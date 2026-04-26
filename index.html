@@ -2221,7 +2221,11 @@ const ROLE_PERMS = {
 const ROLE_LABELS = { admin:'مدير النظام', sales:'المبيعات', academy:'التشغيل', finance:'المالية', reports:'التقارير' };
 const roleLabels  = ROLE_LABELS;
 
-function can(perm) { return (ROLE_PERMS[role] || {})[perm] === true; }
+function can(perm) {
+  // لو كنا في صفحة الإعدادات، نستخدم دور المستخدم الفعلي من الجلسة
+  const effectiveRole = role === 'settings' ? (currentUser().role || 'sales') : role;
+  return (ROLE_PERMS[effectiveRole] || {})[perm] === true;
+}
 
 let _usersCache = [];
 
