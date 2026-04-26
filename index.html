@@ -4,6 +4,9 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>نظام العمليات الداخلي</title>
+<!-- Firebase compat -->
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
 <style>
   /* ── متغيرات النظام ── */
   :root {
@@ -455,13 +458,13 @@
     <div class="login-sub">حيث يعمل فريق لا يقبل إلا بالتميز</div>
     <div class="login-field">
       <label>اسم المستخدم</label>
-      <input id="login-user" type="text" placeholder="username" autocomplete="username" onkeydown="if(event.key==='Enter')doLogin()" />
+      <input id="login-user" type="text" placeholder="username" autocomplete="username" onkeydown="if(event.key==='Enter')doLoginBtn()" />
     </div>
     <div class="login-field">
       <label>كلمة المرور</label>
-      <input id="login-pass" type="password" placeholder="••••••••" autocomplete="current-password" onkeydown="if(event.key==='Enter')doLogin()" />
+      <input id="login-pass" type="password" placeholder="••••••••" autocomplete="current-password" onkeydown="if(event.key==='Enter')doLoginBtn()" />
     </div>
-    <button class="login-btn" onclick="doLogin()">دخول</button>
+    <button class="login-btn" onclick="doLoginBtn()">دخول</button>
     <div class="login-error" id="login-error">اسم المستخدم أو كلمة المرور غير صحيحة</div>
   </div>
 </div>
@@ -905,97 +908,79 @@
   </div>
 </div>
 
-<!-- Firebase SDKs -->
-<script type="module">
-import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-import { getDatabase, ref, set, get, onValue, push, remove } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
 
-const firebaseConfig = {
-  apiKey: "AIzaSyCs93D3a-RS7dcnVSsoeYNtUMNxMcAguI4",
-  authDomain: "sulukeraops.firebaseapp.com",
-  databaseURL: "https://sulukeraops-default-rtdb.firebaseio.com",
-  projectId: "sulukeraops",
-  storageBucket: "sulukeraops.firebasestorage.app",
-  messagingSenderId: "866322180806",
-  appId: "1:866322180806:web:4efad8507d7ba3cf3ec5c7",
-  measurementId: "G-Z5BCCRZ2PZ"
-};
-
-const fbApp = initializeApp(firebaseConfig);
-const db    = getDatabase(fbApp);
-
-// ── واجهة Firebase مشتركة مع بقية الكود ──
-window.FB = {
-  // المستخدمون
-  async getUsers() {
-    const snap = await get(ref(db, 'users'));
-    const data = snap.val() || {};
-    const list = Object.values(data);
-    // تأكد أن admin موجود دائماً
-    if (!list.find(u => u.username === 'admin')) {
-      const admin = { username:'admin', password:'sulukera2025', role:'admin', fullName:'المدير الرئيسي' };
-      await set(ref(db, 'users/admin'), admin);
-      list.unshift(admin);
-    }
-    return list;
-  },
-  async saveUser(user) {
-    await set(ref(db, `users/${user.username}`), user);
-  },
-  async deleteUser(username) {
-    await remove(ref(db, `users/${username}`));
-  },
-
-  // الليبلات
-  async getLabels() {
-    const snap = await get(ref(db, 'labels'));
-    if (!snap.exists()) {
-      // ليبلات افتراضية أول مرة
-      const defaults = [
-        { id:'lb1', name:'Dashboard', color:'#7c3aed' },
-        { id:'lb2', name:'Basecamp',  color:'#0369a1' },
-        { id:'lb3', name:'WhatsApp',  color:'#15803d' },
-      ];
-      await set(ref(db, 'labels'), Object.fromEntries(defaults.map(l => [l.id, l])));
-      return defaults;
-    }
-    return Object.values(snap.val());
-  },
-  async saveLabel(label) {
-    await set(ref(db, `labels/${label.id}`), label);
-  },
-  async deleteLabel(id) {
-    await remove(ref(db, `labels/${id}`));
-  },
-
-  // الإشعارات
-  async getNotifications() {
-    const snap = await get(ref(db, 'notifications'));
-    if (!snap.exists()) return [];
-    return Object.entries(snap.val())
-      .map(([k,v]) => ({...v, _key:k}))
-      .sort((a,b) => b.id - a.id)
-      .slice(0, 50);
-  },
-  async addNotification(notif) {
-    const newRef = push(ref(db, 'notifications'));
-    await set(newRef, notif);
-  },
-  async clearNotifications() {
-    await set(ref(db, 'notifications'), null);
-  },
-
-  // مراقبة الإشعارات الجديدة (real-time)
-  watchNotifications(callback) {
-    onValue(ref(db, 'notifications'), snap => callback());
-  }
-};
-
-// إشعار النظام بأن Firebase جاهز
-window.dispatchEvent(new Event('firebase-ready'));
-</script>
 
 <script>
+// ════════════════════════════════
+// Firebase — تهيئة مع fallback تلقائي
+// ════════════════════════════════
+(function initFirebase() {
+  // لو الصفحة مفتوحة من file:// ما يشتغل Firebase — نستخدم localStorage
+  if (window.location.protocol === 'file:') {
+    console.warn('⚠️ Firebase لا يعمل من file:// — يعمل بوضع offline (localStorage)');
+    window.FB = null;
+    return;
+  }
+  try {
+    const cfg = {
+      apiKey: "AIzaSyCs93D3a-RS7dcnVSsoeYNtUMNxMcAguI4",
+      authDomain: "sulukeraops.firebaseapp.com",
+      databaseURL: "https://sulukeraops-default-rtdb.firebaseio.com",
+      projectId: "sulukeraops",
+      storageBucket: "sulukeraops.firebasestorage.app",
+      messagingSenderId: "866322180806",
+      appId: "1:866322180806:web:4efad8507d7ba3cf3ec5c7"
+    };
+    if (!firebase.apps.length) firebase.initializeApp(cfg);
+    const db = firebase.database();
+
+    window.FB = {
+      async getUsers() {
+        const snap = await db.ref('users').get();
+        const data = snap.val() || {};
+        const list = Object.values(data);
+        if (!list.find(u => u.username === 'admin')) {
+          const admin = { username:'admin', password:'sulukera2025', role:'admin', fullName:'المدير الرئيسي' };
+          await db.ref('users/admin').set(admin);
+          list.unshift(admin);
+        }
+        return list;
+      },
+      async saveUser(user)   { await db.ref(`users/${user.username}`).set(user); },
+      async deleteUser(u)    { await db.ref(`users/${u}`).remove(); },
+
+      async getLabels() {
+        const snap = await db.ref('labels').get();
+        if (!snap.exists()) {
+          const defaults = [
+            { id:'lb1', name:'Dashboard', color:'#7c3aed' },
+            { id:'lb2', name:'Basecamp',  color:'#0369a1' },
+            { id:'lb3', name:'WhatsApp',  color:'#15803d' },
+          ];
+          await db.ref('labels').set(Object.fromEntries(defaults.map(l => [l.id, l])));
+          return defaults;
+        }
+        return Object.values(snap.val());
+      },
+      async saveLabel(label)  { await db.ref(`labels/${label.id}`).set(label); },
+      async deleteLabel(id)   { await db.ref(`labels/${id}`).remove(); },
+
+      async getNotifications() {
+        const snap = await db.ref('notifications').get();
+        if (!snap.exists()) return [];
+        return Object.values(snap.val()).sort((a,b) => b.id - a.id).slice(0,50);
+      },
+      async addNotification(n) { await db.ref('notifications').push(n); },
+      async clearNotifications() { await db.ref('notifications').remove(); },
+      watchNotifications(cb)  { db.ref('notifications').on('value', cb); }
+    };
+    console.log('✅ Firebase متصل');
+  } catch(e) {
+    console.warn('Firebase فشل، وضع offline:', e.message);
+    window.FB = null;
+  }
+})();
+
 // ════════════════════════════════
 // الإعداد — ضع رابط الـ Web App هنا بعد النشر
 // ════════════════════════════════
@@ -1416,13 +1401,12 @@ function renderProductSales() {
 
 function renderReports() {
   // تهيئة خانة مبيعات المنتجات بفترة الشهر الحالي افتراضياً
-  const now = new Date();
+  const now    = new Date();
   const fromEl = document.getElementById('sales-date-from');
   const toEl   = document.getElementById('sales-date-to');
   if (fromEl && !fromEl.value) {
     fromEl.value = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().split('T')[0];
     toEl.value   = now.toISOString().split('T')[0];
-    // تفعيل زر "شهر"
     setTimeout(() => {
       const btn = document.getElementById('sp-month');
       if (btn) { btn.style.background='var(--blue)'; btn.style.color='#fff'; btn.style.borderColor='var(--blue)'; }
@@ -1433,7 +1417,6 @@ function renderReports() {
   const done     = clients.filter(c => c.academyAssigned).length;
   const pending  = clients.filter(c => !c.academyAssigned).length;
   const needAsgn = clients.filter(c => needsAssign(c.source) && !c.academyAssigned).length;
-  const now      = new Date();
   const month    = now.getMonth();
   const year     = now.getFullYear();
   const thisMonth = clients.filter(c => {
@@ -2084,7 +2067,8 @@ function openSettings() {
   if (addUserPanel) addUserPanel.style.display = can('settings') ? '' : 'none';
 }
 
-// ── الليبلات المخصصة (Firebase) ──
+// wrapper للـ HTML onclick (لا يقبل async مباشرة)
+function doLoginBtn() { doLogin().catch(e => console.error(e)); }
 let _labelsCache = [];
 
 async function loadCustomLabels() {
@@ -2412,10 +2396,8 @@ async function checkSession() {
   }
 }
 
-// تشغيل checkSession بعد تحميل Firebase
-window.addEventListener('firebase-ready', checkSession);
-// fallback لو Firebase ما اشتغل
-setTimeout(() => { if (_usersCache.length === 0) checkSession(); }, 3000);
+// تشغيل checkSession عند تحميل الصفحة
+checkSession();
 
 
 </script>
