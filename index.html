@@ -1291,8 +1291,9 @@ async function toggleNotifications() {
     _notifCache = _notifCache.map(n => ({...n, read: true}));
     renderNotifList();
     renderNotifDot();
-    // حفظ حالة القراءة — نعيد الكتابة
+    // حفظ حالة القراءة — نمسح أولاً لتجنب التكرار ثم نعيد الكتابة
     if (window.FB) {
+      await window.FB.clearNotifications().catch(()=>{});
       for (const n of _notifCache) await window.FB.addNotification(n).catch(()=>{});
     }
   }
@@ -2424,8 +2425,23 @@ function currentUser() { return JSON.parse(sessionStorage.getItem('ops_session')
 async function doLogin() {
   const username = document.getElementById('login-user').value.trim();
   const password = document.getElementById('login-pass').value;
-  if (_usersCache.length === 0) await loadUsers();
+  if (!username || !password) return;
+
+  // أظهر حالة تحميل
+  const loginBtn = document.querySelector('#login-screen .login-btn') || document.querySelector('#login-screen button[onclick]');
+  if (loginBtn) { loginBtn.disabled = true; loginBtn.textContent = 'جاري التحقق...'; }
+
+  try {
+    // دائماً نحمّل أحدث قائمة من Firebase عند كل محاولة دخول
+    await loadUsers();
+  } catch(e) {
+    console.error('loadUsers error:', e);
+  }
+
   const user = _usersCache.find(u => u.username === username && u.password === password);
+
+  if (loginBtn) { loginBtn.disabled = false; loginBtn.textContent = 'دخول'; }
+
   if (user) {
     sessionStorage.setItem('ops_session', JSON.stringify({ username:user.username, role:user.role, fullName:user.fullName||user.username }));
     document.getElementById('login-screen').style.display = 'none';
