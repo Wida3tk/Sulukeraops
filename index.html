@@ -1607,7 +1607,27 @@ async function syncData() {
     api({action:'getPrograms'})
   ]);
 
-  if (cr.clients)  clients  = cr.clients;
+  if (cr.clients) {
+    // دمج البيانات المحلية مع بيانات الشيت للحفاظ على الحقول الإضافية
+    const localClients = JSON.parse(localStorage.getItem('ops_clients') || '[]');
+    clients = cr.clients.map(sheetClient => {
+      const local = localClients.find(l => l.ref === sheetClient.ref);
+      if (local) {
+        // احتفظ بالحقول الإضافية من النسخة المحلية
+        return {
+          ...sheetClient,
+          addedBy:     local.addedBy     || sheetClient.addedBy     || '',
+          labels:      local.labels      || sheetClient.labels      || [],
+          notes:       local.notes       || sheetClient.notes       || '',
+          track:       local.track       || sheetClient.track       || '',
+          programType: local.programType || sheetClient.programType || '',
+          clientType:  local.clientType  || sheetClient.clientType  || '',
+          log:         local.log         || [],
+        };
+      }
+      return sheetClient;
+    });
+  }
   if (pr.programs) programs = pr.programs;
 
   // fallback محلي
@@ -2381,8 +2401,17 @@ function getUsers() { return _usersCache; }
 async function saveUser(user) {
   const idx = _usersCache.findIndex(u => u.username === user.username);
   if (idx >= 0) _usersCache[idx] = user; else _usersCache.push(user);
-  if (window.FB) await window.FB.saveUser(user);
-  else localStorage.setItem('ops_users', JSON.stringify(_usersCache));
+  if (window.FB) {
+    try {
+      await window.FB.saveUser(user);
+      console.log('✅ User saved to Firebase:', user.username);
+    } catch(e) {
+      console.error('❌ Firebase saveUser error:', e);
+      toast('خطأ في حفظ المستخدم: ' + e.message, false);
+    }
+  } else {
+    localStorage.setItem('ops_users', JSON.stringify(_usersCache));
+  }
 }
 
 async function deleteUserFromStore(username) {
@@ -2465,12 +2494,17 @@ async function addUser() {
   if (_usersCache.find(u => u.username===name)) { toast('اسم المستخدم موجود مسبقاً', false); return; }
   const perms = getFormPerms();
   const user  = { username:name, password:pass, role:'custom', fullName:fullName||name, perms };
-  await saveUser(user);
-  ['new-user-name','new-user-fullname','new-user-pass'].forEach(id => document.getElementById(id).value='');
-  // مسح الصلاحيات
-  Object.keys(PERM_LABELS).forEach(k => { const el = document.getElementById(`perm-${k}`); if (el) el.checked = false; });
-  toast('تم إضافة المستخدم ✓');
-  renderUsersList();
+  toast('جاري الحفظ في Firebase...');
+  try {
+    await saveUser(user);
+    ['new-user-name','new-user-fullname','new-user-pass'].forEach(id => document.getElementById(id).value='');
+    Object.keys(PERM_LABELS).forEach(k => { const el = document.getElementById(`perm-${k}`); if (el) el.checked = false; });
+    toast('✅ تم حفظ المستخدم ' + name + ' في Firebase');
+    renderUsersList();
+  } catch(e) {
+    console.error('addUser error:', e);
+    toast('❌ فشل الحفظ: ' + (e.message||e), false);
+  }
 }
 
 async function removeUser(username) {
