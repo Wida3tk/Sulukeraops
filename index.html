@@ -751,10 +751,14 @@
         <div class="df" id="d-notes-wrap" style="display:none"><label>ملاحظات</label><span id="d-notes"></span></div>
       </div>
       <!-- زر تعديل البيانات -->
-      <div style="margin:.75rem 0 0" id="edit-btn-wrap">
+      <div style="margin:.75rem 0 0;display:flex;gap:8px;flex-wrap:wrap" id="edit-btn-wrap">
         <button class="btn sm" style="color:#0D40FC;border-color:#c7d7fd" onclick="openEditModal()">
           <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
           تعديل البيانات
+        </button>
+        <button id="delete-client-btn" class="btn sm" style="color:#b91c1c;border-color:#fca5a5;display:none" onclick="deleteClient()">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4h6v2"/></svg>
+          حذف العميل
         </button>
       </div>
       <div class="sec-hd" style="margin-top:.5rem"><span class="sec-title">مراحل العملية</span></div>
@@ -2021,7 +2025,9 @@ function renderDetail(ref) {
   if (editWrap) {
     const u = currentUser();
     const canEdit = can('editClient') && (can('editAny') || c.addedBy === u.username || c.addedBy === u.fullName);
-    editWrap.style.display = canEdit ? '' : 'none';
+    document.querySelector('#edit-btn-wrap .btn.sm').style.display = canEdit ? '' : 'none';
+    const delBtn = document.getElementById('delete-client-btn');
+    if (delBtn) delBtn.style.display = can('settings') ? '' : 'none';
   }
 
   const log = c.log || [];
@@ -2214,6 +2220,23 @@ function renderLabelsList() {
   `).join('') || '<div class="empty">لا توجد ليبلات</div>';
 }
 
+
+// ── حذف عميل (مدير النظام فقط) ──
+async function deleteClient() {
+  if (!can('settings')) { toast('ليس لديك صلاحية', false); return; }
+  const c = clients.find(x => x.ref === selId);
+  if (!c) return;
+  if (!confirm(`حذف العميل "${c.name}" (${c.ref}) نهائياً؟\nهذا الإجراء لا يمكن التراجع عنه.`)) return;
+  // حذف من الـ Google Sheets
+  await api(null, { action: 'deleteClient', ref: c.ref });
+  // حذف محلياً
+  clients = clients.filter(x => x.ref !== selId);
+  localStorage.setItem('ops_clients', JSON.stringify(clients));
+  closeDetail();
+  updateStats();
+  render();
+  toast(`تم حذف العميل ${c.ref} ✓`);
+}
 
 // ── تعديل بيانات العميل ──
 function openEditModal() {
