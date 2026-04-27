@@ -2152,14 +2152,7 @@ function openSettings() {
   role = 'settings';
   render();
   renderLabelsList();
-  // تحميل المستخدمين من Firebase أولاً ثم العرض
-  loadUsers().then(() => {
-    renderUsersList();
-  }).catch(e => {
-    console.error('loadUsers error:', e);
-    renderUsersList(); // عرض ما في الكاش على الأقل
-  });
-  // إخفاء قسم إضافة المستخدمين إذا لم يكن admin
+  renderUsersList(); // async — تحمّل من Firebase وتعرض
   const addUserPanel = document.querySelector('#v-settings .settings-panel');
   if (addUserPanel) addUserPanel.style.display = can('settings') ? '' : 'none';
 }
@@ -2535,11 +2528,14 @@ async function changePassword(username) {
   if (user) { user.password = newPass; await saveUser(user); toast('تم تغيير كلمة المرور ✓'); }
 }
 
-function renderUsersList() {
+async function renderUsersList() {
   const el = document.getElementById('users-list');
   if (!el) return;
-  const users  = getUsers();
-  const u      = currentUser();
+  // دائماً نحمّل من Firebase أولاً
+  el.innerHTML = '<div style="padding:12px;text-align:center;color:var(--muted);font-size:13px">جاري التحميل...</div>';
+  await loadUsers();
+  const users   = getUsers();
+  const u       = currentUser();
   const isAdmin = can('settings');
   el.innerHTML = users.map(usr => {
     const perms   = getUserPerms(usr);
