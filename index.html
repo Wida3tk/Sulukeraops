@@ -374,19 +374,27 @@
 
   /* ── شاشة تسجيل الدخول ── */
   #login-screen {
-    position: fixed; inset: 0;
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    width: 100%; height: 100%;
     background: linear-gradient(135deg, #001442 0%, #0D40FC 100%);
     display: flex; align-items: center; justify-content: center;
-    z-index: 9999;
+    z-index: 99999;
     font-family: 'Segoe UI', Tahoma, sans-serif;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
   }
   .login-box {
     background: #fff;
     border-radius: 16px;
     padding: 2.5rem 2rem;
     width: 340px;
+    max-width: calc(100vw - 2rem);
     box-shadow: 0 20px 60px rgba(0,0,0,.3);
     text-align: center;
+    margin: 1rem auto;
+    position: relative;
+    z-index: 100000;
   }
   .login-logo { margin-bottom: 1rem; }
   .login-logo img { height: 54px; object-fit: contain; }
