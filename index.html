@@ -883,14 +883,48 @@
         <div class="fg"><label>الاسم الكامل</label><input id="new-user-fullname" placeholder="مثال: أحمد محمد" /></div>
         <div class="fg"><label>اسم المستخدم (للدخول)</label><input id="new-user-name" placeholder="مثال: ahmed" dir="ltr" /></div>
         <div class="fg"><label>كلمة المرور</label><input id="new-user-pass" type="password" placeholder="6 أحرف على الأقل" /></div>
-        <div class="fg"><label>الصلاحية</label>
-          <select id="new-user-role">
-            <option value="sales">المبيعات — يضيف ويعدل بياناته</option>
-            <option value="academy">التشغيل — يغير حالات التفعيل</option>
-            <option value="finance">المالية — يشوف المالية فقط</option>
-            <option value="reports">التقارير — مشاهدة فقط</option>
-            <option value="admin">مدير النظام — صلاحية كاملة</option>
-          </select>
+      </div>
+      <!-- صلاحيات مخصصة -->
+      <div style="margin-bottom:1rem">
+        <div style="font-size:12px;font-weight:600;color:var(--text);margin-bottom:8px">الصلاحيات</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px" id="new-user-perms">
+          <label style="display:flex;align-items:center;gap:8px;padding:8px 10px;border:1px solid var(--border);border-radius:8px;cursor:pointer;font-size:12px">
+            <input type="checkbox" id="perm-addClient" style="width:15px;height:15px;cursor:pointer">
+            <div><div style="font-weight:600">إضافة عميل</div><div style="color:var(--muted);font-size:11px">تسجيل عملاء جدد</div></div>
+          </label>
+          <label style="display:flex;align-items:center;gap:8px;padding:8px 10px;border:1px solid var(--border);border-radius:8px;cursor:pointer;font-size:12px">
+            <input type="checkbox" id="perm-editClient" style="width:15px;height:15px;cursor:pointer">
+            <div><div style="font-weight:600">تعديل بيانات</div><div style="color:var(--muted);font-size:11px">تعديل بيانات العملاء</div></div>
+          </label>
+          <label style="display:flex;align-items:center;gap:8px;padding:8px 10px;border:1px solid var(--border);border-radius:8px;cursor:pointer;font-size:12px">
+            <input type="checkbox" id="perm-editAny" style="width:15px;height:15px;cursor:pointer">
+            <div><div style="font-weight:600">تعديل الكل</div><div style="color:var(--muted);font-size:11px">تعديل بيانات أي عميل</div></div>
+          </label>
+          <label style="display:flex;align-items:center;gap:8px;padding:8px 10px;border:1px solid var(--border);border-radius:8px;cursor:pointer;font-size:12px">
+            <input type="checkbox" id="perm-academy" style="width:15px;height:15px;cursor:pointer">
+            <div><div style="font-weight:600">التشغيل</div><div style="color:var(--muted);font-size:11px">تغيير حالات التفعيل</div></div>
+          </label>
+          <label style="display:flex;align-items:center;gap:8px;padding:8px 10px;border:1px solid var(--border);border-radius:8px;cursor:pointer;font-size:12px">
+            <input type="checkbox" id="perm-finance" style="width:15px;height:15px;cursor:pointer">
+            <div><div style="font-weight:600">المالية</div><div style="color:var(--muted);font-size:11px">الوصول لتبويب المالية</div></div>
+          </label>
+          <label style="display:flex;align-items:center;gap:8px;padding:8px 10px;border:1px solid var(--border);border-radius:8px;cursor:pointer;font-size:12px">
+            <input type="checkbox" id="perm-reports" style="width:15px;height:15px;cursor:pointer">
+            <div><div style="font-weight:600">التقارير</div><div style="color:var(--muted);font-size:11px">عرض التقارير والإحصائيات</div></div>
+          </label>
+          <label style="display:flex;align-items:center;gap:8px;padding:8px 10px;border:1px solid var(--border);border-radius:8px;cursor:pointer;font-size:12px">
+            <input type="checkbox" id="perm-settings" style="width:15px;height:15px;cursor:pointer">
+            <div><div style="font-weight:600">الإعدادات</div><div style="color:var(--muted);font-size:11px">إدارة المستخدمين والنظام</div></div>
+          </label>
+        </div>
+        <!-- أزرار إعداد سريع -->
+        <div style="display:flex;gap:6px;margin-top:8px;flex-wrap:wrap">
+          <span style="font-size:11px;color:var(--muted);align-self:center">إعداد سريع:</span>
+          <button type="button" class="btn sm" onclick="setPresetPerms('admin')" style="font-size:11px">مدير كامل</button>
+          <button type="button" class="btn sm" onclick="setPresetPerms('sales')" style="font-size:11px">مبيعات</button>
+          <button type="button" class="btn sm" onclick="setPresetPerms('academy')" style="font-size:11px">تشغيل</button>
+          <button type="button" class="btn sm" onclick="setPresetPerms('finance')" style="font-size:11px">مالية</button>
+          <button type="button" class="btn sm" onclick="setPresetPerms('reports')" style="font-size:11px">تقارير</button>
         </div>
       </div>
       <div class="fbtns">
@@ -904,6 +938,29 @@
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
         تسجيل الخروج
       </button>
+    </div>
+  </div>
+</div>
+
+<!-- مودال تعديل صلاحيات مستخدم -->
+<div id="edit-perms-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:9000;align-items:center;justify-content:center">
+  <div style="background:#fff;border-radius:16px;padding:1.75rem 1.5rem;width:420px;max-width:94vw;max-height:85vh;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,.25)">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1.25rem">
+      <div style="font-size:15px;font-weight:700;color:#001442">تعديل صلاحيات — <span id="edit-perms-name"></span></div>
+      <button onclick="closeEditPerms()" style="border:none;background:none;cursor:pointer;font-size:18px;color:#6b7280">✕</button>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:1rem" id="edit-perms-grid"></div>
+    <div style="display:flex;gap:6px;margin-bottom:1rem;flex-wrap:wrap">
+      <span style="font-size:11px;color:var(--muted);align-self:center">إعداد سريع:</span>
+      <button type="button" class="btn sm" onclick="setEditPreset('admin')" style="font-size:11px">مدير كامل</button>
+      <button type="button" class="btn sm" onclick="setEditPreset('sales')" style="font-size:11px">مبيعات</button>
+      <button type="button" class="btn sm" onclick="setEditPreset('academy')" style="font-size:11px">تشغيل</button>
+      <button type="button" class="btn sm" onclick="setEditPreset('finance')" style="font-size:11px">مالية</button>
+      <button type="button" class="btn sm" onclick="setEditPreset('reports')" style="font-size:11px">تقارير</button>
+    </div>
+    <div class="fbtns">
+      <button class="btn primary" onclick="saveEditPerms()">حفظ الصلاحيات</button>
+      <button class="btn" onclick="closeEditPerms()">إلغاء</button>
     </div>
   </div>
 </div>
@@ -2221,10 +2278,57 @@ const ROLE_PERMS = {
 const ROLE_LABELS = { admin:'مدير النظام', sales:'المبيعات', academy:'التشغيل', finance:'المالية', reports:'التقارير' };
 const roleLabels  = ROLE_LABELS;
 
+const PERM_LABELS = {
+  addClient:  { label:'إضافة عميل',    desc:'تسجيل عملاء جدد' },
+  editClient: { label:'تعديل بيانات',  desc:'تعديل بيانات العملاء' },
+  editAny:    { label:'تعديل الكل',    desc:'تعديل بيانات أي عميل' },
+  academy:    { label:'التشغيل',       desc:'تغيير حالات التفعيل' },
+  finance:    { label:'المالية',       desc:'الوصول لتبويب المالية' },
+  reports:    { label:'التقارير',      desc:'عرض التقارير والإحصائيات' },
+  settings:   { label:'الإعدادات',     desc:'إدارة المستخدمين والنظام' },
+};
+
+const PRESETS = {
+  admin:   { addClient:true,  editClient:true,  editAny:true,  academy:true,  finance:true,  reports:true,  settings:true  },
+  sales:   { addClient:true,  editClient:true,  editAny:false, academy:false, finance:false, reports:false, settings:false },
+  academy: { addClient:false, editClient:false, editAny:false, academy:true,  finance:false, reports:false, settings:false },
+  finance: { addClient:false, editClient:false, editAny:false, academy:false, finance:true,  reports:false, settings:false },
+  reports: { addClient:false, editClient:false, editAny:false, academy:false, finance:false, reports:true,  settings:false },
+};
+
+function getUserPerms(user) {
+  if (!user) return PRESETS['sales'];
+  // admin دائماً صلاحية كاملة
+  if (user.username === 'admin') return PRESETS['admin'];
+  // لو عنده perms مخصصة استخدمها
+  if (user.perms) return user.perms;
+  // وإلا ارجع للـ PRESETS حسب الدور
+  return PRESETS[user.role] || PRESETS['sales'];
+}
+
 function can(perm) {
-  // لو كنا في صفحة الإعدادات، نستخدم دور المستخدم الفعلي من الجلسة
-  const effectiveRole = role === 'settings' ? (currentUser().role || 'sales') : role;
-  return (ROLE_PERMS[effectiveRole] || {})[perm] === true;
+  const u = currentUser();
+  const userObj = _usersCache.find(x => x.username === u.username);
+  const perms = getUserPerms(userObj);
+  return perms[perm] === true;
+}
+
+// أزرار الإعداد السريع — نموذج إضافة مستخدم جديد
+function setPresetPerms(preset) {
+  const p = PRESETS[preset] || {};
+  Object.keys(PERM_LABELS).forEach(k => {
+    const el = document.getElementById(`perm-${k}`);
+    if (el) el.checked = !!p[k];
+  });
+}
+
+function getFormPerms() {
+  const p = {};
+  Object.keys(PERM_LABELS).forEach(k => {
+    const el = document.getElementById(`perm-${k}`);
+    if (el) p[k] = el.checked;
+  });
+  return p;
 }
 
 let _usersCache = [];
@@ -2310,7 +2414,11 @@ function applyRoleUI() {
   }
 
   // تحديد أول تاب متاح
-  const firstTab = showAdd ? 'sales' : showAcademy ? 'academy' : showFinance ? 'finance' : showReports ? 'reports' : 'sales';
+  const firstTab = can('addClient') ? 'sales'
+    : can('academy')  ? 'academy'
+    : can('finance')  ? 'finance'
+    : can('reports')  ? 'reports'
+    : 'sales';
   const tabBtn   = document.getElementById('btn-'+firstTab) || document.getElementById('btn-sales');
   setRole(firstTab, tabBtn);
 }
@@ -2320,14 +2428,16 @@ async function addUser() {
   const name      = document.getElementById('new-user-name').value.trim();
   const fullName  = document.getElementById('new-user-fullname').value.trim();
   const pass      = document.getElementById('new-user-pass').value.trim();
-  const userRole  = document.getElementById('new-user-role').value;
   if (!name||!pass) { toast('أدخل اسم المستخدم وكلمة المرور', false); return; }
   if (name==='admin') { toast('هذا الاسم محجوز للمدير الرئيسي', false); return; }
   if (pass.length < 6) { toast('كلمة المرور يجب أن تكون 6 أحرف على الأقل', false); return; }
   if (_usersCache.find(u => u.username===name)) { toast('اسم المستخدم موجود مسبقاً', false); return; }
-  const user = { username:name, password:pass, role:userRole, fullName:fullName||name };
+  const perms = getFormPerms();
+  const user  = { username:name, password:pass, role:'custom', fullName:fullName||name, perms };
   await saveUser(user);
   ['new-user-name','new-user-fullname','new-user-pass'].forEach(id => document.getElementById(id).value='');
+  // مسح الصلاحيات
+  Object.keys(PERM_LABELS).forEach(k => { const el = document.getElementById(`perm-${k}`); if (el) el.checked = false; });
   toast('تم إضافة المستخدم ✓');
   renderUsersList();
 }
@@ -2355,26 +2465,86 @@ async function changePassword(username) {
 function renderUsersList() {
   const el = document.getElementById('users-list');
   if (!el) return;
-  const users = getUsers();
-  const u = currentUser();
-  el.innerHTML = users.map(usr => `
-    <div class="cc" style="display:flex;align-items:center;justify-content:space-between;cursor:default;gap:8px">
-      <div style="flex:1">
-        <div style="font-size:13px;font-weight:600">${usr.fullName||usr.username}
-          <span style="font-size:11px;color:var(--muted);font-weight:400">(${usr.username})</span>
-          ${usr.username===u.username?'<span style="font-size:10px;color:var(--blue)"> • أنت</span>':''}
-          ${usr.username==='admin'?'<span style="font-size:10px;color:#b45309"> • Super Admin</span>':''}
+  const users  = getUsers();
+  const u      = currentUser();
+  const isAdmin = can('settings');
+  el.innerHTML = users.map(usr => {
+    const perms   = getUserPerms(usr);
+    const active  = Object.entries(PERM_LABELS).filter(([k]) => perms[k]);
+    const pillsHTML = active.map(([,v]) =>
+      `<span style="font-size:10px;padding:2px 7px;border-radius:10px;background:var(--blue-lt);color:var(--blue);font-weight:600">${v.label}</span>`
+    ).join('');
+    return `
+    <div class="cc" style="cursor:default">
+      <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:8px">
+        <div style="flex:1">
+          <div style="font-size:13px;font-weight:600;margin-bottom:4px">
+            ${usr.fullName||usr.username}
+            <span style="font-size:11px;color:var(--muted);font-weight:400">(${usr.username})</span>
+            ${usr.username===u.username?'<span style="font-size:10px;color:var(--blue)"> • أنت</span>':''}
+            ${usr.username==='admin'?'<span style="font-size:10px;color:#b45309"> • Super Admin</span>':''}
+          </div>
+          <div style="display:flex;flex-wrap:wrap;gap:4px">${pillsHTML||'<span style="font-size:11px;color:var(--muted)">لا توجد صلاحيات</span>'}</div>
         </div>
-        <div style="font-size:11px;color:var(--muted);margin-top:2px">${ROLE_LABELS[usr.role]||usr.role}</div>
+        <div style="display:flex;gap:6px;flex-shrink:0;margin-top:2px">
+          ${isAdmin && usr.username!=='admin'
+            ? `<button class="btn sm" style="color:#0D40FC;border-color:#c7d7fd" onclick="openEditPerms('${usr.username}')">تعديل الصلاحيات</button>`
+            : ''}
+          <button class="btn sm" style="color:#059669;border-color:#a7f3d0" onclick="changePassword('${usr.username}')">كلمة المرور</button>
+          ${isAdmin && usr.username!=='admin' && usr.username!==u.username
+            ? `<button class="btn sm" style="color:#b91c1c;border-color:#fca5a5" onclick="removeUser('${usr.username}')">حذف</button>`
+            : ''}
+        </div>
       </div>
-      <div style="display:flex;gap:6px;flex-shrink:0">
-        <button class="btn sm" style="color:#0D40FC;border-color:#c7d7fd" onclick="changePassword('${usr.username}')">تغيير كلمة المرور</button>
-        ${can('settings') && usr.username!=='admin' && usr.username!==u.username
-          ? `<button class="btn sm" style="color:#b91c1c;border-color:#fca5a5" onclick="removeUser('${usr.username}')">حذف</button>`
-          : ''}
-      </div>
-    </div>
-  `).join('') || '<div class="empty">لا يوجد مستخدمون</div>';
+    </div>`;
+  }).join('') || '<div class="empty">لا يوجد مستخدمون</div>';
+}
+
+// ── مودال تعديل الصلاحيات ──
+let _editPermsUsername = null;
+
+function openEditPerms(username) {
+  const usr = _usersCache.find(u => u.username === username);
+  if (!usr) return;
+  _editPermsUsername = username;
+  document.getElementById('edit-perms-name').textContent = usr.fullName || usr.username;
+  const perms = getUserPerms(usr);
+  const grid  = document.getElementById('edit-perms-grid');
+  grid.innerHTML = Object.entries(PERM_LABELS).map(([k, v]) => `
+    <label style="display:flex;align-items:center;gap:8px;padding:8px 10px;border:1px solid var(--border);border-radius:8px;cursor:pointer;font-size:12px">
+      <input type="checkbox" id="ep-${k}" ${perms[k]?'checked':''} style="width:15px;height:15px;cursor:pointer">
+      <div><div style="font-weight:600">${v.label}</div><div style="color:var(--muted);font-size:11px">${v.desc}</div></div>
+    </label>`).join('');
+  document.getElementById('edit-perms-modal').style.display = 'flex';
+}
+
+function closeEditPerms() {
+  document.getElementById('edit-perms-modal').style.display = 'none';
+  _editPermsUsername = null;
+}
+
+function setEditPreset(preset) {
+  const p = PRESETS[preset] || {};
+  Object.keys(PERM_LABELS).forEach(k => {
+    const el = document.getElementById(`ep-${k}`);
+    if (el) el.checked = !!p[k];
+  });
+}
+
+async function saveEditPerms() {
+  if (!_editPermsUsername) return;
+  const usr = _usersCache.find(u => u.username === _editPermsUsername);
+  if (!usr) return;
+  const perms = {};
+  Object.keys(PERM_LABELS).forEach(k => {
+    const el = document.getElementById(`ep-${k}`);
+    if (el) perms[k] = el.checked;
+  });
+  usr.perms = perms;
+  await saveUser(usr);
+  toast('تم حفظ الصلاحيات ✓');
+  closeEditPerms();
+  renderUsersList();
 }
 
 // تحقق من الجلسة عند التحميل — ننتظر Firebase
