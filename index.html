@@ -1005,18 +1005,39 @@
 
     window.FB = {
       async getUsers() {
-        const snap = await db.ref('users').get();
-        const data = snap.val() || {};
-        const list = Object.values(data);
-        if (!list.find(u => u.username === 'admin')) {
-          const admin = { username:'admin', password:'sulukera2025', role:'admin', fullName:'المدير الرئيسي' };
-          await db.ref('users/admin').set(admin);
-          list.unshift(admin);
+        try {
+          const snap = await db.ref('users').get();
+          console.log('🔍 Firebase users snap exists:', snap.exists());
+          if (!snap.exists()) {
+            console.log('⚠️ لا يوجد مستخدمون في Firebase — إنشاء admin');
+            const admin = { username:'admin', password:'sulukera2025', role:'admin', fullName:'المدير الرئيسي' };
+            await db.ref('users/admin').set(admin);
+            return [admin];
+          }
+          const data = snap.val();
+          console.log('🔍 Firebase users raw data:', JSON.stringify(data));
+          const list = Object.values(data).filter(u => u && u.username);
+          console.log('🔍 Firebase users list:', list.length, 'users');
+          if (!list.find(u => u.username === 'admin')) {
+            const admin = { username:'admin', password:'sulukera2025', role:'admin', fullName:'المدير الرئيسي' };
+            await db.ref('users/admin').set(admin);
+            list.unshift(admin);
+          }
+          return list;
+        } catch(e) {
+          console.error('❌ getUsers error:', e.message);
+          throw e;
         }
-        return list;
       },
-      async saveUser(user)   { await db.ref(`users/${user.username}`).set(user); },
-      async deleteUser(u)    { await db.ref(`users/${u}`).remove(); },
+      async saveUser(user) {
+        // Firebase لا يقبل . # $ [ ] / في المسارات — نستبدل بـ _
+        const safeKey = user.username.replace(/[.#$\[\]/]/g, '_');
+        await db.ref(`users/${safeKey}`).set(user);
+      },
+      async deleteUser(u) {
+        const safeKey = u.replace(/[.#$\[\]/]/g, '_');
+        await db.ref(`users/${safeKey}`).remove();
+      },
 
       async getLabels() {
         const snap = await db.ref('labels').get();
@@ -2386,7 +2407,27 @@ let _usersCache = [];
 
 async function loadUsers() {
   if (window.FB) {
-    _usersCache = await window.FB.getUsers();
+    try {
+      const list = await window.FB.getUsers();
+      _usersCache = list;
+      console.log('✅ loadUsers from Firebase:', _usersCache.length, 'users');
+    } catch(e) {
+      console.error('❌ loadUsers Firebase failed:', e);
+      // retry مرة واحدة بعد ثانية
+      try {
+        await new Promise(r => setTimeout(r, 1000));
+        const list = await window.FB.getUsers();
+        _usersCache = list;
+        console.log('✅ loadUsers retry success:', _usersCache.length, 'users');
+      } catch(e2) {
+        console.error('❌ loadUsers retry also failed:', e2);
+        // fallback إلى localStorage
+        const saved = localStorage.getItem('ops_users');
+        _usersCache = saved ? JSON.parse(saved) : [];
+        if (!_usersCache.find(u => u.username === 'admin'))
+          _usersCache.unshift({ username:'admin', password:'sulukera2025', role:'admin', fullName:'المدير الرئيسي' });
+      }
+    }
   } else {
     const saved = localStorage.getItem('ops_users');
     _usersCache = saved ? JSON.parse(saved) : [];
@@ -2643,8 +2684,26 @@ async function checkSession() {
   if (session) {
     const s = JSON.parse(session);
     // تحقق أن المستخدم لا يزال موجوداً في Firebase
-    const stillExists = _usersCache.find(u => u.username === s.username);
-    if (!stillExists) { sessionStorage.removeItem('ops_session'); return; }
+    let stillExists = _usersCache.find(u => u.username === s.username);
+
+    // لو ما وجد المستخدم و Firebase متصل — ربما فشل التحميل، حاول مرة ثانية
+    if (!stillExists && window.FB) {
+      console.log('⚠️ المستخدم ما وُجد في الـ cache، إعادة المحاولة...');
+      await new Promise(r => setTimeout(r, 1500));
+      await loadUsers();
+      stillExists = _usersCache.find(u => u.username === s.username);
+    }
+
+    // لو admin دائماً يُسمح له بالدخول (حماية من مشاكل Firebase)
+    if (!stillExists && s.username === 'admin') {
+      stillExists = { username:'admin', role:'admin', fullName:'المدير الرئيسي' };
+    }
+
+    if (!stillExists) {
+      console.warn('⚠️ المستخدم', s.username, 'غير موجود في Firebase — إنهاء الجلسة');
+      sessionStorage.removeItem('ops_session');
+      return;
+    }
     role = s.role;
     document.getElementById('login-screen').style.display = 'none';
     applyRoleUI();
