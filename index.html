@@ -1731,26 +1731,43 @@ async function syncData() {
   ]);
 
   if (cr.clients) {
-    // دمج البيانات المحلية مع بيانات الشيت للحفاظ على الحقول الإضافية
+    // تنظيف القيم القادمة من Google Sheets
+    const cleanVal = v => {
+      if (v === null || v === undefined) return '';
+      const s = String(v).trim();
+      // تجاهل أخطاء الشيت
+      if (s.startsWith('#') || s === 'undefined' || s === 'null') return '';
+      return s;
+    };
     const localClients = JSON.parse(localStorage.getItem('ops_clients') || '[]');
-    clients = cr.clients.map(sheetClient => {
-      const local = localClients.find(l => l.ref === sheetClient.ref);
-      if (local) {
-        // احتفظ بالحقول الإضافية من النسخة المحلية
-        return {
-          ...sheetClient,
-          addedBy:     local.addedBy     || sheetClient.addedBy     || '',
-          labels:      local.labels      || sheetClient.labels      || [],
-          notes:       local.notes       || sheetClient.notes       || '',
-          track:       local.track       || sheetClient.track       || '',
-          programType: local.programType || sheetClient.programType || '',
-          clientType:  local.clientType  || sheetClient.clientType  || '',
-          batchNo:     local.batchNo     || sheetClient.batchNo     || '',
-          log:         local.log         || [],
-        };
-      }
-      return sheetClient;
-    });
+    clients = cr.clients
+      .filter(sc => sc && cleanVal(sc.ref) && cleanVal(sc.name)) // تجاهل الصفوف الفارغة
+      .map(sheetClient => {
+        // تنظيف كل حقل
+        const clean = {};
+        Object.keys(sheetClient).forEach(k => { clean[k] = cleanVal(sheetClient[k]); });
+        // تطبيع academyAdded و academyAssigned (قد تأتي كـ string من الشيت)
+        clean.academyAdded    = sheetClient.academyAdded    === true || String(sheetClient.academyAdded).toLowerCase()    === 'true';
+        clean.academyAssigned = sheetClient.academyAssigned === true || String(sheetClient.academyAssigned).toLowerCase() === 'true';
+        const local = localClients.find(l => l.ref === clean.ref);
+        if (local) {
+          return {
+            ...clean,
+            addedBy:     local.addedBy     || clean.addedBy     || '',
+            labels:      local.labels      || [],
+            notes:       local.notes       || clean.notes       || '',
+            track:       local.track       || clean.track       || '',
+            programType: local.programType || clean.programType || '',
+            clientType:  local.clientType  || clean.clientType  || '',
+            batchNo:     local.batchNo     || clean.batchNo     || '',
+            // حافظ على الحالة المحلية إن وُجدت
+            academyAdded:    local.academyAdded    !== undefined ? local.academyAdded    : clean.academyAdded,
+            academyAssigned: local.academyAssigned !== undefined ? local.academyAssigned : clean.academyAssigned,
+            log:         local.log         || [],
+          };
+        }
+        return { ...clean, labels: clean.labels ? (Array.isArray(clean.labels) ? clean.labels : []) : [], log: [] };
+      });
   }
   if (pr.programs) programs = pr.programs;
 
@@ -1780,6 +1797,8 @@ async function syncData() {
   render();
   btn.classList.remove('loading');
   btn.innerHTML = '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg> مزامنة';
+  // تأكيد إضافي: إعادة الرسم بعد قليل لضمان تحديث الـ view الحالي
+  setTimeout(() => { updateStats(); render(); }, 200);
 }
 
 function fillProgramSelect() {
@@ -1833,6 +1852,19 @@ function updateStats() {
   document.getElementById('st1').textContent = clients.filter(c=>!c.academyAssigned).length;
   document.getElementById('st2').textContent = clients.filter(c=>c.academyAssigned).length;
   document.getElementById('st3').textContent = clients.filter(c=>needsAssign(c.source)&&!c.academyAssigned).length;
+  // تحديث عدادات التشغيل دائماً بغض النظر عن الـ role الحالي
+  const acaPend      = clients.filter(c=>!c.academyAssigned && !isTrialClient(c)).length;
+  const acaPendTrial = clients.filter(c=>!c.academyAssigned && isTrialClient(c)).length;
+  const acaDone      = clients.filter(c=>c.academyAssigned && !isTrialClient(c)).length;
+  const acaDoneTrial = clients.filter(c=>c.academyAssigned && isTrialClient(c)).length;
+  const e1 = document.getElementById('aca-pend-count');
+  const e2 = document.getElementById('aca-pend-trial-count');
+  const e3 = document.getElementById('aca-done-count');
+  const e4 = document.getElementById('aca-done-trial-count');
+  if (e1) e1.textContent = acaPend;
+  if (e2) e2.textContent = acaPendTrial;
+  if (e3) e3.textContent = acaDone;
+  if (e4) e4.textContent = acaDoneTrial;
 }
 
 // ── التبديل بين الأقسام ──
@@ -1973,9 +2005,9 @@ function render() {
     document.getElementById('fl').innerHTML = clients.length ? clients.map(c => {
       const status = c.academyAssigned ? '<span class="pill p-done">مكتمل</span>' : '<span class="pill p-pending">جارٍ</span>';
       return `<div class="cc${selId===c.ref?' sel':''}" onclick="openDetail('${c.ref}')">
-        <div class="cc-top"><span class="cc-name">${c.name}</span><span class="cc-ref">${c.ref}</span></div>
-        <div class="cc-meta">${srcPill(c.source)}${status}
-          <span style="font-size:11px;color:var(--muted)">${c.createdAt}</span>
+        <div class="cc-top"><span class="cc-name">${c.name||'—'}</span><span class="cc-ref">${c.ref||''}</span></div>
+        <div class="cc-meta">${srcPill(c.source||'')}${status}
+          <span style="font-size:11px;color:var(--muted)">${c.createdAt||''}</span>
         </div>
       </div>`;
     }).join('') : '<div class="empty">لا يوجد سجلات</div>';
