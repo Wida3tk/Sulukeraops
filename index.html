@@ -1151,6 +1151,25 @@ function isTrialClient(c) {
 function placeDetailPanel() {
   const panel = document.getElementById('dpanel');
   if (!panel) return;
+  // ضع البانل بعد البطاقة المحددة مباشرة لو أمكن
+  if (selId) {
+    // نبحث عن بطاقة العميل المضغوطة في الـ DOM
+    const cards = document.querySelectorAll('.cc');
+    let targetCard = null;
+    cards.forEach(card => {
+      if (card.getAttribute('onclick') && card.getAttribute('onclick').includes(selId)) {
+        targetCard = card;
+      }
+    });
+    if (targetCard && targetCard.parentElement) {
+      // أدخل البانل بعد البطاقة مباشرة داخل نفس القائمة
+      if (panel.previousElementSibling !== targetCard) {
+        targetCard.insertAdjacentElement('afterend', panel);
+      }
+      return;
+    }
+  }
+  // fallback: ضعه بعد الـ anchor
   const anchorId = role === 'academy'
     ? 'academy-detail-anchor'
     : role === 'reports'
@@ -2108,7 +2127,10 @@ function openDetail(ref) {
   document.getElementById('dpanel').style.display = 'block';
   renderDetail(ref);
   render();
-  document.getElementById('dpanel').scrollIntoView({behavior:'smooth',block:'start'});
+  setTimeout(() => {
+    const panel = document.getElementById('dpanel');
+    if (panel) panel.scrollIntoView({behavior:'smooth', block:'nearest'});
+  }, 80);
 }
 
 function closeDetail() {
@@ -2120,19 +2142,19 @@ function closeDetail() {
 function renderDetail(ref) {
   const c = clients.find(x => x.ref === ref);
   if (!c) return;
-  document.getElementById('d-av').textContent    = ini(c.name);
-  document.getElementById('d-name').textContent  = c.name;
-  document.getElementById('d-email').textContent = c.email;
+  document.getElementById('d-av').textContent    = ini(c.name || '؟');
+  document.getElementById('d-name').textContent  = c.name || '—';
+  document.getElementById('d-email').textContent = c.email || '—';
   document.getElementById('d-phone').textContent = c.phone || '—';
-  document.getElementById('d-ref').textContent   = c.ref + ' · ' + c.createdAt;
-  document.getElementById('d-prog').textContent  = c.program;
+  document.getElementById('d-ref').textContent   = (c.ref || '') + ' · ' + (c.createdAt || '');
+  document.getElementById('d-prog').textContent  = c.program || '—';
   document.getElementById('d-track').textContent = c.track || '—';
   document.getElementById('d-progtype').textContent = c.programType || '—';
   document.getElementById('d-clienttype').textContent = c.clientType || '—';
   document.getElementById('d-batch').textContent = c.batchNo || '—';
-  document.getElementById('d-src').innerHTML     = srcPill(c.source);
+  document.getElementById('d-src').innerHTML     = srcPill(c.source || '');
   document.getElementById('d-addedby').textContent = c.addedBy || '—';
-  document.getElementById('d-date').textContent  = c.createdAt;
+  document.getElementById('d-date').textContent  = c.createdAt || '—';
   const expiryEl = document.getElementById('d-expiry');
   if (c.expiry) {
     const exp = new Date(c.expiry);
