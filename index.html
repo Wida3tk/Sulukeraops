@@ -487,6 +487,7 @@
     <div class="fg full" style="margin-bottom:.875rem"><label>الاسم</label><input id="edit-name" placeholder="اسم العميل" /></div>
     <div class="fg full" style="margin-bottom:.875rem"><label>البريد الإلكتروني</label><input id="edit-email" type="email" placeholder="example@email.com" dir="ltr" /></div>
     <div class="fg full" style="margin-bottom:.875rem"><label>رقم الجوال</label><input id="edit-phone" placeholder="05XXXXXXXX" dir="ltr" /></div>
+    <div class="fg full" style="margin-bottom:.875rem"><label>رقم الدفعة</label><input id="edit-batch" placeholder="رقم الدفعة" /></div>
     <div class="fg full" style="margin-bottom:.875rem"><label>تاريخ انتهاء الاشتراك</label><input id="edit-expiry" type="date" /></div>
     <div class="fg full" style="margin-bottom:.875rem"><label>ملاحظات</label><textarea id="edit-notes" rows="2" style="resize:vertical;padding:8px 12px;border:1px solid var(--border);border-radius:8px;font-family:inherit;font-size:13px;width:100%;box-sizing:border-box" placeholder="أي ملاحظات..."></textarea></div>
     <div class="fbtns" style="margin-top:1rem">
@@ -575,6 +576,10 @@
         <div class="fg">
           <label>رقم الجوال *</label>
           <input id="fphone" type="tel" placeholder="05xxxxxxxx أو +966..." maxlength="15" />
+        </div>
+        <div class="fg">
+          <label>رقم الدفعة</label>
+          <input id="fbatch" placeholder="مثال: 21" />
         </div>
         <div class="fg">
           <label>نوع العميل *</label>
@@ -695,25 +700,47 @@
         <button onclick="clearFilters()" class="btn sm" style="font-size:12px">مسح الفلاتر ✕</button>
       </div>
     </div>
-    <div id="sl" class="clist"></div>
+    <div id="sales-detail-anchor"></div>
+    <div class="sec-hd" style="margin-top:1rem">
+      <span class="sec-title">العملاء المسجلون</span>
+      <span class="sec-count" id="sales-regular-count">0</span>
+    </div>
+    <div id="sl-regular" class="clist"></div>
+    <div class="sec-hd" style="margin-top:1rem">
+      <span class="sec-title">فترة التجربة</span>
+      <span class="sec-count" id="sales-trial-count">0</span>
+    </div>
+    <div id="sl-trial" class="clist"></div>
   </div>
 
   <!-- ───────── واجهة التشغيل ───────── -->
   <div id="v-academy" style="display:none">
+    <div id="academy-detail-anchor"></div>
     <div class="sec-hd">
-      <span class="sec-title">بانتظار التفعيل</span>
+      <span class="sec-title">بانتظار التفعيل — العملاء المسجلون</span>
       <span class="sec-count" id="aca-pend-count">0</span>
     </div>
     <div id="al-pending" class="clist"></div>
     <div class="sec-hd">
-      <span class="sec-title">تم التفعيل</span>
+      <span class="sec-title">بانتظار التفعيل — فترة التجربة</span>
+      <span class="sec-count" id="aca-pend-trial-count">0</span>
+    </div>
+    <div id="al-pending-trial" class="clist"></div>
+    <div class="sec-hd">
+      <span class="sec-title">تم التفعيل — العملاء المسجلون</span>
       <span class="sec-count" id="aca-done-count">0</span>
     </div>
     <div id="al-done" class="clist"></div>
+    <div class="sec-hd">
+      <span class="sec-title">تم التفعيل — فترة التجربة</span>
+      <span class="sec-count" id="aca-done-trial-count">0</span>
+    </div>
+    <div id="al-done-trial" class="clist"></div>
   </div>
 
   <!-- ───────── واجهة المالية ───────── -->
   <div id="v-finance" style="display:none">
+    <div id="finance-detail-anchor"></div>
     <div class="sec-hd">
       <span class="sec-title">السجل المالي — جميع العملاء</span>
       <span class="sec-count" id="fin-count">0</span>
@@ -751,6 +778,7 @@
         <div class="df"><label>نوع البرنامج</label><span id="d-progtype"></span></div>
         <div class="df"><label>نوع العميل</label><span id="d-clienttype"></span></div>
         <div class="df"><label>رقم الجوال</label><span id="d-phone"></span></div>
+        <div class="df"><label>رقم الدفعة</label><span id="d-batch"></span></div>
         <div class="df"><label>نوع الاشتراك</label><span id="d-src"></span></div>
         <div class="df"><label>تاريخ التسجيل</label><span id="d-date"></span></div>
         <div class="df"><label>أضافه</label><span id="d-addedby" style="font-weight:600;color:var(--blue)"></span></div>
@@ -781,6 +809,7 @@
 
   <!-- ───────── إعدادات البرامج ───────── -->
   <div id="v-reports" style="display:none">
+    <div id="reports-detail-anchor"></div>
     <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:1.25rem" id="report-stats"></div>
 
     <!-- ── مبيعات المنتجات بفلتر التواريخ ── -->
@@ -1102,6 +1131,45 @@ const toast = (msg, ok=true) => {
 };
 const genRef = () => 'CLT-' + String(Date.now()).slice(-6).padStart(4,'0');
 
+function normalizePhoneForWhatsApp(phone='') {
+  const digits = String(phone).replace(/\D/g, '');
+  if (!digits) return '';
+  if (digits.startsWith('966')) return digits;
+  if (digits.startsWith('0')) return '966' + digits.slice(1);
+  if (digits.startsWith('5') && digits.length === 9) return '966' + digits;
+  return digits;
+}
+
+function getVisibleClients() {
+  return getFilteredClients();
+}
+
+function isTrialClient(c) {
+  return c?.clientType === 'تجربة';
+}
+
+function placeDetailPanel() {
+  const panel = document.getElementById('dpanel');
+  if (!panel) return;
+  const anchorId = role === 'academy'
+    ? 'academy-detail-anchor'
+    : role === 'reports'
+    ? 'reports-detail-anchor'
+    : role === 'finance'
+    ? 'finance-detail-anchor'
+    : 'sales-detail-anchor';
+  const anchor = document.getElementById(anchorId);
+  if (anchor && panel.previousElementSibling !== anchor) {
+    anchor.insertAdjacentElement('afterend', panel);
+  }
+}
+
+async function persistClient(c) {
+  localStorage.setItem('ops_clients', JSON.stringify(clients));
+  const res = await api(null, { action: 'updateClient', ...c });
+  return res;
+}
+
 // ── API ──
 async function api(params, body=null) {
   try {
@@ -1126,7 +1194,8 @@ async function api(params, body=null) {
 function openWhatsApp() {
   const c = clients.find(x => x.ref === selId);
   if (!c || !c.phone) { toast('لا يوجد رقم جوال لهذا العميل', false); return; }
-  const phone = c.phone.replace(/^0/, '966');
+  const phone = normalizePhoneForWhatsApp(c.phone);
+  if (!phone) { toast('رقم الجوال غير صالح لواتساب', false); return; }
 
   let msg = '';
   if (c.program === 'إدارة السلوك التنظيمي') {
@@ -1154,7 +1223,9 @@ function openWhatsApp() {
     msg = 'مرحباً ' + c.name + '، نتواصل معك بخصوص اشتراكك في برنامج ' + c.program + '. شكراً لثقتك بسلوكيرا.';
   }
 
-  window.open('https://wa.me/' + phone + '?text=' + encodeURIComponent(msg), '_blank');
+  const text = encodeURIComponent(msg);
+  const webUrl = 'https://wa.me/' + phone + '?text=' + text;
+  window.open(webUrl, '_blank');
 }
 
 function openEmail() {
@@ -1212,9 +1283,8 @@ function getFilteredClients() {
 
 function renderFiltered() {
   const filtered = getFilteredClients();
-  const el = document.getElementById('sl');
   document.getElementById('sales-count').textContent = filtered.length + '/' + clients.length;
-  el.innerHTML = filtered.length ? filtered.map(cardHTML).join('') : '<div class="empty">لا توجد نتائج مطابقة</div>';
+  if (role === 'sales') render();
 }
 
 // ── فلتر متقدم ──
@@ -1245,12 +1315,13 @@ function exportCSV() {
   const filtered = getFilteredClients();
   if (!filtered.length) { toast('لا توجد بيانات للتصدير', false); return; }
 
-  const headers = ['رقم المرجع','الاسم','البريد الإلكتروني','الجوال','البرنامج','المسار','نوع البرنامج','نوع العميل','المصدر','الحالة','تاريخ التسجيل','أضافه','ملاحظات'];
+  const headers = ['رقم المرجع','الاسم','البريد الإلكتروني','الجوال','رقم الدفعة','البرنامج','المسار','نوع البرنامج','نوع العميل','المصدر','الحالة','تاريخ التسجيل','أضافه','ملاحظات'];
   const rows = filtered.map(c => [
     c.ref,
     c.name,
     c.email || '',
     c.phone || '',
+    c.batchNo || '',
     c.program,
     c.track || '',
     c.programType || '',
@@ -1655,6 +1726,7 @@ async function syncData() {
           track:       local.track       || sheetClient.track       || '',
           programType: local.programType || sheetClient.programType || '',
           clientType:  local.clientType  || sheetClient.clientType  || '',
+          batchNo:     local.batchNo     || sheetClient.batchNo     || '',
           log:         local.log         || [],
         };
       }
@@ -1828,25 +1900,36 @@ function cardHTML(c) {
 
 function render() {
   if (role==='sales') {
-    const el = document.getElementById('sl');
     document.getElementById('sales-count').textContent = clients.length;
     fillFilterSelects();
-    renderFiltered();
+    const filtered = getVisibleClients();
+    const regular = filtered.filter(c => !isTrialClient(c));
+    const trial = filtered.filter(c => isTrialClient(c));
+    document.getElementById('sales-regular-count').textContent = regular.length;
+    document.getElementById('sales-trial-count').textContent = trial.length;
+    document.getElementById('sl-regular').innerHTML = regular.length ? regular.map(cardHTML).join('') : '<div class="empty">لا توجد نتائج مطابقة</div>';
+    document.getElementById('sl-trial').innerHTML = trial.length ? trial.map(cardHTML).join('') : '<div class="empty">لا توجد عملاء تجربة</div>';
   }
   if (role==='academy') {
-    const pending = clients.filter(c=>!c.academyAssigned);
-    const done    = clients.filter(c=>c.academyAssigned);
+    const pending = clients.filter(c=>!c.academyAssigned && !isTrialClient(c));
+    const pendingTrial = clients.filter(c=>!c.academyAssigned && isTrialClient(c));
+    const done    = clients.filter(c=>c.academyAssigned && !isTrialClient(c));
+    const doneTrial = clients.filter(c=>c.academyAssigned && isTrialClient(c));
     const al = document.getElementById('main-alert');
-    if (pending.length) {
+    if (pending.length || pendingTrial.length) {
       al.classList.add('show');
-      document.getElementById('alert-txt').textContent = `${pending.length} عميل بانتظار التفعيل`;
+      document.getElementById('alert-txt').textContent = `${pending.length + pendingTrial.length} عميل بانتظار التفعيل`;
     } else {
       al.classList.remove('show');
     }
     document.getElementById('aca-pend-count').textContent = pending.length;
+    document.getElementById('aca-pend-trial-count').textContent = pendingTrial.length;
     document.getElementById('aca-done-count').textContent = done.length;
+    document.getElementById('aca-done-trial-count').textContent = doneTrial.length;
     document.getElementById('al-pending').innerHTML = pending.length ? pending.map(cardHTML).join('') : '<div class="empty">لا يوجد عملاء معلقون</div>';
+    document.getElementById('al-pending-trial').innerHTML = pendingTrial.length ? pendingTrial.map(cardHTML).join('') : '<div class="empty">لا يوجد عملاء تجربة معلقون</div>';
     document.getElementById('al-done').innerHTML    = done.length    ? done.map(cardHTML).join('')    : '<div class="empty">—</div>';
+    document.getElementById('al-done-trial').innerHTML = doneTrial.length ? doneTrial.map(cardHTML).join('') : '<div class="empty">—</div>';
   }
   if (role==='finance') {
     document.getElementById('fin-count').textContent = clients.length;
@@ -1889,6 +1972,7 @@ async function addClient() {
   const program = document.getElementById('fp').value;
   const source  = document.getElementById('fs').value;
   const phone = document.getElementById('fphone').value.trim();
+  const batchNo = document.getElementById('fbatch').value.trim();
   const clientType = document.getElementById('fclienttype').value;
   const track = document.getElementById('ftrack').value;
   const programType = document.getElementById('fptype').value;
@@ -1908,7 +1992,7 @@ async function addClient() {
   const session = JSON.parse(sessionStorage.getItem('ops_session') || '{}');
   const client = {
     ref, name, email, phone, program, source, expiry,
-    clientType, track, programType, continuousText,
+    clientType, track, programType, continuousText, batchNo,
     notes: '',
     addedBy: session.username || 'المبيعات',
     academyAdded: false, academyAssigned: false,
@@ -1938,13 +2022,13 @@ async function addClient() {
   btn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg> تسجيل وإرسال للتشغيل';
   // التمرير لقائمة العملاء لرؤية البيانات المضافة
   setTimeout(() => {
-    const list = document.getElementById('sl');
+    const list = document.getElementById('sl-regular');
     if (list) list.scrollIntoView({ behavior: 'smooth', block: 'start' });
   }, 100);
 }
 
 function clearForm() {
-  ['fn','fe','fphone'].forEach(id => document.getElementById(id).value = '');
+  ['fn','fe','fphone','fbatch'].forEach(id => document.getElementById(id).value = '');
   document.getElementById('fp').value = '';
   document.getElementById('fs').value = '';
   document.getElementById('fexpiry').value = '';
@@ -2002,10 +2086,11 @@ function onSourceChange() {
 // ── التفاصيل ──
 function openDetail(ref) {
   selId = ref;
+  placeDetailPanel();
   document.getElementById('dpanel').style.display = 'block';
   renderDetail(ref);
   render();
-  document.getElementById('dpanel').scrollIntoView({behavior:'smooth',block:'nearest'});
+  document.getElementById('dpanel').scrollIntoView({behavior:'smooth',block:'start'});
 }
 
 function closeDetail() {
@@ -2026,6 +2111,7 @@ function renderDetail(ref) {
   document.getElementById('d-track').textContent = c.track || '—';
   document.getElementById('d-progtype').textContent = c.programType || '—';
   document.getElementById('d-clienttype').textContent = c.clientType || '—';
+  document.getElementById('d-batch').textContent = c.batchNo || '—';
   document.getElementById('d-src').innerHTML     = srcPill(c.source);
   document.getElementById('d-addedby').textContent = c.addedBy || '—';
   document.getElementById('d-date').textContent  = c.createdAt;
@@ -2120,9 +2206,7 @@ async function markAdded(ref) {
   c.academyAdded = true;
   c.log = c.log || [];
   c.log.push({who:'التشغيل', action:'تمت إضافة الحساب في المنصة', time:now});
-  localStorage.setItem('ops_clients', JSON.stringify(clients));
-
-  await api(null, {action:'updateAcademy', ref, field:'added'});
+  await persistClient(c);
   toast('تم تسجيل إضافة الحساب ✓');
   updateStats(); render();
 }
@@ -2134,8 +2218,7 @@ async function markAssigned(ref) {
   c.academyAssigned = true;
   c.activatedAt = now;
   c.log.push({who:'التشغيل', action:'تم إسناد المقررات — العملية مكتملة', time:now});
-  localStorage.setItem('ops_clients', JSON.stringify(clients));
-  await api(null, {action:'updateAcademy', ref, field:'assigned'});
+  await persistClient(c);
   toast('تم إسناد المقررات — العميل مكتمل ✓');
   updateStats(); render();
 }
@@ -2147,8 +2230,7 @@ async function markComplete(ref) {
   c.academyAssigned = true;
   c.activatedAt = now;
   c.log.push({who:'التشغيل', action:'اكتمل التفعيل — عصارة (لا يحتاج إسناد)', time:now});
-  localStorage.setItem('ops_clients', JSON.stringify(clients));
-  await api(null, {action:'updateAcademy', ref, field:'assigned'});
+  await persistClient(c);
   toast('اكتمل التفعيل ✓');
   updateStats(); render();
 }
@@ -2246,8 +2328,7 @@ async function toggleClientLabel(labelId) {
   if (!c.labels) c.labels = [];
   if (c.labels.includes(labelId)) { c.labels = c.labels.filter(l => l !== labelId); }
   else { c.labels.push(labelId); }
-  localStorage.setItem('ops_clients', JSON.stringify(clients));
-  await api(null, { action: 'updateClient', ...c });
+  await persistClient(c);
   renderLabelsPicker();
   render();
 }
@@ -2316,6 +2397,7 @@ function openEditModal() {
   document.getElementById('edit-name').value   = c.name || '';
   document.getElementById('edit-email').value  = c.email || '';
   document.getElementById('edit-phone').value  = c.phone || '';
+  document.getElementById('edit-batch').value  = c.batchNo || '';
   document.getElementById('edit-expiry').value = c.expiry || '';
   document.getElementById('edit-notes').value  = c.notes || '';
   document.getElementById('edit-modal').style.display = 'flex';
@@ -2331,6 +2413,7 @@ async function saveEdit() {
   const name   = document.getElementById('edit-name').value.trim();
   const email  = document.getElementById('edit-email').value.trim();
   const phone  = document.getElementById('edit-phone').value.trim();
+  const batchNo = document.getElementById('edit-batch').value.trim();
   const expiry = document.getElementById('edit-expiry').value;
   const notes  = document.getElementById('edit-notes').value.trim();
   if (!name || !email || !phone) { toast('يرجى تعبئة الحقول الإلزامية', false); return; }
@@ -2342,15 +2425,15 @@ async function saveEdit() {
   if (c.name !== name)     changes.push(`الاسم: ${c.name} ← ${name}`);
   if (c.email !== email)   changes.push(`الإيميل: ${c.email} ← ${email}`);
   if (c.phone !== phone)   changes.push(`الجوال: ${c.phone} ← ${phone}`);
+  if ((c.batchNo||'') !== batchNo) changes.push(`رقم الدفعة: ${c.batchNo||'—'} ← ${batchNo||'—'}`);
   if ((c.expiry||'') !== expiry) changes.push(`انتهاء الاشتراك: ${c.expiry||'—'} ← ${expiry||'—'}`);
   if ((c.notes||'') !== notes)   changes.push('ملاحظات محدّثة');
 
-  c.name = name; c.email = email; c.phone = phone; c.expiry = expiry; c.notes = notes;
+  c.name = name; c.email = email; c.phone = phone; c.batchNo = batchNo; c.expiry = expiry; c.notes = notes;
   if (!c.log) c.log = [];
   if (changes.length) c.log.push({ who: editor, action: 'تعديل: ' + changes.join(' | '), time: new Date().toLocaleString('ar-SA') });
 
-  await api(null, { action: 'updateClient', ...c });
-  localStorage.setItem('ops_clients', JSON.stringify(clients));
+  await persistClient(c);
   toast('تم حفظ التعديلات ✓');
   closeEditModal();
   renderDetail(selId);
