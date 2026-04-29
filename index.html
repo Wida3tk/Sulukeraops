@@ -255,6 +255,44 @@
     box-shadow: var(--shadow);
     margin-bottom: 1rem;
   }
+  /* ── بانل التفاصيل العائم ── */
+  #dpanel {
+    position: fixed !important;
+    top: 64px;
+    left: 0;
+    width: 420px;
+    max-width: 96vw;
+    height: calc(100vh - 64px);
+    overflow-y: auto;
+    z-index: 200;
+    background: var(--white);
+    border-left: none;
+    border-right: 1px solid var(--border);
+    box-shadow: 4px 0 24px rgba(0,0,0,0.10);
+    border-radius: 0;
+    padding: 0;
+    transition: transform 0.22s cubic-bezier(.4,0,.2,1);
+  }
+  #dpanel[style*="display: none"], #dpanel[style*="display:none"] {
+    transform: translateX(-100%);
+  }
+  /* overlay خلف البانل */
+  #dpanel-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.18);
+    z-index: 199;
+  }
+  #dpanel-overlay.show { display: block; }
+  /* تعديل المحتوى للـ fixed panel */
+  #dpanel .dpanel {
+    margin-bottom: 0;
+    border: none;
+    box-shadow: none;
+    border-radius: 0;
+    min-height: 100%;
+  }
   .dph {
     display: flex;
     align-items: flex-start;
@@ -748,6 +786,8 @@
     <div id="fl" class="clist"></div>
   </div>
 
+  <!-- overlay البانل -->
+  <div id="dpanel-overlay" onclick="closeDetail()"></div>
   <!-- ───────── لوحة التفاصيل ───────── -->
   <div id="dpanel" style="display:none">
     <div class="dpanel">
@@ -769,7 +809,7 @@
           <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,12 2,6"/></svg>
           إيميل
         </button>
-        <button class="btn sm" onclick="closeDetail()">إغلاق ✕</button>
+        <button class="btn sm" onclick="closeDetail()" style="min-width:80px">إغلاق ✕</button>
       </div>
       </div>
       <div class="dfields">
@@ -1879,6 +1919,8 @@ function setRole(r, btn) {
   if (r === 'reports') renderReports();
   selId = null;
   document.getElementById('dpanel').style.display = 'none';
+  const ov = document.getElementById('dpanel-overlay');
+  if (ov) ov.classList.remove('show');
   document.getElementById('main-alert').classList.remove('show');
   render();
 }
@@ -2031,7 +2073,7 @@ function render() {
       <button class="btn sm" style="color:#b91c1c;border-color:#fca5a5" onclick="removeSource(${i})">حذف</button>
     </div>`).join('') || '<div class="empty">لا توجد مصادر</div>';
   }
-  if (selId) renderDetail(selId);
+  // البانل fixed - لا حاجة لإعادة renderDetail هنا
 }
 
 // ── إضافة عميل ──
@@ -2155,20 +2197,30 @@ function onSourceChange() {
 // ── التفاصيل ──
 function openDetail(ref) {
   selId = ref;
-  placeDetailPanel();
   document.getElementById('dpanel').style.display = 'block';
+  document.getElementById('dpanel-overlay').classList.add('show');
   renderDetail(ref);
-  render();
+  // تحديث حالة البطاقة المحددة فقط بدون إعادة رسم كل القوائم
+  document.querySelectorAll('.cc').forEach(card => {
+    const onclick = card.getAttribute('onclick') || '';
+    if (onclick.includes(ref)) {
+      card.classList.add('sel');
+    } else {
+      card.classList.remove('sel');
+    }
+  });
+  // scroll البانل لأعلاه
   setTimeout(() => {
     const panel = document.getElementById('dpanel');
-    if (panel) panel.scrollIntoView({behavior:'smooth', block:'nearest'});
-  }, 80);
+    if (panel) panel.scrollTop = 0;
+  }, 50);
 }
 
 function closeDetail() {
   selId = null;
   document.getElementById('dpanel').style.display = 'none';
-  render();
+  document.getElementById('dpanel-overlay').classList.remove('show');
+  document.querySelectorAll('.cc.sel').forEach(c => c.classList.remove('sel'));
 }
 
 function renderDetail(ref) {
@@ -2280,7 +2332,10 @@ async function markAdded(ref) {
   c.log.push({who:'التشغيل', action:'تمت إضافة الحساب في المنصة', time:now});
   await persistClient(c);
   toast('تم تسجيل إضافة الحساب ✓');
-  updateStats(); render();
+  updateStats();
+  render();
+  // تحديث البانل لو مفتوح على نفس العميل
+  if (selId === ref) renderDetail(ref);
 }
 
 async function markAssigned(ref) {
@@ -2292,7 +2347,9 @@ async function markAssigned(ref) {
   c.log.push({who:'التشغيل', action:'تم إسناد المقررات — العملية مكتملة', time:now});
   await persistClient(c);
   toast('تم إسناد المقررات — العميل مكتمل ✓');
-  updateStats(); render();
+  updateStats();
+  render();
+  if (selId === ref) renderDetail(ref);
 }
 
 async function markComplete(ref) {
@@ -2304,7 +2361,9 @@ async function markComplete(ref) {
   c.log.push({who:'التشغيل', action:'اكتمل التفعيل — عصارة (لا يحتاج إسناد)', time:now});
   await persistClient(c);
   toast('اكتمل التفعيل ✓');
-  updateStats(); render();
+  updateStats();
+  render();
+  if (selId === ref) renderDetail(ref);
 }
 
 // ── حذف برنامج ──
