@@ -1255,14 +1255,14 @@ function getFilteredClients() {
 
   return clients.filter(c => {
     const matchQ = !q ||
-      c.name.toLowerCase().includes(q) ||
+      (c.name||'').toLowerCase().includes(q) ||
       (c.phone||'').includes(q) ||
       (c.email||'').toLowerCase().includes(q) ||
-      c.program.toLowerCase().includes(q) ||
-      c.ref.toLowerCase().includes(q);
+      (c.program||'').toLowerCase().includes(q) ||
+      (c.ref||'').toLowerCase().includes(q);
     const matchSrc     = !src     || c.source === src;
     const matchStatus  = !status  || (status === 'done' ? c.academyAssigned : !c.academyAssigned);
-    const matchProgram = !program || c.program.startsWith(program);
+    const matchProgram = !program || (c.program||'').startsWith(program);
     const matchLabel   = !labelId || (c.labels && c.labels.includes(labelId));
     let matchDate = true;
     if (dateF) {
@@ -1690,7 +1690,7 @@ function renderReports() {
       <div style="width:36px;height:36px;border-radius:50%;background:${urgent?'#fee2e2':'#fef3c7'};display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:${urgent?'#b91c1c':'#b45309'};flex-shrink:0">${diff}د</div>
       <div style="flex:1">
         <div style="font-size:13px;font-weight:600;color:var(--text)">${c.name}</div>
-        <div style="font-size:11px;color:var(--muted)">${c.program.split('—')[0].trim()} · ${c.source}</div>
+        <div style="font-size:11px;color:var(--muted)">${(c.program || '').split('—')[0].trim()} · ${c.source || ''}</div>
       </div>
       <div style="text-align:left">
         <div style="font-size:12px;font-weight:500;color:${urgent?'#b91c1c':'#b45309'}">${c.expiry}</div>
@@ -1850,6 +1850,7 @@ function toolLabels(c) {
 
 // ── بطاقة العميل ──
 function cardHTML(c) {
+  try {
   const stage = c.academyAssigned ? 'done' : c.academyAdded ? 'half' : 'pending';
   const stageLabel = stage==='done'
     ? '<span class="pill p-done">مكتمل</span>'
@@ -1860,15 +1861,16 @@ function cardHTML(c) {
     ? '<span class="pill p-assign">يحتاج إسناد</span>' : '';
   const p2 = c.academyAssigned ? 'done' : c.academyAdded ? 'half' : 'act';
   const p3 = c.academyAssigned ? 'done' : '';
+  const programName = (c.program || '').split('—')[0].trim() || '—';
   return `<div class="cc${selId===c.ref?' sel':''}" onclick="openDetail('${c.ref}')">
     <div class="cc-top">
-      <span class="cc-name">${c.name}</span>
-      <span class="cc-ref">${c.ref}</span>
+      <span class="cc-name">${c.name || '—'}</span>
+      <span class="cc-ref">${c.ref || ''}</span>
     </div>
     <div class="cc-meta">
       ${c.phone ? `<span style="font-size:11px;color:var(--muted);direction:ltr">${c.phone}</span>` : ''}
-      ${srcPill(c.source)}
-      <span class="pill p-prog">${c.program.split('—')[0].trim()}</span>
+      ${srcPill(c.source || '')}
+      <span class="pill p-prog">${programName}</span>
       ${stageLabel}
       ${assignBadge}
       ${toolLabels(c)}
@@ -1896,6 +1898,10 @@ function cardHTML(c) {
       مكتمل — تم التفعيل الكامل
     </div>` : ''}
   </div>`;
+  } catch(e) {
+    console.error('cardHTML error for client:', c?.ref, e);
+    return `<div class="cc"><div class="cc-top"><span class="cc-name">${c?.name || '—'}</span><span class="cc-ref">${c?.ref || ''}</span></div></div>`;
+  }
 }
 
 function render() {
@@ -1907,8 +1913,12 @@ function render() {
     const trial = filtered.filter(c => isTrialClient(c));
     document.getElementById('sales-regular-count').textContent = regular.length;
     document.getElementById('sales-trial-count').textContent = trial.length;
-    document.getElementById('sl-regular').innerHTML = regular.length ? regular.map(cardHTML).join('') : '<div class="empty">لا توجد نتائج مطابقة</div>';
-    document.getElementById('sl-trial').innerHTML = trial.length ? trial.map(cardHTML).join('') : '<div class="empty">لا توجد عملاء تجربة</div>';
+    try {
+      document.getElementById('sl-regular').innerHTML = regular.length ? regular.map(cardHTML).join('') : '<div class="empty">لا توجد نتائج مطابقة</div>';
+    } catch(e) { console.error('render sales-regular error:', e); }
+    try {
+      document.getElementById('sl-trial').innerHTML = trial.length ? trial.map(cardHTML).join('') : '<div class="empty">لا توجد عملاء تجربة</div>';
+    } catch(e) { console.error('render sales-trial error:', e); }
   }
   if (role==='academy') {
     const pending = clients.filter(c=>!c.academyAssigned && !isTrialClient(c));
@@ -1926,10 +1936,18 @@ function render() {
     document.getElementById('aca-pend-trial-count').textContent = pendingTrial.length;
     document.getElementById('aca-done-count').textContent = done.length;
     document.getElementById('aca-done-trial-count').textContent = doneTrial.length;
-    document.getElementById('al-pending').innerHTML = pending.length ? pending.map(cardHTML).join('') : '<div class="empty">لا يوجد عملاء معلقون</div>';
-    document.getElementById('al-pending-trial').innerHTML = pendingTrial.length ? pendingTrial.map(cardHTML).join('') : '<div class="empty">لا يوجد عملاء تجربة معلقون</div>';
-    document.getElementById('al-done').innerHTML    = done.length    ? done.map(cardHTML).join('')    : '<div class="empty">—</div>';
-    document.getElementById('al-done-trial').innerHTML = doneTrial.length ? doneTrial.map(cardHTML).join('') : '<div class="empty">—</div>';
+    try {
+      document.getElementById('al-pending').innerHTML = pending.length ? pending.map(cardHTML).join('') : '<div class="empty">لا يوجد عملاء معلقون</div>';
+    } catch(e) { console.error('render al-pending error:', e); document.getElementById('al-pending').innerHTML = '<div class="empty">خطأ في عرض البيانات</div>'; }
+    try {
+      document.getElementById('al-pending-trial').innerHTML = pendingTrial.length ? pendingTrial.map(cardHTML).join('') : '<div class="empty">لا يوجد عملاء تجربة معلقون</div>';
+    } catch(e) { console.error('render al-pending-trial error:', e); document.getElementById('al-pending-trial').innerHTML = '<div class="empty">خطأ في عرض البيانات</div>'; }
+    try {
+      document.getElementById('al-done').innerHTML    = done.length    ? done.map(cardHTML).join('')    : '<div class="empty">—</div>';
+    } catch(e) { console.error('render al-done error:', e); document.getElementById('al-done').innerHTML = '<div class="empty">—</div>'; }
+    try {
+      document.getElementById('al-done-trial').innerHTML = doneTrial.length ? doneTrial.map(cardHTML).join('') : '<div class="empty">—</div>';
+    } catch(e) { console.error('render al-done-trial error:', e); document.getElementById('al-done-trial').innerHTML = '<div class="empty">—</div>'; }
   }
   if (role==='finance') {
     document.getElementById('fin-count').textContent = clients.length;
