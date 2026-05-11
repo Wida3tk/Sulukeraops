@@ -351,6 +351,12 @@ input, select, textarea { font-family: var(--font); }
 .client-card:hover { border-color: var(--blue-mid); box-shadow: 0 4px 12px rgba(26,59,219,.08); transform: translateY(-1px); }
 .client-card.selected { border-color: var(--blue); box-shadow: 0 0 0 3px var(--blue-lt); }
 
+.card-late {
+  border-right: 3px solid var(--red) !important;
+  background: #fff8f8 !important;
+}
+.card-late:hover { background: #fff0f0 !important; }
+
 /* الشريط الجانبي للبرنامج */
 .card-prog-bar { position: absolute; right: 0; top: 0; bottom: 0; width: 4px; }
 
@@ -797,9 +803,8 @@ input, select, textarea { font-family: var(--font); }
   <!-- الشريط العلوي -->
   <header class="topbar">
     <div class="topbar-logo">
-      <img src="/mnt/user-data/uploads/شعارات.pdf" style="display:none">
-      <svg height="32" viewBox="0 0 300 80" xmlns="http://www.w3.org/2000/svg" style="overflow:visible">
-        <text y="62" font-family="'Scheherazade New', serif" font-size="68" font-weight="900" fill="#0D40FC" letter-spacing="-1">سلوكيرا</text>
+      <svg height="34" viewBox="0 0 310 70" xmlns="http://www.w3.org/2000/svg">
+        <text x="2" y="56" font-family="'Scheherazade New', serif" font-size="62" font-weight="900" fill="#0D40FC" letter-spacing="-1">سلوكيرا</text>
       </svg>
       <span style="font-size:11px;color:var(--text-3);font-weight:500;padding-bottom:2px;margin-right:2px">Ops</span>
     </div>
@@ -1740,6 +1745,13 @@ function clearFilters() {
 // ════════════════════════════════
 // الحصول على العملاء المفلترة
 // ════════════════════════════════
+// مساعد: كم يوم مضى على العميل
+function daysSince(c) {
+  const d = parseClientDate(c);
+  if (!d) return 0;
+  return Math.floor((new Date() - d) / 86400000);
+}
+
 function getFilteredClients() {
   const q       = (document.getElementById('search-input')?.value || '').toLowerCase();
   const src     = document.getElementById('filter-source')?.value  || '';
@@ -1887,7 +1899,14 @@ function cardHTML(c, showTrialActions=false) {
       </div>`;
     }
 
-    return `<div class="client-card${selId===c.ref?' selected':''}" onclick="openDetail('${c.ref}')">
+    // عداد الأيام + تحذير المتأخرين
+    const days = daysSince(c);
+    const isLate = !c.academyAssigned && !isTrial && days >= 3;
+    const daysBadge = days > 0
+      ? `<span style="font-size:10px;color:${isLate?'var(--red)':'var(--text-3)'};font-weight:${isLate?700:400};margin-right:auto">${isLate?'⚠ ':''}منذ ${days} ${days===1?'يوم':'أيام'}</span>`
+      : '';
+
+    return `<div class="client-card${selId===c.ref?' selected':''}${isLate?' card-late':''}" onclick="openDetail('${c.ref}')">
       <div class="card-prog-bar" style="background:${progColor}"></div>
       <div class="card-body">
         <div class="card-top">
@@ -1903,6 +1922,7 @@ function cardHTML(c, showTrialActions=false) {
           ${assignBadge}
           ${toolLabelsHTML(c)}
           ${clientLabelsHTML(c)}
+          ${daysBadge}
         </div>
         <div class="progress-track">
           <div class="progress-seg done"></div>
@@ -1941,21 +1961,26 @@ function updateStats() {
     badge.style.display = pendTotal > 0 ? 'flex' : 'none';
   }
 
-  // شريط التقدم اليومي
+  // شريط التقدم اليومي — مكتملون اليوم من إجمالي المسجلين اليوم
+  const todayStr = new Date().toDateString();
   const todayDone = clients.filter(c => {
     if (!c.academyAssigned || !c.activatedAt) return false;
-    try { return new Date(c.activatedAt).toDateString() === new Date().toDateString(); } catch { return false; }
+    try {
+      const d = new Date(c.activatedAt);
+      return !isNaN(d) && d.toDateString() === todayStr;
+    } catch { return false; }
   }).length;
-  const todayTotal = clients.filter(c => {
+  const todayRegistered = clients.filter(c => {
     const d = parseClientDate(c);
-    return d && d.toDateString() === new Date().toDateString();
-  }).length + todayDone;
-  const pct = todayTotal > 0 ? Math.round(todayDone / Math.max(todayTotal,1) * 100) : 0;
+    return d && d.toDateString() === todayStr;
+  }).length;
+  const todayTotal = Math.max(todayRegistered, todayDone, 1);
+  const pct = Math.round(todayDone / todayTotal * 100);
   const fill = document.getElementById('dp-fill');
   const frac = document.getElementById('dp-fraction');
   const pctEl = document.getElementById('dp-pct');
   if (fill) fill.style.width = pct + '%';
-  if (frac) frac.textContent = `${todayDone} / ${Math.max(todayTotal, pending)}`;
+  if (frac) frac.textContent = `${todayDone} / ${todayTotal}`;
   if (pctEl) pctEl.textContent = pct + '% مكتمل اليوم';
 
   // عدادات التشغيل
@@ -1996,15 +2021,17 @@ function renderSales() {
 }
 
 function renderAcademy() {
-  // مجموعات حسب البرنامج والمسار
-  const pending = clients.filter(c => !c.academyAssigned && !isTrialClient(c));
+  const allFiltered = getFilteredClients();
+
+  // بانتظار التفعيل — من الفلتر، بدون تجربة
+  const pending = allFiltered.filter(c => !c.academyAssigned && !isTrialClient(c));
   const alert = document.getElementById('main-alert');
   if (pending.length) {
     alert.classList.add('show');
     document.getElementById('alert-txt').textContent = `${pending.length} عميل بانتظار التفعيل`;
   } else { alert.classList.remove('show'); }
 
-  // تجميع حسب البرنامج + المسار
+  // تجميع المعلقين حسب البرنامج + المسار
   const groups = {};
   pending.forEach(c => {
     const key = [(c.program||'عام').split('—')[0].trim(), c.track||''].filter(Boolean).join(' — ');
@@ -2034,13 +2061,42 @@ function renderAcademy() {
     }
   }
 
-  // تجربة
-  const trialPend = clients.filter(c => isTrialClient(c) && !c.trialStatus);
+  // تجربة بانتظار القرار — من الفلتر
+  const trialPend = allFiltered.filter(c => isTrialClient(c) && !c.trialStatus);
   try { document.getElementById('al-pending-trial').innerHTML = trialPend.length ? trialPend.map(c => cardHTML(c, true)).join('') : '<div class="empty-state">—</div>'; } catch(e) {}
 
-  // مكتملون
-  const done = clients.filter(c => c.academyAssigned);
-  try { document.getElementById('al-done').innerHTML = done.length ? done.map(c => cardHTML(c)).join('') : '<div class="empty-state">—</div>'; } catch(e) {}
+  // مكتملون — مجموعات حسب البرنامج، مرتبة بالأحدث
+  const done = allFiltered.filter(c => c.academyAssigned)
+    .sort((a,b) => (new Date(b.activatedAt||b.createdAt||0)) - (new Date(a.activatedAt||a.createdAt||0)));
+
+  const doneGroups = {};
+  done.forEach(c => {
+    const key = (c.program||'عام').split('—')[0].trim();
+    if (!doneGroups[key]) doneGroups[key] = { prog: c.program||'', clients: [] };
+    doneGroups[key].clients.push(c);
+  });
+
+  const doneEl = document.getElementById('al-done');
+  if (doneEl) {
+    if (!Object.keys(doneGroups).length) {
+      doneEl.innerHTML = '<div class="empty-state">—</div>';
+    } else {
+      doneEl.innerHTML = Object.entries(doneGroups).map(([key, g]) => {
+        const color = getProgColor(g.prog);
+        return `<div class="ops-group">
+          <div class="ops-group-header" onclick="toggleOpsGroup(this)">
+            <div class="ops-group-prog-dot" style="background:${color}"></div>
+            <div class="ops-group-name">${key}</div>
+            <div class="ops-group-count" style="background:var(--green-lt);color:var(--green)">${g.clients.length}</div>
+            <svg class="ops-group-chevron open" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+          </div>
+          <div class="ops-group-body">
+            ${g.clients.map(c => cardHTML(c)).join('')}
+          </div>
+        </div>`;
+      }).join('');
+    }
+  }
 }
 
 function renderFinance() {
@@ -2404,7 +2460,15 @@ function renderDetail(ref) {
     <div class="dp-field"><label>أضافه</label><span style="color:var(--blue);font-weight:600">${c.addedBy||'—'}</span></div>
     <div class="dp-field"><label>انتهاء الاشتراك</label><span>${expiryText}</span></div>
     <div class="dp-field"><label>إسناد يدوي</label><span>${needsAssign(c.source)?'<span style="color:var(--red)">نعم</span>':'<span style="color:var(--green)">لا — تلقائي</span>'}</span></div>
-    ${c.notes ? `<div class="dp-field" style="grid-column:1/-1"><label>ملاحظات</label><span>${c.notes}</span></div>` : ''}
+    ${c.notes ? `<div class="dp-field" style="grid-column:1/-1"><label>ملاحظات المبيعات</label><span>${c.notes}</span></div>` : ''}
+    <div class="dp-field" style="grid-column:1/-1">
+      <label>ملاحظات التشغيل</label>
+      <div style="display:flex;gap:6px;align-items:flex-start;margin-top:2px">
+        <textarea id="ops-notes-input" rows="2" style="flex:1;padding:7px 10px;border:1.5px solid var(--border);border-radius:8px;font-family:var(--font);font-size:12px;resize:vertical;background:var(--bg)"
+          placeholder="أضف ملاحظة للتشغيل...">${c.opsNotes||''}</textarea>
+        <button onclick="saveOpsNotes('${c.ref}')" class="btn btn-sm btn-primary" style="white-space:nowrap;flex-shrink:0">حفظ</button>
+      </div>
+    </div>
   `;
 
   // مراحل
@@ -2466,6 +2530,21 @@ function renderDetail(ref) {
         <span class="log-time">${l.time}</span>
       </div>`).join('')
     : '<div style="font-size:12px;color:var(--text-3);padding:.5rem 0">لا يوجد سجل بعد</div>';
+}
+
+// ════════════════════════════════
+// ملاحظات التشغيل
+// ════════════════════════════════
+async function saveOpsNotes(ref) {
+  const c = clients.find(x => x.ref === ref);
+  if (!c) return;
+  const txt = document.getElementById('ops-notes-input')?.value?.trim() || '';
+  c.opsNotes = txt;
+  const session = JSON.parse(sessionStorage.getItem('ops_session') || '{}');
+  c.log = c.log || [];
+  c.log.push({ who: session.username||'التشغيل', action: 'تحديث ملاحظات التشغيل', time: new Date().toLocaleString('ar-SA') });
+  await persistClient(c);
+  toast('تم حفظ ملاحظات التشغيل ✓');
 }
 
 // ════════════════════════════════
@@ -2539,14 +2618,28 @@ function openWhatsApp() {
   const c = clients.find(x => x.ref === selId);
   if (!c?.phone) { toast('لا يوجد رقم جوال', false); return; }
   const phone = normalizePhoneForWhatsApp(c.phone);
+  const prog  = c.program || '';
+  const track = c.track   || '';
+  const ptype = c.programType || '';
   let msg = '';
-  if ((c.program||'').includes('إدارة السلوك')) {
-    const tl = c.programType==='مسجل'?'(مسجل)':c.programType==='مباشر'?'(مباشر)':'';
-    msg = `أهلًا 💙\nنرحب بانضمامك إلى منصة سلوكيرا في برنامج شهادة إدارة السلوك التنظيمي ${tl}\nللوصول للبرنامج الدراسي:\n1️⃣ تسجيل الدخول إلى المنصة | https://elearning.sulukera.com/\n2️⃣ الدخول إلى الملف الشخصي\n3️⃣ اختيار المسارات\nيسعدنا مساعدتك 💙`;
-  } else if ((c.program||'').includes('تحليل السلوك') && c.track !== 'CA') {
-    msg = `أهلًا 💙\nنرحب بانضمامك لمنصة سلوكيرا في برنامج تحليل السلوك التطبيقي،\nتم دعوتك عبر الإيميل المسجل، قم بتحميل تطبيق Basecamp واتباع الدليل.\nشاكرين حرصك وتعاونك 💙`;
+
+  if (prog.includes('تحليل السلوك')) {
+    if (track === 'CA') {
+      msg = `أهلًا ${c.name} 💙\nنرحب بانضمامك لمنصة سلوكيرا في برنامج تحليل السلوك التطبيقي — مسار CA.\nسيتواصل معك فريقنا قريباً لتفعيل حسابك وتزويدك بالخطوات التالية.\nشاكرين ثقتك 💙`;
+    } else if (['QBA','QASP-S'].includes(track)) {
+      msg = `أهلًا ${c.name} 💙\nنرحب بانضمامك لمنصة سلوكيرا في برنامج تحليل السلوك التطبيقي — مسار ${track}.\nتم دعوتك عبر الإيميل المسجل لتطبيق Basecamp، كما تم إضافتك في قاعدة البيانات.\nللتفعيل:\n1️⃣ حمّل تطبيق Basecamp\n2️⃣ افتح الدعوة على إيميلك\n3️⃣ أكمل إنشاء الحساب\nنسعد بمساعدتك 💙`;
+    } else {
+      msg = `أهلًا ${c.name} 💙\nنرحب بانضمامك لمنصة سلوكيرا في برنامج تحليل السلوك التطبيقي.\nتم دعوتك عبر الإيميل المسجل، قم بتحميل تطبيق Basecamp واتباع الدليل.\nشاكرين حرصك وتعاونك 💙`;
+    }
+  } else if (prog.includes('إدارة السلوك')) {
+    const tl = ptype==='مسجل'?'(مسجل)':ptype==='مباشر'?'(مباشر)':'';
+    msg = `أهلًا ${c.name} 💙\nنرحب بانضمامك إلى منصة سلوكيرا في برنامج شهادة إدارة السلوك التنظيمي ${tl}\nللوصول للبرنامج الدراسي:\n1️⃣ تسجيل الدخول إلى المنصة | https://elearning.sulukera.com/\n2️⃣ الدخول إلى الملف الشخصي\n3️⃣ اختيار المسارات\nيسعدنا مساعدتك 💙`;
+  } else if (prog.includes('الاقتصاد السلوكي')) {
+    msg = `أهلًا ${c.name} 💙\nنرحب بانضمامك في برنامج الاقتصاد السلوكي.\nسيتواصل معك فريقنا قريباً بتفاصيل الوصول للمحتوى.\nشاكرين ثقتك 💙`;
+  } else if (prog.includes('التعليم المستمر') || prog.includes('تعليم مستمر')) {
+    msg = `أهلًا ${c.name} 💙\nنرحب بتسجيلك في برامج التعليم المستمر لدى سلوكيرا.\nستصلك تفاصيل البرنامج والوصول قريباً.\nشاكرين ثقتك 💙`;
   } else {
-    msg = `مرحباً ${c.name}، نتواصل معك بخصوص اشتراكك في ${c.program}. شكراً لثقتك بسلوكيرا.`;
+    msg = `مرحباً ${c.name}، نتواصل معك بخصوص اشتراكك في ${prog}. شكراً لثقتك بسلوكيرا.`;
   }
   window.open('https://wa.me/' + phone + '?text=' + encodeURIComponent(msg), '_blank');
 }
