@@ -1050,7 +1050,7 @@ input, select, textarea { font-family: var(--font); }
               <div class="fg"><label>رقم الدفعة</label><input id="fbatch" placeholder="مثال: B24"></div>
               <!-- قناة الاكتساب -->
               <div class="fg">
-                <label>قناة الاكتساب</label>
+                <label>كيف عرف عنا؟</label>
                 <select id="facquisition" onchange="onAcquisitionChange()">
                   <option value="">اختر...</option>
                   <option value="لينكدإن">لينكدإن</option>
@@ -2669,7 +2669,7 @@ function renderDetail(ref) {
     <div class="dp-field"><label>انتهاء الاشتراك</label><span>${expiryText}</span></div>
     <div class="dp-field"><label>إسناد يدوي</label><span>${needsAssign(c.source)?'<span style="color:var(--red)">نعم</span>':'<span style="color:var(--green)">لا — تلقائي</span>'}</span></div>
     ${c.efficiencyCheck ? `<div class="dp-field"><label>شامل تقييم الكفاءة</label><span style="color:${c.efficiencyCheck==='نعم'?'var(--green)':'var(--red)'};font-weight:600">${c.efficiencyCheck}</span></div>` : ''}
-    ${c.acquisitionChannel ? `<div class="dp-field"><label>قناة الاكتساب</label><span>${c.acquisitionChannel}</span></div>` : ''}
+    ${c.acquisitionChannel ? `<div class="dp-field"><label>كيف عرف عنا؟</label><span>${c.acquisitionChannel}</span></div>` : ''}
     ${c.startDate ? (() => {
       const sd = new Date(c.startDate + 'T00:00:00');
       const now = new Date(); now.setHours(0,0,0,0);
