@@ -1015,7 +1015,7 @@ input, select, textarea { font-family: var(--font); }
                 </select>
               </div>
               <div class="fg" id="ftrack-wrap" style="display:none"><label>المسار</label>
-                <select id="ftrack"><option value="">اختر المسار...</option></select>
+                <select id="ftrack" onchange="onTrackChange()"><option value="">اختر المسار...</option></select>
               </div>
               <div class="fg" id="fptype-wrap" style="display:none"><label>نوع البرنامج</label>
                 <select id="fptype" onchange="onProgramTypeChange()">
@@ -2276,16 +2276,24 @@ function renderFinance() {
 }
 
 function renderSettings() {
+  const fixed = ['تحليل السلوك التطبيقي','إدارة السلوك التنظيمي','الاقتصاد السلوكي','برامج التعليم المستمر','حجز مقعد'];
+  const allProgs = programs.map((p,i)=>({name:p,i}));
+
   const pl = document.getElementById('prog-list');
-  if (pl) pl.innerHTML = programs.map((p,i) => `<div class="client-card" style="cursor:default">
-    <div class="card-prog-bar" style="background:${getProgColor(p)}"></div>
-    <div class="card-body">
-      <div class="card-top">
-        <span class="card-name" style="font-size:13px">${p}</span>
-        <button class="btn btn-sm" style="color:var(--red);border-color:#fca5a5" onclick="removeProgram(${i})">حذف</button>
+  if (pl) pl.innerHTML = allProgs.map(({name,i}) => {
+    const isFixed = fixed.some(f => name.includes(f));
+    return `<div class="client-card" style="cursor:default">
+      <div class="card-prog-bar" style="background:${getProgColor(name)}"></div>
+      <div class="card-body">
+        <div class="card-top">
+          <span class="card-name" style="font-size:13px">${name}</span>
+          ${isFixed
+            ? `<span style="font-size:11px;color:var(--text-3);padding:3px 8px">ثابت</span>`
+            : `<button class="btn btn-sm" style="color:var(--red);border-color:#fca5a5" onclick="removeProgram('${name.replace(/'/g,"\\'")}')">حذف</button>`}
+        </div>
       </div>
-    </div>
-  </div>`).join('') || '<div class="empty-state">لا توجد برامج</div>';
+    </div>`;
+  }).join('') || '<div class="empty-state">لا توجد برامج</div>';
 
   const sl2 = document.getElementById('src-list');
   if (sl2) sl2.innerHTML = sources.map((s,i) => `<div class="client-card" style="cursor:default">
@@ -2389,9 +2397,11 @@ function onProgramChange() {
   ptypeWrap.style.display     = ['تحليل السلوك التطبيقي','إدارة السلوك التنظيمي'].includes(p) ? 'block' : 'none';
   contWrap.style.display      = p === 'برامج التعليم المستمر' ? 'block' : 'none';
   langWrap.style.display      = ['تحليل السلوك التطبيقي','إدارة السلوك التنظيمي'].includes(p) ? 'block' : 'none';
-  // حقل تقييم الكفاءة — فقط لأخصائي تحليل السلوك
-  efficiencyWrap.style.display = p.includes('أخصائي تحليل السلوك') ? 'block' : 'none';
-  if (!p.includes('أخصائي تحليل السلوك')) { const ef = document.getElementById('fefficiency'); if(ef) ef.value=''; }
+  // حقل تقييم الكفاءة — فقط لمسار ABAT
+  const currentTrack = document.getElementById('ftrack')?.value || '';
+  const showEfficiency = tracks.includes('ABAT') || currentTrack === 'ABAT';
+  efficiencyWrap.style.display = showEfficiency ? 'block' : 'none';
+  if (!showEfficiency) { const ef = document.getElementById('fefficiency'); if(ef) ef.value=''; }
   if (!['تحليل السلوك التطبيقي','إدارة السلوك التنظيمي'].includes(p)) document.getElementById('fptype').value = '';
 }
 function onProgramTypeChange() {
@@ -2399,6 +2409,14 @@ function onProgramTypeChange() {
   const wrap  = document.getElementById('fstartdate-wrap');
   if (wrap) wrap.style.display = ptype === 'مباشر' ? 'block' : 'none';
   if (ptype !== 'مباشر') { const el = document.getElementById('fstartdate'); if(el) el.value = ''; }
+}
+
+function onTrackChange() {
+  const track = document.getElementById('ftrack')?.value || '';
+  const efficiencyWrap = document.getElementById('fefficiency-wrap');
+  if (!efficiencyWrap) return;
+  efficiencyWrap.style.display = track === 'ABAT' ? 'block' : 'none';
+  if (track !== 'ABAT') { const ef = document.getElementById('fefficiency'); if(ef) ef.value=''; }
 }
 
 function onAcquisitionChange() {
