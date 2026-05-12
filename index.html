@@ -143,8 +143,9 @@ input, select, textarea { font-family: var(--font); }
 /* الشريط العلوي */
 .topbar {
   height: var(--topbar-h);
-  background: var(--surface);
-  border-bottom: 1px solid var(--border);
+  background: linear-gradient(135deg, #0B1F8C 0%, #1A3BDB 60%, #2248F5 100%);
+  border-bottom: none;
+  box-shadow: 0 2px 16px rgba(15,36,153,0.18);
   display: flex; align-items: center;
   padding: 0 1.25rem;
   gap: 12px;
@@ -152,46 +153,62 @@ input, select, textarea { font-family: var(--font); }
 }
 .topbar-logo {
   display: flex; align-items: center; gap: 10px;
-  text-decoration: none;
+  text-decoration: none; flex-shrink: 0;
 }
 .topbar-logo-mark {
-  width: 32px; height: 32px;
-  background: linear-gradient(135deg, #1A3BDB, #0F2499);
-  border-radius: 8px;
+  width: 34px; height: 34px;
+  background: rgba(255,255,255,0.15);
+  border: 1.5px solid rgba(255,255,255,0.25);
+  border-radius: 9px;
   display: flex; align-items: center; justify-content: center;
   flex-shrink: 0;
+  backdrop-filter: blur(8px);
 }
-.topbar-logo-mark svg { width: 16px; height: 16px; fill: white; }
-.topbar-logo-text { font-size: 14px; font-weight: 700; color: var(--text); letter-spacing: -.2px; }
-.topbar-logo-text span { color: var(--text-3); font-weight: 400; font-size: 12px; margin-right: 4px; }
+.topbar-logo-mark svg { width: 18px; height: 18px; fill: white; }
+.topbar-logo-text {
+  font-size: 17px; font-weight: 800; color: #fff;
+  letter-spacing: -.3px; line-height: 1;
+}
+.topbar-logo-text span {
+  display: block; font-size: 10px; font-weight: 400;
+  color: rgba(255,255,255,0.6); margin-top: 1px; letter-spacing: .04em;
+}
 .topbar-nav { display: flex; gap: 2px; margin-right: auto; }
 .tnb {
   display: flex; align-items: center; gap: 6px;
-  padding: 6px 14px; border-radius: 8px;
+  padding: 6px 13px; border-radius: 8px;
   border: none; background: transparent;
-  font-size: 13px; font-weight: 500; color: var(--text-2);
-  transition: all .12s; position: relative;
+  font-size: 13px; font-weight: 500; color: rgba(255,255,255,0.7);
+  transition: all .15s; position: relative;
   white-space: nowrap;
 }
-.tnb:hover { background: var(--bg); color: var(--text); }
-.tnb.active { background: var(--blue-lt); color: var(--blue); font-weight: 600; }
+.tnb:hover { background: rgba(255,255,255,0.12); color: #fff; }
+.tnb.active {
+  background: rgba(255,255,255,0.18);
+  color: #fff; font-weight: 700;
+  box-shadow: inset 0 0 0 1px rgba(255,255,255,0.25);
+}
+.tnb svg { opacity: .8; }
+.tnb.active svg { opacity: 1; }
 .tnb .badge {
-  position: absolute; top: 4px; right: 4px;
+  position: absolute; top: 3px; right: 3px;
   min-width: 16px; height: 16px;
-  background: var(--red); color: #fff;
+  background: #FF4444; color: #fff;
   border-radius: 8px; font-size: 10px; font-weight: 700;
   display: flex; align-items: center; justify-content: center;
   padding: 0 4px; line-height: 1;
+  border: 1.5px solid rgba(255,255,255,0.3);
 }
 .topbar-end { display: flex; align-items: center; gap: 8px; }
 .sync-btn {
   display: flex; align-items: center; gap: 5px;
   padding: 6px 12px; border-radius: 8px;
-  border: 1px solid var(--border); background: var(--bg);
-  color: var(--text-2); font-size: 12px; font-weight: 500;
-  transition: all .12s;
+  border: 1px solid rgba(255,255,255,0.2);
+  background: rgba(255,255,255,0.1);
+  color: rgba(255,255,255,0.85); font-size: 12px; font-weight: 500;
+  transition: all .15s; backdrop-filter: blur(4px);
 }
-.sync-btn:hover { background: var(--surface); color: var(--text); }
+.sync-btn:hover { background: rgba(255,255,255,0.18); color: #fff; }
 .sync-btn.loading { opacity: .5; pointer-events: none; }
 .sync-btn svg { transition: transform .3s; }
 .sync-btn.loading svg { animation: spin 1s linear infinite; }
@@ -199,30 +216,33 @@ input, select, textarea { font-family: var(--font); }
 
 .notif-btn {
   width: 34px; height: 34px; border-radius: 8px;
-  border: 1px solid var(--border); background: var(--bg);
+  border: 1px solid rgba(255,255,255,0.2);
+  background: rgba(255,255,255,0.1);
   display: flex; align-items: center; justify-content: center;
-  color: var(--text-2); position: relative; transition: all .12s;
+  color: rgba(255,255,255,0.85); position: relative; transition: all .15s;
 }
-.notif-btn:hover { background: var(--surface); color: var(--text); }
+.notif-btn:hover { background: rgba(255,255,255,0.18); color: #fff; }
 .notif-dot {
   position: absolute; top: 6px; right: 6px;
   width: 7px; height: 7px; border-radius: 50%;
-  background: var(--red); border: 1.5px solid var(--surface);
+  background: #FF4444; border: 1.5px solid #1A3BDB;
   display: none;
 }
 .user-chip {
   display: flex; align-items: center; gap: 7px;
   padding: 4px 10px 4px 4px;
-  border-radius: 8px; border: 1px solid var(--border);
-  background: var(--bg);
+  border-radius: 8px;
+  border: 1px solid rgba(255,255,255,0.2);
+  background: rgba(255,255,255,0.1);
+  backdrop-filter: blur(4px);
 }
 .user-av {
   width: 26px; height: 26px; border-radius: 6px;
-  background: var(--blue-lt); color: var(--blue);
+  background: rgba(255,255,255,0.22); color: #fff;
   font-size: 11px; font-weight: 700;
   display: flex; align-items: center; justify-content: center;
 }
-.user-chip span { font-size: 12px; font-weight: 500; color: var(--text); }
+.user-chip span { font-size: 12px; font-weight: 500; color: rgba(255,255,255,0.9); }
 
 /* ══════════════════════════════════════════
    المحتوى الرئيسي
@@ -803,10 +823,15 @@ input, select, textarea { font-family: var(--font); }
   <!-- الشريط العلوي -->
   <header class="topbar">
     <div class="topbar-logo">
-      <svg height="34" viewBox="0 0 310 70" xmlns="http://www.w3.org/2000/svg">
-        <text x="2" y="56" font-family="'Scheherazade New', serif" font-size="62" font-weight="900" fill="#0D40FC" letter-spacing="-1">سلوكيرا</text>
-      </svg>
-      <span style="font-size:11px;color:var(--text-3);font-weight:500;padding-bottom:2px;margin-right:2px">Ops</span>
+      <div class="topbar-logo-mark">
+        <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+          <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 14H9V8h2v8zm4 0h-2V8h2v8z" fill="white"/>
+        </svg>
+      </div>
+      <div class="topbar-logo-text">
+        سلوكيرا
+        <span>Operations</span>
+      </div>
     </div>
 
     <nav class="topbar-nav">
@@ -818,6 +843,11 @@ input, select, textarea { font-family: var(--font); }
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c3 3 9 3 12 0v-5"/></svg>
         <span>التشغيل</span>
         <span class="badge" id="ops-badge" style="display:none">0</span>
+      </button>
+      <button class="tnb" id="btn-completed" onclick="setView('completed',this)">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+        <span>المكتملون</span>
+        <span class="badge" id="completed-badge" style="display:none">0</span>
       </button>
       <button class="tnb nf" id="btn-finance" onclick="setView('finance',this)" style="display:none">
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
@@ -1060,13 +1090,20 @@ input, select, textarea { font-family: var(--font); }
           <span class="sec-badge" id="aca-pend-trial-count">0</span>
         </div>
         <div id="al-pending-trial" class="clients-list"></div>
+      </div>
 
-        <!-- مكتملون -->
-        <div class="sec-head" style="margin-top:1.5rem">
-          <span class="sec-title">تم التفعيل</span>
-          <span class="sec-badge" id="aca-done-count">0</span>
+      <!-- ───── المكتملون ───── -->
+      <div id="v-completed" style="display:none">
+        <div class="stats-row">
+          <div class="stat-card s-green"><div class="stat-num" id="comp-total">0</div><div class="stat-lbl">إجمالي المكتملين</div></div>
+          <div class="stat-card s-blue"><div class="stat-num" id="comp-today">0</div><div class="stat-lbl">مكتملو اليوم</div></div>
+          <div class="stat-card s-blue" style="border-top-color:#6C3DBF"><div class="stat-num" id="comp-month">0</div><div class="stat-lbl">هذا الشهر</div></div>
         </div>
-        <div id="al-done" class="clients-list"></div>
+        <div class="sec-head" style="margin-top:1rem">
+          <span class="sec-title">المكتملون حسب البرنامج</span>
+          <span class="sec-badge" id="comp-count-badge">0</span>
+        </div>
+        <div id="comp-groups"></div>
       </div>
 
       <!-- ───── المالية ───── -->
@@ -1990,9 +2027,13 @@ function updateStats() {
   const pendingOps = clients.filter(c => !c.academyAssigned && !isTrialClient(c)).length;
   const el2 = document.getElementById('aca-pend-total');
   if (el2) el2.textContent = pendingOps;
-  const doneOps = clients.filter(c => c.academyAssigned).length;
-  const el3 = document.getElementById('aca-done-count');
-  if (el3) el3.textContent = doneOps;
+
+  // badge المكتملون في الـ topbar
+  const compBadgeNav = document.getElementById('completed-badge');
+  if (compBadgeNav) {
+    compBadgeNav.textContent = done;
+    compBadgeNav.style.display = done > 0 ? 'flex' : 'none';
+  }
 }
 
 // ════════════════════════════════
@@ -2001,13 +2042,14 @@ function updateStats() {
 function render() {
   if (currentView === 'sales') renderSales();
   else if (currentView === 'academy') renderAcademy();
+  else if (currentView === 'completed') renderCompleted();
   else if (currentView === 'finance') renderFinance();
   else if (currentView === 'settings') renderSettings();
 }
 
 function renderSales() {
   const filtered     = getFilteredClients();
-  const regular      = filtered.filter(c => !isTrialClient(c));
+  const regular      = filtered.filter(c => !isTrialClient(c) && !c.academyAssigned);
   const trial        = filtered.filter(c => isTrialClient(c) && c.trialStatus !== 'uninterested');
   const uninterested = filtered.filter(c => c.trialStatus === 'uninterested');
 
@@ -2051,7 +2093,7 @@ function renderAcademy() {
             <div class="ops-group-prog-dot" style="background:${color}"></div>
             <div class="ops-group-name">${key}</div>
             <div class="ops-group-count">${g.clients.length}</div>
-            <svg class="ops-group-chevron open" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+            <svg class="ops-group-chevron open" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
           </div>
           <div class="ops-group-body">
             ${g.clients.map(c => cardHTML(c)).join('')}
@@ -2064,39 +2106,76 @@ function renderAcademy() {
   // تجربة بانتظار القرار — من الفلتر
   const trialPend = allFiltered.filter(c => isTrialClient(c) && !c.trialStatus);
   try { document.getElementById('al-pending-trial').innerHTML = trialPend.length ? trialPend.map(c => cardHTML(c, true)).join('') : '<div class="empty-state">—</div>'; } catch(e) {}
+}
 
-  // مكتملون — مجموعات حسب البرنامج، مرتبة بالأحدث
-  const done = allFiltered.filter(c => c.academyAssigned)
-    .sort((a,b) => (new Date(b.activatedAt||b.createdAt||0)) - (new Date(a.activatedAt||a.createdAt||0)));
+function renderCompleted() {
+  const q      = (document.getElementById('search-input')?.value || '').toLowerCase();
+  const prog   = document.getElementById('filter-prog')?.dataset?.active || '';
+  const track  = document.getElementById('filter-track')?.dataset?.active || '';
 
-  const doneGroups = {};
+  let done = clients.filter(c => c.academyAssigned);
+
+  // فلتر بحث
+  if (q) done = done.filter(c =>
+    (c.name||'').toLowerCase().includes(q) ||
+    (c.ref||'').toLowerCase().includes(q) ||
+    (c.email||'').toLowerCase().includes(q) ||
+    (c.phone||'').includes(q)
+  );
+
+  // فرز حسب تاريخ الإكمال — الأحدث أولاً
+  done.sort((a,b) => (new Date(b.activatedAt||b.createdAt||0)) - (new Date(a.activatedAt||a.createdAt||0)));
+
+  // إحصائيات
+  const todayStr = new Date().toDateString();
+  const monthNow = new Date();
+  const todayCount = done.filter(c => {
+    try { return new Date(c.activatedAt||c.createdAt).toDateString() === todayStr; } catch { return false; }
+  }).length;
+  const monthCount = done.filter(c => {
+    try {
+      const d = new Date(c.activatedAt||c.createdAt);
+      return d.getMonth() === monthNow.getMonth() && d.getFullYear() === monthNow.getFullYear();
+    } catch { return false; }
+  }).length;
+
+  const compTotal = document.getElementById('comp-total');
+  const compToday = document.getElementById('comp-today');
+  const compMonth = document.getElementById('comp-month');
+  const compBadge = document.getElementById('comp-count-badge');
+  if (compTotal) compTotal.textContent = done.length;
+  if (compToday) compToday.textContent = todayCount;
+  if (compMonth) compMonth.textContent = monthCount;
+  if (compBadge) compBadge.textContent = done.length;
+
+  // مجموعات حسب البرنامج
+  const groups = {};
   done.forEach(c => {
     const key = (c.program||'عام').split('—')[0].trim();
-    if (!doneGroups[key]) doneGroups[key] = { prog: c.program||'', clients: [] };
-    doneGroups[key].clients.push(c);
+    if (!groups[key]) groups[key] = { prog: c.program||'', clients: [] };
+    groups[key].clients.push(c);
   });
 
-  const doneEl = document.getElementById('al-done');
-  if (doneEl) {
-    if (!Object.keys(doneGroups).length) {
-      doneEl.innerHTML = '<div class="empty-state">—</div>';
-    } else {
-      doneEl.innerHTML = Object.entries(doneGroups).map(([key, g]) => {
-        const color = getProgColor(g.prog);
-        return `<div class="ops-group">
-          <div class="ops-group-header" onclick="toggleOpsGroup(this)">
-            <div class="ops-group-prog-dot" style="background:${color}"></div>
-            <div class="ops-group-name">${key}</div>
-            <div class="ops-group-count" style="background:var(--green-lt);color:var(--green)">${g.clients.length}</div>
-            <svg class="ops-group-chevron open" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
-          </div>
-          <div class="ops-group-body">
-            ${g.clients.map(c => cardHTML(c)).join('')}
-          </div>
-        </div>`;
-      }).join('');
-    }
+  const el = document.getElementById('comp-groups');
+  if (!el) return;
+  if (!Object.keys(groups).length) {
+    el.innerHTML = '<div class="empty-state">لا يوجد مكتملون بعد</div>';
+    return;
   }
+  el.innerHTML = Object.entries(groups).map(([key, g]) => {
+    const color = getProgColor(g.prog);
+    return `<div class="ops-group">
+      <div class="ops-group-header" onclick="toggleOpsGroup(this)">
+        <div class="ops-group-prog-dot" style="background:${color}"></div>
+        <div class="ops-group-name">${key}</div>
+        <div class="ops-group-count" style="background:var(--green-lt);color:var(--green)">${g.clients.length}</div>
+        <svg class="ops-group-chevron open" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
+      </div>
+      <div class="ops-group-body">
+        ${g.clients.map(c => cardHTML(c)).join('')}
+      </div>
+    </div>`;
+  }).join('');
 }
 
 function renderFinance() {
@@ -2163,7 +2242,7 @@ function setView(view, btn) {
   currentView = view;
   document.querySelectorAll('.tnb').forEach(b => b.classList.remove('active'));
   btn.classList.add('active');
-  ['v-sales','v-academy','v-finance','v-reports','v-settings'].forEach(id => {
+  ['v-sales','v-academy','v-completed','v-finance','v-reports','v-settings'].forEach(id => {
     const el = document.getElementById(id);
     if (el) el.style.display = 'none';
   });
@@ -2171,6 +2250,7 @@ function setView(view, btn) {
   if (vEl) vEl.style.display = 'block';
   closeDetail();
   if (view === 'reports') renderReports();
+  else if (view === 'completed') renderCompleted();
   else render();
 }
 
