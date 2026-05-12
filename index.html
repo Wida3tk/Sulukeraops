@@ -2397,11 +2397,9 @@ function onProgramChange() {
   ptypeWrap.style.display     = ['تحليل السلوك التطبيقي','إدارة السلوك التنظيمي'].includes(p) ? 'block' : 'none';
   contWrap.style.display      = p === 'برامج التعليم المستمر' ? 'block' : 'none';
   langWrap.style.display      = ['تحليل السلوك التطبيقي','إدارة السلوك التنظيمي'].includes(p) ? 'block' : 'none';
-  // حقل تقييم الكفاءة — فقط لمسار ABAT
-  const currentTrack = document.getElementById('ftrack')?.value || '';
-  const showEfficiency = tracks.includes('ABAT') || currentTrack === 'ABAT';
-  efficiencyWrap.style.display = showEfficiency ? 'block' : 'none';
-  if (!showEfficiency) { const ef = document.getElementById('fefficiency'); if(ef) ef.value=''; }
+  // حقل تقييم الكفاءة — فقط لما يختار مسار ABAT فعلاً
+  efficiencyWrap.style.display = 'none';
+  if (!p.includes('أخصائي تحليل السلوك')) { const ef = document.getElementById('fefficiency'); if(ef) ef.value=''; }
   if (!['تحليل السلوك التطبيقي','إدارة السلوك التنظيمي'].includes(p)) document.getElementById('fptype').value = '';
 }
 function onProgramTypeChange() {
@@ -2974,10 +2972,11 @@ async function addProgram() {
   programs.push(name); localStorage.setItem('ops_programs', JSON.stringify(programs));
   inp.value = ''; fillProgramSelect(); toast('تم إضافة البرنامج ✓'); render();
 }
-function removeProgram(i) {
-  if (!confirm('حذف هذا البرنامج؟')) return;
-  programs.splice(i,1); localStorage.setItem('ops_programs', JSON.stringify(programs));
-  fillProgramSelect(); toast('تم الحذف'); render();
+function removeProgram(name) {
+  if (!confirm(`حذف "${name}"؟`)) return;
+  programs = programs.filter(p => p !== name);
+  localStorage.setItem('ops_programs', JSON.stringify(programs));
+  fillProgramSelect(); toast('تم الحذف ✓'); renderSettings();
 }
 function addSource() {
   const name = document.getElementById('new-src-name').value.trim();
