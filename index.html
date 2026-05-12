@@ -944,6 +944,17 @@ input, select, textarea { font-family: var(--font); }
         <option value="">كل الليبلات</option>
       </select>
 
+      <div class="fs-title">كيف عرف عنا؟</div>
+      <select class="filter-select" id="filter-acquisition" onchange="renderFiltered()">
+        <option value="">الكل</option>
+        <option value="لينكدإن">لينكدإن</option>
+        <option value="انستقرام">انستقرام</option>
+        <option value="إعلان غير مدفوع">إعلان غير مدفوع</option>
+        <option value="توصية زميل">توصية زميل</option>
+        <option value="عميل سابق في المنصة">عميل سابق في المنصة</option>
+        <option value="غير ذلك">غير ذلك</option>
+      </select>
+
       <button class="clear-filters-btn" onclick="clearFilters()">مسح الفلاتر ✕</button>
 
       <div style="margin-top:1.5rem;padding-top:1rem;border-top:1px solid var(--border)">
@@ -1827,7 +1838,7 @@ function updateLabelFilter() {
 
 function clearFilters() {
   filterProg = ''; filterTrack = ''; filterType = '';
-  ['search-input','filter-source','filter-status','filter-label','filter-date']
+  ['search-input','filter-source','filter-status','filter-label','filter-date','filter-acquisition']
     .forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; });
   buildFilterSidebar();
   renderFiltered();
@@ -1844,12 +1855,13 @@ function daysSince(c) {
 }
 
 function getFilteredClients() {
-  const q       = (document.getElementById('search-input')?.value || '').toLowerCase();
-  const src     = document.getElementById('filter-source')?.value  || '';
-  const status  = document.getElementById('filter-status')?.value  || '';
-  const labelId = document.getElementById('filter-label')?.value   || '';
-  const dateF   = document.getElementById('filter-date')?.value    || '';
-  const now     = new Date();
+  const q           = (document.getElementById('search-input')?.value || '').toLowerCase();
+  const src         = document.getElementById('filter-source')?.value      || '';
+  const status      = document.getElementById('filter-status')?.value      || '';
+  const labelId     = document.getElementById('filter-label')?.value       || '';
+  const dateF       = document.getElementById('filter-date')?.value        || '';
+  const acquisition = document.getElementById('filter-acquisition')?.value || '';
+  const now         = new Date();
 
   return clients.filter(c => {
     // بحث نصي
@@ -1871,13 +1883,16 @@ function getFilteredClients() {
 
     // فلتر الحالة
     let matchStatus = true;
-    if (status === 'pending')      matchStatus = !c.academyAssigned && !isTrialClient(c);
-    else if (status === 'done')    matchStatus = !!c.academyAssigned;
-    else if (status === 'trial')   matchStatus = isTrialClient(c) && c.trialStatus !== 'uninterested';
+    if (status === 'pending')           matchStatus = !c.academyAssigned && !isTrialClient(c);
+    else if (status === 'done')         matchStatus = !!c.academyAssigned;
+    else if (status === 'trial')        matchStatus = isTrialClient(c) && c.trialStatus !== 'uninterested';
     else if (status === 'uninterested') matchStatus = c.trialStatus === 'uninterested';
 
     // فلتر الليبل
     const matchLabel = !labelId || (c.labels && c.labels.includes(labelId));
+
+    // فلتر كيف عرف عنا
+    const matchAcquisition = !acquisition || (c.acquisitionChannel || '').includes(acquisition);
 
     // فلتر التاريخ
     let matchDate = true;
@@ -1889,7 +1904,7 @@ function getFilteredClients() {
       else if (dateF === 'month') matchDate = cd.getMonth()===now.getMonth() && cd.getFullYear()===now.getFullYear();
     }
 
-    return matchQ && matchProg && matchTrack && matchType && matchSrc && matchStatus && matchLabel && matchDate;
+    return matchQ && matchProg && matchTrack && matchType && matchSrc && matchStatus && matchLabel && matchAcquisition && matchDate;
   });
 }
 
@@ -3199,8 +3214,8 @@ document.addEventListener('click', e => {
 function exportCSV() {
   const filtered = getFilteredClients();
   if (!filtered.length) { toast('لا توجد بيانات للتصدير', false); return; }
-  const headers = ['رقم المرجع','الاسم','البريد','الجوال','الدفعة','البرنامج','المسار','النوع','اللغة','نوع العميل','المصدر','الحالة','التسجيل','أضافه','ملاحظات'];
-  const rows = filtered.map(c=>[c.ref,c.name,c.email||'',c.phone||'',c.batchNo||'',c.program,c.track||'',c.programType||'',c.lang||'',c.clientType||'',c.source,c.academyAssigned?'مكتمل':'قيد التفعيل',c.createdAt||'',c.addedBy||'',(c.notes||'').replace(/,/g,'؛')]);
+  const headers = ['رقم المرجع','الاسم','البريد','الجوال','الدفعة','البرنامج','المسار','النوع','اللغة','نوع العميل','المصدر','كيف عرف عنا؟','شامل الكفاءة','الحالة','التسجيل','أضافه','ملاحظات'];
+  const rows = filtered.map(c=>[c.ref,c.name,c.email||'',c.phone||'',c.batchNo||'',c.program,c.track||'',c.programType||'',c.lang||'',c.clientType||'',c.source,c.acquisitionChannel||'',c.efficiencyCheck||'',c.academyAssigned?'مكتمل':'قيد التفعيل',c.createdAt||'',c.addedBy||'',(c.notes||'').replace(/,/g,'؛')]);
   const csv=[headers,...rows].map(r=>r.map(v=>`"${String(v).replace(/"/g,'""')}"`).join(',')).join('\n');
   const a=document.createElement('a'); a.href=URL.createObjectURL(new Blob(['\uFEFF'+csv],{type:'text/csv;charset=utf-8;'}));
   a.download=`سلوكيرا-${new Date().toLocaleDateString('ar-SA').replace(/\//g,'-')}.csv`; a.click(); toast(`تصدير ${filtered.length} عميل ✓`);
