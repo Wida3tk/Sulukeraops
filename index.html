@@ -1024,6 +1024,18 @@ input, select, textarea { font-family: var(--font); }
                   <option value="مسجل">مسجل (Recorded)</option>
                 </select>
               </div>
+              <!-- شامل تقييم الكفاءة — يظهر فقط لأخصائي تحليل السلوك -->
+              <div class="fg" id="fefficiency-wrap" style="display:none">
+                <label>شامل تقييم الكفاءة؟</label>
+                <select id="fefficiency">
+                  <option value="">اختر...</option>
+                  <option value="نعم">نعم</option>
+                  <option value="لا">لا</option>
+                </select>
+                <div style="margin-top:6px;padding:7px 10px;background:#FFF8E1;border-radius:7px;font-size:11px;color:#92620a;border:1px solid #FFE082;line-height:1.5">
+                  ℹ️ أي طلب بعد تاريخ ١٤ أبريل على عصارة — مسجل أو مباشر — غير شامل لتقييم الكفاءة
+                </div>
+              </div>
               <div class="fg" id="fstartdate-wrap" style="display:none">
                 <label>موعد بدء البرنامج <span style="color:var(--text-3);font-weight:400">(اختياري)</span></label>
                 <input id="fstartdate" type="date">
@@ -1036,6 +1048,23 @@ input, select, textarea { font-family: var(--font); }
                 </select>
               </div>
               <div class="fg"><label>رقم الدفعة</label><input id="fbatch" placeholder="مثال: B24"></div>
+              <!-- قناة الاكتساب -->
+              <div class="fg">
+                <label>قناة الاكتساب</label>
+                <select id="facquisition" onchange="onAcquisitionChange()">
+                  <option value="">اختر...</option>
+                  <option value="لينكدإن">لينكدإن</option>
+                  <option value="انستقرام">انستقرام</option>
+                  <option value="إعلان غير مدفوع">إعلان غير مدفوع</option>
+                  <option value="توصية زميل">توصية زميل</option>
+                  <option value="عميل سابق في المنصة">عميل سابق في المنصة</option>
+                  <option value="غير ذلك">غير ذلك</option>
+                </select>
+              </div>
+              <div class="fg" id="facquisition-other-wrap" style="display:none">
+                <label>وضّح قناة الاكتساب</label>
+                <input id="facquisition-other" placeholder="اكتب هنا...">
+              </div>
               <div class="fg full" id="fcontinuous-wrap" style="display:none"><label>تفاصيل برنامج التعليم المستمر</label><input id="fcontinuous" placeholder="اسم البرنامج..."></div>
             </div>
             <div class="form-hint" id="assign-hint">⚠️ هذا المصدر يتطلب إسناد يدوي في المنصة</div>
@@ -1653,6 +1682,8 @@ async function syncData() {
             trialStatus:  local.trialStatus  || clean.trialStatus  || '',
             startDate:    local.startDate    || clean.startDate    || '',
             activatedAt:  local.activatedAt  || clean.activatedAt  || '',
+            efficiencyCheck:    local.efficiencyCheck    || clean.efficiencyCheck    || '',
+            acquisitionChannel: local.acquisitionChannel || clean.acquisitionChannel || '',
             academyAdded:    local.academyAdded    !== undefined ? local.academyAdded    : clean.academyAdded,
             academyAssigned: local.academyAssigned !== undefined ? local.academyAssigned : clean.academyAssigned,
             log: local.log || [],
@@ -2344,19 +2375,23 @@ function onClientTypeChange() {
 }
 function onProgramChange() {
   const p = document.getElementById('fp').value;
-  const trackSel  = document.getElementById('ftrack');
-  const trackWrap = document.getElementById('ftrack-wrap');
-  const ptypeWrap = document.getElementById('fptype-wrap');
-  const contWrap  = document.getElementById('fcontinuous-wrap');
-  const langWrap  = document.getElementById('flang-wrap');
+  const trackSel       = document.getElementById('ftrack');
+  const trackWrap      = document.getElementById('ftrack-wrap');
+  const ptypeWrap      = document.getElementById('fptype-wrap');
+  const contWrap       = document.getElementById('fcontinuous-wrap');
+  const langWrap       = document.getElementById('flang-wrap');
+  const efficiencyWrap = document.getElementById('fefficiency-wrap');
 
   const tracks = PROGRAM_TRACKS[p] || [];
   trackSel.innerHTML = '<option value="">اختر المسار...</option>' +
     tracks.map(t => `<option value="${t}">${t}</option>`).join('');
-  trackWrap.style.display = tracks.length ? 'block' : 'none';
-  ptypeWrap.style.display = ['تحليل السلوك التطبيقي','إدارة السلوك التنظيمي'].includes(p) ? 'block' : 'none';
-  contWrap.style.display  = p === 'برامج التعليم المستمر' ? 'block' : 'none';
-  langWrap.style.display  = ['تحليل السلوك التطبيقي','إدارة السلوك التنظيمي'].includes(p) ? 'block' : 'none';
+  trackWrap.style.display     = tracks.length ? 'block' : 'none';
+  ptypeWrap.style.display     = ['تحليل السلوك التطبيقي','إدارة السلوك التنظيمي'].includes(p) ? 'block' : 'none';
+  contWrap.style.display      = p === 'برامج التعليم المستمر' ? 'block' : 'none';
+  langWrap.style.display      = ['تحليل السلوك التطبيقي','إدارة السلوك التنظيمي'].includes(p) ? 'block' : 'none';
+  // حقل تقييم الكفاءة — فقط لأخصائي تحليل السلوك
+  efficiencyWrap.style.display = p.includes('أخصائي تحليل السلوك') ? 'block' : 'none';
+  if (!p.includes('أخصائي تحليل السلوك')) { const ef = document.getElementById('fefficiency'); if(ef) ef.value=''; }
   if (!['تحليل السلوك التطبيقي','إدارة السلوك التنظيمي'].includes(p)) document.getElementById('fptype').value = '';
 }
 function onProgramTypeChange() {
@@ -2365,6 +2400,14 @@ function onProgramTypeChange() {
   if (wrap) wrap.style.display = ptype === 'مباشر' ? 'block' : 'none';
   if (ptype !== 'مباشر') { const el = document.getElementById('fstartdate'); if(el) el.value = ''; }
 }
+
+function onAcquisitionChange() {
+  const val  = document.getElementById('facquisition').value;
+  const wrap = document.getElementById('facquisition-other-wrap');
+  if (wrap) wrap.style.display = val === 'غير ذلك' ? 'block' : 'none';
+  if (val !== 'غير ذلك') { const el = document.getElementById('facquisition-other'); if(el) el.value = ''; }
+}
+
 function onSourceChange() {
   const src = document.getElementById('fs').value;
   const hint = document.getElementById('assign-hint');
@@ -2384,6 +2427,10 @@ async function addClient() {
   const continuousText = document.getElementById('fcontinuous')?.value.trim() || '';
   const expiry  = document.getElementById('fexpiry').value || '';
   const startDate = document.getElementById('fstartdate')?.value || '';
+  const efficiencyCheck = document.getElementById('fefficiency')?.value || '';
+  const acquisitionRaw = document.getElementById('facquisition')?.value || '';
+  const acquisitionOther = document.getElementById('facquisition-other')?.value.trim() || '';
+  const acquisitionChannel = acquisitionRaw === 'غير ذلك' ? (acquisitionOther || 'غير ذلك') : acquisitionRaw;
 
   if (!name||!email||!phone||!clientType||!program||!source) { toast('يرجى تعبئة جميع الحقول الإلزامية', false); return; }
   const ptReq = ['تحليل السلوك التطبيقي','إدارة السلوك التنظيمي'].includes(program);
@@ -2397,7 +2444,8 @@ async function addClient() {
   const ref = genRef();
   const client = {
     ref, name, email, phone, program, source, expiry, clientType,
-    track, programType, lang, continuousText, batchNo, startDate, notes: '',
+    track, programType, lang, continuousText, batchNo, startDate,
+    efficiencyCheck, acquisitionChannel, notes: '',
     trialStatus: '',
     addedBy: session.username || 'المبيعات',
     academyAdded: false, academyAssigned: false,
@@ -2415,9 +2463,11 @@ async function addClient() {
   btn.innerHTML = '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg> تسجيل وإرسال للتشغيل';
 }
 function clearForm() {
-  ['fn','fe','fphone','fbatch','fcontinuous','fstartdate'].forEach(id => { const el = document.getElementById(id); if(el) el.value=''; });
-  ['fp','fs','fexpiry','fptype','ftrack','fclienttype','flang'].forEach(id => { const el = document.getElementById(id); if(el) el.value=''; });
+  ['fn','fe','fphone','fbatch','fcontinuous','fstartdate','facquisition-other'].forEach(id => { const el = document.getElementById(id); if(el) el.value=''; });
+  ['fp','fs','fexpiry','fptype','ftrack','fclienttype','flang','fefficiency','facquisition'].forEach(id => { const el = document.getElementById(id); if(el) el.value=''; });
   const sdWrap = document.getElementById('fstartdate-wrap'); if(sdWrap) sdWrap.style.display='none';
+  const efWrap = document.getElementById('fefficiency-wrap'); if(efWrap) efWrap.style.display='none';
+  const acWrap = document.getElementById('facquisition-other-wrap'); if(acWrap) acWrap.style.display='none';
   ['assign-hint'].forEach(id => { const el = document.getElementById(id); if(el) el.className='form-hint'; });
   ['fexpiry-wrap','ftrack-wrap','fcontinuous-wrap','flang-wrap'].forEach(id => { const el = document.getElementById(id); if(el) el.style.display='none'; });
   const ptWrap = document.getElementById('fptype-wrap'); if(ptWrap) ptWrap.style.display='none';
@@ -2602,6 +2652,8 @@ function renderDetail(ref) {
     <div class="dp-field"><label>أضافه</label><span style="color:var(--blue);font-weight:600">${c.addedBy||'—'}</span></div>
     <div class="dp-field"><label>انتهاء الاشتراك</label><span>${expiryText}</span></div>
     <div class="dp-field"><label>إسناد يدوي</label><span>${needsAssign(c.source)?'<span style="color:var(--red)">نعم</span>':'<span style="color:var(--green)">لا — تلقائي</span>'}</span></div>
+    ${c.efficiencyCheck ? `<div class="dp-field"><label>شامل تقييم الكفاءة</label><span style="color:${c.efficiencyCheck==='نعم'?'var(--green)':'var(--red)'};font-weight:600">${c.efficiencyCheck}</span></div>` : ''}
+    ${c.acquisitionChannel ? `<div class="dp-field"><label>قناة الاكتساب</label><span>${c.acquisitionChannel}</span></div>` : ''}
     ${c.startDate ? (() => {
       const sd = new Date(c.startDate + 'T00:00:00');
       const now = new Date(); now.setHours(0,0,0,0);
