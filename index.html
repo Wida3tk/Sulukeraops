@@ -376,6 +376,21 @@ input, select, textarea { font-family: var(--font); }
   background: #fff8f8 !important;
 }
 .card-late:hover { background: #fff0f0 !important; }
+.card-urgent {
+  border-right: 3px solid var(--amber) !important;
+  background: #fffbf0 !important;
+}
+.card-urgent:hover { background: #fff6e0 !important; }
+
+/* شارات موعد البدء */
+.start-badge {
+  display: inline-flex; align-items: center; gap: 4px;
+  font-size: 11px; font-weight: 600;
+  padding: 3px 9px; border-radius: 20px;
+}
+.sb-normal  { background: #EEF2FF; color: #3B5BDB; }
+.sb-urgent  { background: #FFF3CD; color: #B45309; border: 1px solid #FCD34D; }
+.sb-overdue { background: #FEE2E2; color: #B91C1C; border: 1px solid #FCA5A5; }
 
 /* الشريط الجانبي للبرنامج */
 .card-prog-bar { position: absolute; right: 0; top: 0; bottom: 0; width: 4px; }
@@ -1003,11 +1018,15 @@ input, select, textarea { font-family: var(--font); }
                 <select id="ftrack"><option value="">اختر المسار...</option></select>
               </div>
               <div class="fg" id="fptype-wrap" style="display:none"><label>نوع البرنامج</label>
-                <select id="fptype">
+                <select id="fptype" onchange="onProgramTypeChange()">
                   <option value="">اختر...</option>
                   <option value="مباشر">مباشر (Live)</option>
                   <option value="مسجل">مسجل (Recorded)</option>
                 </select>
+              </div>
+              <div class="fg" id="fstartdate-wrap" style="display:none">
+                <label>موعد بدء البرنامج <span style="color:var(--text-3);font-weight:400">(اختياري)</span></label>
+                <input id="fstartdate" type="date">
               </div>
               <div class="fg" id="flang-wrap" style="display:none"><label>اللغة</label>
                 <select id="flang">
@@ -1945,7 +1964,27 @@ function cardHTML(c, showTrialActions=false) {
       ? `<span style="font-size:10px;color:${isLate?'var(--red)':'var(--text-3)'};font-weight:${isLate?700:400};margin-right:auto">${isLate?'⚠ ':''}منذ ${days} ${days===1?'يوم':'أيام'}</span>`
       : '';
 
-    return `<div class="client-card${selId===c.ref?' selected':''}${isLate?' card-late':''}" onclick="openDetail('${c.ref}')">
+    // شارة موعد البدء (للمباشر فقط)
+    let startBadge = '';
+    let isUrgent = false;
+    if (c.startDate && !c.academyAssigned) {
+      const sd = new Date(c.startDate);
+      const now = new Date();
+      now.setHours(0,0,0,0);
+      const diffDays = Math.ceil((sd - now) / 86400000);
+      if (diffDays < 0) {
+        startBadge = `<span class="start-badge sb-overdue">🔴 فات الموعد منذ ${Math.abs(diffDays)} ${Math.abs(diffDays)===1?'يوم':'أيام'}</span>`;
+        isUrgent = true;
+      } else if (diffDays <= 3) {
+        startBadge = `<span class="start-badge sb-urgent">⚠ يبدأ خلال ${diffDays===0?'اليوم':diffDays+' '+(diffDays===1?'يوم':'أيام')}</span>`;
+        isUrgent = true;
+      } else {
+        const dateStr = sd.toLocaleDateString('ar-SA', {day:'numeric',month:'short'});
+        startBadge = `<span class="start-badge sb-normal">📅 يبدأ ${dateStr}</span>`;
+      }
+    }
+
+    return `<div class="client-card${selId===c.ref?' selected':''}${isLate?' card-late':''}${isUrgent?' card-urgent':''}" onclick="openDetail('${c.ref}')">
       <div class="card-prog-bar" style="background:${progColor}"></div>
       <div class="card-body">
         <div class="card-top">
@@ -1963,6 +2002,7 @@ function cardHTML(c, showTrialActions=false) {
           ${clientLabelsHTML(c)}
           ${daysBadge}
         </div>
+        ${startBadge ? `<div style="padding:4px 0 2px">${startBadge}</div>` : ''}
         <div class="progress-track">
           <div class="progress-seg done"></div>
           <div class="progress-seg ${p2cls}"></div>
@@ -1992,12 +2032,19 @@ function updateStats() {
   document.getElementById('st2').textContent = done;
   document.getElementById('st3').textContent = needAsgn;
 
-  // badge التشغيل
+  // badge التشغيل — معلقون + حرجون (يبدأون خلال 48 ساعة)
   const badge = document.getElementById('ops-badge');
   if (badge) {
-    const pendTotal = clients.filter(c => !c.academyAssigned).length;
+    const pendTotal = clients.filter(c => !c.academyAssigned && !isTrialClient(c)).length;
+    const urgentCount = clients.filter(c => {
+      if (!c.startDate || c.academyAssigned) return false;
+      const diff = Math.ceil((new Date(c.startDate) - new Date()) / 86400000);
+      return diff <= 2;
+    }).length;
     badge.textContent = pendTotal;
     badge.style.display = pendTotal > 0 ? 'flex' : 'none';
+    badge.style.background = urgentCount > 0 ? '#FF8C00' : '';
+    badge.title = urgentCount > 0 ? `${urgentCount} عميل يبدأ برنامجه خلال 48 ساعة` : '';
   }
 
   // شريط التقدم اليومي — مكتملون اليوم من إجمالي المسجلين اليوم
@@ -2081,6 +2128,17 @@ function renderAcademy() {
     const key = [(c.program||'عام').split('—')[0].trim(), c.track||''].filter(Boolean).join(' — ');
     if (!groups[key]) groups[key] = { prog: c.program||'', track: c.track||'', clients: [] };
     groups[key].clients.push(c);
+  });
+
+  // ترتيب العملاء داخل كل مجموعة — الأقرب لموعد البدء أولاً، ثم الأقدم
+  Object.values(groups).forEach(g => {
+    g.clients.sort((a, b) => {
+      const hasSDA = !!a.startDate, hasSDB = !!b.startDate;
+      if (hasSDA && hasSDB) return new Date(a.startDate) - new Date(b.startDate);
+      if (hasSDA) return -1;
+      if (hasSDB) return 1;
+      return 0;
+    });
   });
 
   const groupsEl = document.getElementById('al-pending-groups');
@@ -2297,6 +2355,12 @@ function onProgramChange() {
   langWrap.style.display  = ['تحليل السلوك التطبيقي','إدارة السلوك التنظيمي'].includes(p) ? 'block' : 'none';
   if (!['تحليل السلوك التطبيقي','إدارة السلوك التنظيمي'].includes(p)) document.getElementById('fptype').value = '';
 }
+function onProgramTypeChange() {
+  const ptype = document.getElementById('fptype').value;
+  const wrap  = document.getElementById('fstartdate-wrap');
+  if (wrap) wrap.style.display = ptype === 'مباشر' ? 'block' : 'none';
+  if (ptype !== 'مباشر') { const el = document.getElementById('fstartdate'); if(el) el.value = ''; }
+}
 function onSourceChange() {
   const src = document.getElementById('fs').value;
   const hint = document.getElementById('assign-hint');
@@ -2315,6 +2379,7 @@ async function addClient() {
   const batchNo = document.getElementById('fbatch').value.trim();
   const continuousText = document.getElementById('fcontinuous')?.value.trim() || '';
   const expiry  = document.getElementById('fexpiry').value || '';
+  const startDate = document.getElementById('fstartdate')?.value || '';
 
   if (!name||!email||!phone||!clientType||!program||!source) { toast('يرجى تعبئة جميع الحقول الإلزامية', false); return; }
   const ptReq = ['تحليل السلوك التطبيقي','إدارة السلوك التنظيمي'].includes(program);
@@ -2328,7 +2393,7 @@ async function addClient() {
   const ref = genRef();
   const client = {
     ref, name, email, phone, program, source, expiry, clientType,
-    track, programType, lang, continuousText, batchNo, notes: '',
+    track, programType, lang, continuousText, batchNo, startDate, notes: '',
     trialStatus: '',
     addedBy: session.username || 'المبيعات',
     academyAdded: false, academyAssigned: false,
@@ -2346,8 +2411,9 @@ async function addClient() {
   btn.innerHTML = '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg> تسجيل وإرسال للتشغيل';
 }
 function clearForm() {
-  ['fn','fe','fphone','fbatch','fcontinuous'].forEach(id => { const el = document.getElementById(id); if(el) el.value=''; });
+  ['fn','fe','fphone','fbatch','fcontinuous','fstartdate'].forEach(id => { const el = document.getElementById(id); if(el) el.value=''; });
   ['fp','fs','fexpiry','fptype','ftrack','fclienttype','flang'].forEach(id => { const el = document.getElementById(id); if(el) el.value=''; });
+  const sdWrap = document.getElementById('fstartdate-wrap'); if(sdWrap) sdWrap.style.display='none';
   ['assign-hint'].forEach(id => { const el = document.getElementById(id); if(el) el.className='form-hint'; });
   ['fexpiry-wrap','ftrack-wrap','fcontinuous-wrap','flang-wrap'].forEach(id => { const el = document.getElementById(id); if(el) el.style.display='none'; });
   const ptWrap = document.getElementById('fptype-wrap'); if(ptWrap) ptWrap.style.display='none';
@@ -2532,6 +2598,14 @@ function renderDetail(ref) {
     <div class="dp-field"><label>أضافه</label><span style="color:var(--blue);font-weight:600">${c.addedBy||'—'}</span></div>
     <div class="dp-field"><label>انتهاء الاشتراك</label><span>${expiryText}</span></div>
     <div class="dp-field"><label>إسناد يدوي</label><span>${needsAssign(c.source)?'<span style="color:var(--red)">نعم</span>':'<span style="color:var(--green)">لا — تلقائي</span>'}</span></div>
+    ${c.startDate ? (() => {
+      const sd = new Date(c.startDate);
+      const now = new Date(); now.setHours(0,0,0,0);
+      const diff = Math.ceil((sd - now) / 86400000);
+      const color = diff < 0 ? 'var(--red)' : diff <= 3 ? 'var(--amber)' : 'var(--blue)';
+      const label = diff < 0 ? `فات الموعد منذ ${Math.abs(diff)} يوم` : diff === 0 ? 'اليوم!' : `خلال ${diff} يوم`;
+      return `<div class="dp-field"><label>موعد بدء البرنامج</label><span style="color:${color};font-weight:700">${c.startDate} <span style="font-size:11px">(${label})</span></span></div>`;
+    })() : ''}
     ${c.notes ? `<div class="dp-field" style="grid-column:1/-1"><label>ملاحظات المبيعات</label><span>${c.notes}</span></div>` : ''}
     <div class="dp-field" style="grid-column:1/-1">
       <label>ملاحظات التشغيل</label>
