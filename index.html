@@ -1842,6 +1842,8 @@ function getFilteredClients() {
 function renderFiltered() {
   if (currentView === 'sales') render();
   else if (currentView === 'academy') render();
+  else if (currentView === 'completed') renderCompleted();
+  else if (currentView === 'finance') renderFinance();
 }
 
 // ════════════════════════════════
@@ -2109,19 +2111,7 @@ function renderAcademy() {
 }
 
 function renderCompleted() {
-  const q      = (document.getElementById('search-input')?.value || '').toLowerCase();
-  const prog   = document.getElementById('filter-prog')?.dataset?.active || '';
-  const track  = document.getElementById('filter-track')?.dataset?.active || '';
-
-  let done = clients.filter(c => c.academyAssigned);
-
-  // فلتر بحث
-  if (q) done = done.filter(c =>
-    (c.name||'').toLowerCase().includes(q) ||
-    (c.ref||'').toLowerCase().includes(q) ||
-    (c.email||'').toLowerCase().includes(q) ||
-    (c.phone||'').includes(q)
-  );
+  let done = getFilteredClients().filter(c => c.academyAssigned);
 
   // فرز حسب تاريخ الإكمال — الأحدث أولاً
   done.sort((a,b) => (new Date(b.activatedAt||b.createdAt||0)) - (new Date(a.activatedAt||a.createdAt||0)));
