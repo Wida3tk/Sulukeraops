@@ -1346,6 +1346,7 @@ input, select, textarea { font-family: var(--font); }
       <div class="fg"><label>رقم الجوال *</label><input id="edit-phone" dir="ltr"></div>
       <div class="fg"><label>رقم الدفعة</label><input id="edit-batch"></div>
       <div class="fg"><label>تاريخ انتهاء الاشتراك</label><input id="edit-expiry" type="date"></div>
+      <div class="fg"><label>موعد بدء البرنامج <span style="color:var(--text-3);font-weight:400">(للمباشر)</span></label><input id="edit-startdate" type="date"></div>
       <div class="fg full"><label>ملاحظات</label><textarea id="edit-notes" rows="2" style="resize:none"></textarea></div>
     </div>
     <div class="modal-btns">
@@ -1968,7 +1969,7 @@ function cardHTML(c, showTrialActions=false) {
     let startBadge = '';
     let isUrgent = false;
     if (c.startDate && !c.academyAssigned) {
-      const sd = new Date(c.startDate);
+      const sd = new Date(c.startDate + 'T00:00:00');
       const now = new Date();
       now.setHours(0,0,0,0);
       const diffDays = Math.ceil((sd - now) / 86400000);
@@ -2599,7 +2600,7 @@ function renderDetail(ref) {
     <div class="dp-field"><label>انتهاء الاشتراك</label><span>${expiryText}</span></div>
     <div class="dp-field"><label>إسناد يدوي</label><span>${needsAssign(c.source)?'<span style="color:var(--red)">نعم</span>':'<span style="color:var(--green)">لا — تلقائي</span>'}</span></div>
     ${c.startDate ? (() => {
-      const sd = new Date(c.startDate);
+      const sd = new Date(c.startDate + 'T00:00:00');
       const now = new Date(); now.setHours(0,0,0,0);
       const diff = Math.ceil((sd - now) / 86400000);
       const color = diff < 0 ? 'var(--red)' : diff <= 3 ? 'var(--amber)' : 'var(--blue)';
@@ -2730,6 +2731,7 @@ function openEditModal() {
   document.getElementById('edit-phone').value  = c.phone  || '';
   document.getElementById('edit-batch').value  = c.batchNo|| '';
   document.getElementById('edit-expiry').value = c.expiry || '';
+  document.getElementById('edit-startdate').value = c.startDate || '';
   document.getElementById('edit-notes').value  = c.notes  || '';
   document.getElementById('edit-modal').classList.add('show');
 }
@@ -2742,6 +2744,7 @@ async function saveEdit() {
   const phone  = document.getElementById('edit-phone').value.trim();
   const batchNo= document.getElementById('edit-batch').value.trim();
   const expiry = document.getElementById('edit-expiry').value;
+  const startDate = document.getElementById('edit-startdate').value;
   const notes  = document.getElementById('edit-notes').value.trim();
   if (!name||!email||!phone) { toast('يرجى تعبئة الحقول الإلزامية', false); return; }
   if (!/^[\d\s\+\-\(\)]{7,15}$/.test(phone)) { toast('رقم الجوال غير صحيح', false); return; }
@@ -2749,7 +2752,8 @@ async function saveEdit() {
   const changes = [];
   if (c.name!==name) changes.push(`الاسم: ${c.name}→${name}`);
   if (c.email!==email) changes.push(`الإيميل: ${c.email}→${email}`);
-  c.name=name; c.email=email; c.phone=phone; c.batchNo=batchNo; c.expiry=expiry; c.notes=notes;
+  if (c.startDate!==startDate && startDate) changes.push(`موعد البدء: ${startDate}`);
+  c.name=name; c.email=email; c.phone=phone; c.batchNo=batchNo; c.expiry=expiry; c.startDate=startDate; c.notes=notes;
   if (!c.log) c.log=[];
   if (changes.length) c.log.push({ who:session.username||'مجهول', action:'تعديل: '+changes.join(' | '), time:new Date().toLocaleString('ar-SA') });
   await persistClient(c);
