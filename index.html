@@ -2444,7 +2444,8 @@ async function markAssigned(ref) {
   if (!c || !c.academyAdded || c.academyAssigned) return;
   const now = new Date().toLocaleString('ar-SA');
   const session = JSON.parse(sessionStorage.getItem('ops_session') || '{}');
-  c.academyAssigned = true; c.activatedAt = now;
+  c.academyAssigned = true; c.activatedAt = new Date().toISOString();
+  c.log = c.log || [];
   c.log.push({ who: session.username||'التشغيل', action:'تم إسناد المقررات — مكتمل', time:now });
   await persistClient(c);
   toast('تم الإسناد — العميل مكتمل ✓');
@@ -2456,7 +2457,8 @@ async function markComplete(ref) {
   if (!c || !c.academyAdded || c.academyAssigned) return;
   const now = new Date().toLocaleString('ar-SA');
   const session = JSON.parse(sessionStorage.getItem('ops_session') || '{}');
-  c.academyAssigned = true; c.activatedAt = now;
+  c.academyAssigned = true; c.activatedAt = new Date().toISOString();
+  c.log = c.log || [];
   c.log.push({ who: session.username||'التشغيل', action:'اكتمل التفعيل (عصارة)', time:now });
   await persistClient(c);
   toast('اكتمل التفعيل ✓');
@@ -2532,7 +2534,7 @@ function renderDetail(ref) {
     <div class="dp-field"><label>المسار</label><span>${c.track||'—'}</span></div>
     <div class="dp-field"><label>نوع البرنامج</label><span>${c.programType||'—'}</span></div>
     <div class="dp-field"><label>اللغة</label><span>${c.lang||'—'}</span></div>
-    <div class="dp-field"><label>نوع العميل</label><span>${c.clientType||'—'}</span></div>
+    <div class="dp-field"><label>نوع العميل</label><span>${c.clientType==='مسجل'?'مشترك':c.clientType||'—'}</span></div>
     <div class="dp-field"><label>رقم الجوال</label><span dir="ltr">${c.phone||'—'}</span></div>
     <div class="dp-field"><label>رقم الدفعة</label><span>${c.batchNo||'—'}</span></div>
     <div class="dp-field"><label>المصدر</label><span>${srcPill(c.source||'')}</span></div>
