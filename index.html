@@ -879,7 +879,8 @@ input, select, textarea { font-family: var(--font); }
     </nav>
 
     <div class="topbar-end">
-      <button class="sync-btn" id="sync-btn" onclick="syncData()">
+      <span id="last-sync-time" style="font-size:10px;color:rgba(255,255,255,0.45);white-space:nowrap"></span>
+          <button class="sync-btn" id="sync-btn" onclick="syncData()">
         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
         مزامنة
       </button>
@@ -1232,6 +1233,14 @@ input, select, textarea { font-family: var(--font); }
         </div>
         <div id="src-list" class="clients-list" style="margin-bottom:1.5rem"></div>
 
+        <div class="sec-head" style="margin-top:1.5rem">
+          <span class="sec-title">🗺 خريطة الإسناد</span>
+          <span style="font-size:11px;color:var(--text-3)">تحكم في الخطوات المطلوبة لكل حالة</span>
+        </div>
+        <div class="settings-panel" style="padding:0;overflow:hidden">
+          <div id="assignment-rules-table" style="overflow-x:auto"></div>
+        </div>
+
         <div class="sec-head"><span class="sec-title">إدارة الليبلات</span></div>
         <div class="settings-panel">
           <div class="fg2" style="margin-bottom:.75rem">
@@ -1349,6 +1358,7 @@ input, select, textarea { font-family: var(--font); }
             ليبلات التشغيل
           </div>
           <div class="labels-picker" id="d-labels-picker"></div>
+          <div id="d-program2-wrap" style="margin-top:8px"></div>
         </div>
       </div>
 
@@ -1371,6 +1381,32 @@ input, select, textarea { font-family: var(--font); }
         </div>
       </div>
 
+    </div>
+  </div>
+</div>
+
+<!-- ══ مودال البرنامج الثاني ══ -->
+<div id="p2-modal">
+  <div class="modal-box">
+    <div class="modal-title">إضافة برنامج ثاني</div>
+    <div class="modal-sub" id="p2-modal-sub">—</div>
+    <div class="fg2">
+      <div class="fg full"><label>البرنامج *</label>
+        <select id="p2-program" onchange="onP2ProgramChange()"><option value="">اختر البرنامج...</option></select>
+      </div>
+      <div class="fg" id="p2-track-wrap" style="display:none"><label>المسار</label>
+        <select id="p2-track"><option value="">—</option></select>
+      </div>
+      <div class="fg" id="p2-ptype-wrap" style="display:none"><label>نوع البرنامج</label>
+        <select id="p2-ptype"><option value="">اختر...</option><option value="مباشر">مباشر (Live)</option><option value="مسجل">مسجل (Recorded)</option></select>
+      </div>
+      <div class="fg full"><label>مصدر الدفع *</label>
+        <select id="p2-source"><option value="">اختر المصدر...</option></select>
+      </div>
+    </div>
+    <div class="modal-btns">
+      <button class="btn" onclick="closeProgram2Modal()">إلغاء</button>
+      <button class="btn btn-primary" onclick="saveProgram2()">✅ إضافة البرنامج</button>
     </div>
   </div>
 </div>
@@ -1603,11 +1639,88 @@ const ini = n => {
   const p = n.trim().split(' ');
   return p.length >= 2 ? p[0][0] + p[p.length-1][0] : n.slice(0,2);
 };
-const needsAssign = src => {
+// ════════════════════════════════
+// خريطة الإسناد الذكية
+// ════════════════════════════════
+// كل قاعدة: { prog, track, ptype, source, steps }
+// steps: 'auto' | 'basecamp' | 'assign' | 'assign+basecamp'
+// source: 'عصارة' | '*' (أي مصدر) | '!عصارة' (أي مصدر غير عصارة)
+let assignmentRules = null;
+
+function getDefaultRules() {
+  return [
+    // تحليل السلوك — ABAT
+    { prog:'تحليل', track:'ABAT', ptype:'مسجل',  source:'عصارة',   steps:'auto'   },
+    { prog:'تحليل', track:'ABAT', ptype:'مسجل',  source:'!عصارة',  steps:'assign' },
+    { prog:'تحليل', track:'ABAT', ptype:'مباشر', source:'*',       steps:'assign' },
+    // تحليل السلوك — QBA & QASP-S
+    { prog:'تحليل', track:'QBA',    ptype:'مسجل', source:'عصارة',  steps:'basecamp' },
+    { prog:'تحليل', track:'QBA',    ptype:'مسجل', source:'!عصارة', steps:'assign'   },
+    { prog:'تحليل', track:'QASP-S', ptype:'مسجل', source:'عصارة',  steps:'basecamp' },
+    { prog:'تحليل', track:'QASP-S', ptype:'مسجل', source:'!عصارة', steps:'assign'   },
+    // تحليل السلوك — CA
+    { prog:'تحليل', track:'CA', ptype:'*', source:'*', steps:'assign' },
+    // إدارة السلوك — عصارة مسجل
+    { prog:'إدارة', track:'*', ptype:'مسجل', source:'عصارة',  steps:'auto'   },
+    { prog:'إدارة', track:'*', ptype:'*',    source:'!عصارة', steps:'assign' },
+    { prog:'إدارة', track:'*', ptype:'مباشر',source:'*',      steps:'assign' },
+    // باقي البرامج — الافتراضي
+    { prog:'*', track:'*', ptype:'*', source:'عصارة',  steps:'auto'   },
+    { prog:'*', track:'*', ptype:'*', source:'!عصارة', steps:'assign' },
+  ];
+}
+
+function loadAssignmentRules() {
+  const saved = localStorage.getItem('ops_assignment_rules');
+  assignmentRules = saved ? JSON.parse(saved) : getDefaultRules();
+}
+
+function saveAssignmentRules() {
+  localStorage.setItem('ops_assignment_rules', JSON.stringify(assignmentRules));
+}
+
+// حساب خطوات العميل بناءً على خريطة الإسناد
+function getClientSteps(c) {
+  if (!assignmentRules) loadAssignmentRules();
+  const prog  = c.program  || '';
+  const track = c.track    || '';
+  const ptype = c.programType || '';
+  const src   = c.source   || '';
+
+  for (const rule of assignmentRules) {
+    const mProg  = rule.prog  === '*' || prog.includes(rule.prog);
+    const mTrack = rule.track === '*' || track === rule.track;
+    const mPtype = rule.ptype === '*' || ptype === rule.ptype;
+    let   mSrc   = false;
+    if      (rule.source === '*')       mSrc = true;
+    else if (rule.source === '!عصارة') mSrc = src !== 'عصارة';
+    else                                mSrc = src === rule.source;
+
+    if (mProg && mTrack && mPtype && mSrc) return rule.steps;
+  }
+  return 'assign'; // افتراضي
+}
+
+// هل يحتاج إسناد؟ (للتوافق مع الكود القديم)
+const needsAssign = (src, c) => {
+  if (c) {
+    const steps = getClientSteps(c);
+    return steps === 'assign' || steps === 'assign+basecamp';
+  }
+  // fallback قديم للتوافق
   if (src === 'عصارة') return false;
   const s = sources.find(x => x.name === src);
   return s ? s.assign : true;
 };
+
+// هل يحتاج Basecamp؟
+const needsBasecamp = c => {
+  const steps = getClientSteps(c);
+  return steps === 'basecamp' || steps === 'assign+basecamp';
+};
+
+// هل مكتمل تلقائياً؟
+const isAutoComplete = c => getClientSteps(c) === 'auto';
 const isTrialClient    = c => c?.clientType === 'تجربة';
 const isUninterested   = c => c?.trialStatus === 'uninterested';
 const isConverted      = c => c?.trialStatus === 'converted';
@@ -1649,6 +1762,7 @@ async function api(params, body=null) {
 }
 
 async function persistClient(c) {
+  c.updatedAt = new Date().toISOString();
   localStorage.setItem('ops_clients', JSON.stringify(clients));
   return await api(null, { action:'updateClient', ...c });
 }
@@ -1670,37 +1784,82 @@ async function syncData() {
       if (s.startsWith('#') || s === 'undefined' || s === 'null') return '';
       return s;
     };
+
+    // مساعد: هل القيمة الشيت أحدث من المحلية؟
+    // نقارن بـ updatedAt إذا موجود، وإلا نفضّل الشيت (المصدر الحقيقي)
+    const sheetIsNewer = (local, sheet) => {
+      if (!local.updatedAt) return true;   // local قديم بدون timestamp → الشيت أحدث
+      if (!sheet.updatedAt) return false;  // الشيت بدون timestamp → نحافظ على local
+      return new Date(sheet.updatedAt) > new Date(local.updatedAt);
+    };
+
     const localClients = JSON.parse(localStorage.getItem('ops_clients') || '[]');
+
     clients = cr.clients
       .filter(sc => sc && cleanVal(sc.ref) && cleanVal(sc.name))
       .map(sc => {
+        // تنظيف القيم من الشيت
         const clean = {};
         Object.keys(sc).forEach(k => { clean[k] = cleanVal(sc[k]); });
+
+        // تحويل Boolean
         clean.academyAdded    = sc.academyAdded    === true || String(sc.academyAdded).toLowerCase()    === 'true';
         clean.academyAssigned = sc.academyAssigned === true || String(sc.academyAssigned).toLowerCase() === 'true';
+
         const local = localClients.find(l => l.ref === clean.ref);
-        if (local) {
+        if (!local) {
+          // عميل جديد من الشيت — لا يوجد locally
           return {
             ...clean,
-            addedBy:      local.addedBy      || clean.addedBy      || '',
-            labels:       local.labels       || [],
-            notes:        local.notes        || clean.notes        || '',
-            opsNotes:     local.opsNotes     || clean.opsNotes     || '',
-            track:        local.track        || clean.track        || '',
-            programType:  local.programType  || clean.programType  || '',
-            clientType:   local.clientType   || clean.clientType   || '',
-            batchNo:      local.batchNo      || clean.batchNo      || '',
-            trialStatus:  local.trialStatus  || clean.trialStatus  || '',
-            startDate:    local.startDate    || clean.startDate    || '',
-            activatedAt:  local.activatedAt  || clean.activatedAt  || '',
-            efficiencyCheck:    local.efficiencyCheck    || clean.efficiencyCheck    || '',
-            acquisitionChannel: local.acquisitionChannel || clean.acquisitionChannel || '',
-            academyAdded:    local.academyAdded    !== undefined ? local.academyAdded    : clean.academyAdded,
-            academyAssigned: local.academyAssigned !== undefined ? local.academyAssigned : clean.academyAssigned,
-            log: local.log || [],
+            labels:      Array.isArray(clean.labels) ? clean.labels : [],
+            log:         [],
+            trialStatus: clean.trialStatus || '',
           };
         }
-        return { ...clean, labels: Array.isArray(clean.labels) ? clean.labels : [], log:[], trialStatus:'' };
+
+        // ══ منطق الدمج الذكي ══
+        // القاعدة: بيانات الشيت هي المصدر الحقيقي للحالات الرئيسية
+        // بيانات local تحتفظ بالبيانات الغنية (labels, log, opsNotes, program2)
+        // للحقول الحساسة (academyAdded, academyAssigned): نأخذ أعلى قيمة (true يفوز)
+        const mergedAcademyAdded    = clean.academyAdded    || local.academyAdded    || false;
+        const mergedAcademyAssigned = clean.academyAssigned || local.academyAssigned || false;
+
+        // للحقول النصية: نفضّل الشيت إذا أحدث، وإلا local
+        const useSheet = sheetIsNewer(local, clean);
+
+        return {
+          // أساس: بيانات الشيت (المصدر الحقيقي)
+          ...clean,
+
+          // الحالات: أعلى قيمة تفوز (true يفوز على false دائماً)
+          academyAdded:    mergedAcademyAdded,
+          academyAssigned: mergedAcademyAssigned,
+
+          // activatedAt: خذ الأقدم غير فارغ (أول مرة تفعيل)
+          activatedAt: clean.activatedAt || local.activatedAt || '',
+
+          // بيانات غنية محلية فقط (غير موجودة في الشيت)
+          labels:      local.labels      || [],
+          log:         local.log         || [],
+          opsNotes:    local.opsNotes    || clean.opsNotes    || '',
+          program2:    local.program2    || null,
+          createdAtISO: local.createdAtISO || clean.createdAtISO || '',
+
+          // البيانات النصية: الشيت أحدث → خذ الشيت، وإلا خذ local إذا موجود
+          notes:       useSheet ? (clean.notes || local.notes || '') : (local.notes || clean.notes || ''),
+          trialStatus: useSheet ? (clean.trialStatus || local.trialStatus || '') : (local.trialStatus || clean.trialStatus || ''),
+          startDate:   clean.startDate  || local.startDate  || '',
+          batchNo:     clean.batchNo    || local.batchNo    || '',
+          expiry:      clean.expiry     || local.expiry     || '',
+
+          // البيانات الثابتة: local تفوز (محفوظة محلياً بدقة)
+          addedBy:            local.addedBy            || clean.addedBy            || '',
+          track:              local.track              || clean.track              || '',
+          programType:        local.programType        || clean.programType        || '',
+          clientType:         local.clientType         || clean.clientType         || '',
+          efficiencyCheck:    local.efficiencyCheck    || clean.efficiencyCheck    || '',
+          acquisitionChannel: local.acquisitionChannel || clean.acquisitionChannel || '',
+        };
       });
   }
   if (pr.programs) programs = pr.programs;
@@ -1726,7 +1885,20 @@ async function syncData() {
 
   btn.classList.remove('loading');
   btn.innerHTML = '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg> مزامنة';
+  const lastSyncEl = document.getElementById('last-sync-time');
+  if (lastSyncEl) lastSyncEl.textContent = 'آخر مزامنة: ' + new Date().toLocaleTimeString('ar-SA', {hour:'2-digit', minute:'2-digit'});
   setTimeout(() => { updateStats(); render(); }, 200);
+}
+
+// مزامنة تلقائية كل 90 ثانية
+let _autoSyncTimer = null;
+function startAutoSync() {
+  if (_autoSyncTimer) clearInterval(_autoSyncTimer);
+  _autoSyncTimer = setInterval(() => {
+    // لا تزامن إذا كان هناك موديل مفتوح
+    const anyModal = document.querySelector('.modal-overlay.show, #dpanel-overlay.show');
+    if (!anyModal) syncData();
+  }, 90000);
 }
 
 // ════════════════════════════════
@@ -1898,10 +2070,16 @@ function getFilteredClients() {
     let matchDate = true;
     if (dateF) {
       const cd = parseClientDate(c);
-      if (!cd) matchDate = false;
-      else if (dateF === 'today') matchDate = cd.toDateString() === now.toDateString();
-      else if (dateF === 'week')  matchDate = (now - cd) <= 7 * 86400000;
-      else if (dateF === 'month') matchDate = cd.getMonth()===now.getMonth() && cd.getFullYear()===now.getFullYear();
+      if (!cd) {
+        // إذا ما قدرنا نحلل التاريخ — نُظهره في "الكل" فقط، نخفيه في الفلاتر الزمنية
+        matchDate = false;
+      } else {
+        const cdD = new Date(cd.getFullYear(), cd.getMonth(), cd.getDate());
+        const nowD = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+        if      (dateF === 'today') matchDate = cdD.getTime() === nowD.getTime();
+        else if (dateF === 'week')  matchDate = (nowD - cdD) <= 7 * 86400000;
+        else if (dateF === 'month') matchDate = cd.getMonth() === now.getMonth() && cd.getFullYear() === now.getFullYear();
+      }
     }
 
     return matchQ && matchProg && matchTrack && matchType && matchSrc && matchStatus && matchLabel && matchAcquisition && matchDate;
@@ -1942,6 +2120,12 @@ function toolLabelsHTML(c) {
     h += '<span class="pill" style="background:#FFF3E0;color:#E65100;font-size:10px">Basecamp</span>';
     h += '<span class="pill" style="background:#E8F5E9;color:#1B5E20;font-size:10px">Database</span>';
   }
+  // ليبل البرنامج الثاني
+  if (c.program2) {
+    const col2 = getProgColor(c.program2.program);
+    const done2 = c.program2.assigned;
+    h += `<span class="pill" style="background:${col2}18;color:${col2};border:1px solid ${col2}44;font-size:10px;font-weight:700">● برنامجان${done2?' ✓':''}</span>`;
+  }
   return h;
 }
 
@@ -1977,21 +2161,35 @@ function cardHTML(c, showTrialActions=false) {
     else if (c.academyAdded) statusPill = '<span class="pill p-amber">تمت الإضافة</span>';
     else statusPill = '<span class="pill p-amber">بانتظار التفعيل</span>';
 
-    const needsAsgn = needsAssign(c.source) && !c.academyAssigned;
+    const steps      = getClientSteps(c);
+    const isAutoC     = steps === 'auto';
+    const needsBC     = steps === 'basecamp' || steps === 'assign+basecamp';
+    const needsAsgn   = (steps === 'assign' || steps === 'assign+basecamp') && !c.academyAssigned;
     const assignBadge = needsAsgn && !isTrial ? '<span class="pill p-red" style="font-size:10px">يحتاج إسناد</span>' : '';
 
     // أزرار التشغيل السريعة (داخل البطاقة في واجهة التشغيل)
     let quickActions = '';
     if (currentView === 'academy' && !isTrial && !c.academyAssigned && can('academy')) {
       quickActions = `<div class="card-actions">`;
-      if (!c.academyAdded) {
-        quickActions += `<button class="btn btn-sm btn-success" onclick="event.stopPropagation();markAdded('${c.ref}')">✓ تمت الإضافة في المنصة</button>`;
-      } else {
-        quickActions += `<span class="pill p-green" style="font-size:11px">✓ تمت الإضافة</span>`;
-        if (needsAssign(c.source)) {
-          quickActions += `<button class="btn btn-sm btn-primary" onclick="event.stopPropagation();markAssigned('${c.ref}')" style="margin-right:auto">✓ تم الإسناد — اكتمل</button>`;
+      if (isAutoC) {
+        // تلقائي — زر اكتمال مباشر
+        quickActions += `<span class="pill" style="font-size:10px;background:#E8F5E9;color:#1B5E20">⚡ تلقائي</span>`;
+        quickActions += `<button class="btn btn-sm btn-success" onclick="event.stopPropagation();markComplete('${c.ref}')" style="margin-right:auto">✓ تأكيد الاكتمال</button>`;
+      } else if (needsBC && !needsAsgn) {
+        // Basecamp فقط
+        if (!c.academyAdded) {
+          quickActions += `<button class="btn btn-sm btn-success" onclick="event.stopPropagation();markAdded('${c.ref}')">✓ تفعيل Basecamp</button>`;
         } else {
-          quickActions += `<button class="btn btn-sm btn-primary" onclick="event.stopPropagation();markComplete('${c.ref}')" style="margin-right:auto">✓ اكتمل التفعيل</button>`;
+          quickActions += `<span class="pill p-green" style="font-size:11px">✓ Basecamp مفعّل</span>`;
+          quickActions += `<button class="btn btn-sm btn-primary" onclick="event.stopPropagation();markComplete('${c.ref}')" style="margin-right:auto">✓ اكتمل</button>`;
+        }
+      } else {
+        // إسناد (مع أو بدون Basecamp)
+        if (!c.academyAdded) {
+          quickActions += `<button class="btn btn-sm btn-success" onclick="event.stopPropagation();markAdded('${c.ref}')">✓ تمت الإضافة في المنصة</button>`;
+        } else {
+          quickActions += `<span class="pill p-green" style="font-size:11px">✓ تمت الإضافة</span>`;
+          quickActions += `<button class="btn btn-sm btn-primary" onclick="event.stopPropagation();markAssigned('${c.ref}')" style="margin-right:auto">✓ تم الإسناد — اكتمل</button>`;
         }
       }
       quickActions += `</div>`;
@@ -2146,11 +2344,22 @@ function render() {
   else if (currentView === 'settings') renderSettings();
 }
 
+// مساعد الفرز: الأحدث أولاً
+function sortByDateDesc(arr) {
+  return [...arr].sort((a, b) => {
+    const da = parseClientDate(a), db = parseClientDate(b);
+    if (da && db) return db - da;
+    if (da) return -1;
+    if (db) return 1;
+    return (b.ref || '').localeCompare(a.ref || '');
+  });
+}
+
 function renderSales() {
   const filtered     = getFilteredClients();
-  const regular      = filtered.filter(c => !isTrialClient(c) && !c.academyAssigned);
-  const trial        = filtered.filter(c => isTrialClient(c) && c.trialStatus !== 'uninterested');
-  const uninterested = filtered.filter(c => c.trialStatus === 'uninterested');
+  const regular      = sortByDateDesc(filtered.filter(c => !isTrialClient(c) && !c.academyAssigned));
+  const trial        = sortByDateDesc(filtered.filter(c => isTrialClient(c) && c.trialStatus !== 'uninterested'));
+  const uninterested = sortByDateDesc(filtered.filter(c => c.trialStatus === 'uninterested'));
 
   document.getElementById('sales-regular-count').textContent = regular.length;
   document.getElementById('sales-trial-count').textContent   = trial.length;
@@ -2222,17 +2431,21 @@ function renderCompleted() {
   let done = getFilteredClients().filter(c => c.academyAssigned);
 
   // فرز حسب تاريخ الإكمال — الأحدث أولاً
-  done.sort((a,b) => (new Date(b.activatedAt||b.createdAt||0)) - (new Date(a.activatedAt||a.createdAt||0)));
+  const getActivatedDate = c => {
+    if (c.activatedAt) { const d = new Date(c.activatedAt); if (!isNaN(d)) return d; }
+    return parseClientDate(c) || new Date(0);
+  };
+  done.sort((a, b) => getActivatedDate(b) - getActivatedDate(a));
 
   // إحصائيات
   const todayStr = new Date().toDateString();
   const monthNow = new Date();
   const todayCount = done.filter(c => {
-    try { return new Date(c.activatedAt||c.createdAt).toDateString() === todayStr; } catch { return false; }
+    try { return getActivatedDate(c).toDateString() === todayStr; } catch { return false; }
   }).length;
   const monthCount = done.filter(c => {
     try {
-      const d = new Date(c.activatedAt||c.createdAt);
+      const d = getActivatedDate(c);
       return d.getMonth() === monthNow.getMonth() && d.getFullYear() === monthNow.getFullYear();
     } catch { return false; }
   }).length;
@@ -2332,6 +2545,86 @@ function renderSettings() {
   </div>`).join('') || '<div class="empty-state">لا توجد ليبلات</div>';
 
   renderUsersList();
+  renderAssignmentRulesTable();
+}
+
+function renderAssignmentRulesTable() {
+  const el = document.getElementById('assignment-rules-table');
+  if (!el) return;
+  if (!assignmentRules) loadAssignmentRules();
+
+  const STEPS_LABELS = {
+    'auto':           '⚡ تلقائي',
+    'basecamp':       '📋 Basecamp فقط',
+    'assign':         '📌 إسناد مقررات',
+    'assign+basecamp':'📌📋 إسناد + Basecamp',
+  };
+  const STEPS_COLORS = {
+    'auto':           'var(--green)',
+    'basecamp':       '#E65100',
+    'assign':         'var(--blue)',
+    'assign+basecamp':'var(--red)',
+  };
+
+  el.innerHTML = `
+  <table style="width:100%;border-collapse:collapse;font-size:12px">
+    <thead>
+      <tr style="border-bottom:2px solid var(--border)">
+        <th style="text-align:right;padding:8px 10px;color:var(--text-3);font-size:10px;font-weight:700">البرنامج</th>
+        <th style="text-align:right;padding:8px 10px;color:var(--text-3);font-size:10px;font-weight:700">المسار</th>
+        <th style="text-align:right;padding:8px 10px;color:var(--text-3);font-size:10px;font-weight:700">النوع</th>
+        <th style="text-align:right;padding:8px 10px;color:var(--text-3);font-size:10px;font-weight:700">المصدر</th>
+        <th style="text-align:center;padding:8px 10px;color:var(--text-3);font-size:10px;font-weight:700">الخطوات المطلوبة</th>
+        <th style="padding:8px 10px;width:60px"></th>
+      </tr>
+    </thead>
+    <tbody>
+      ${assignmentRules.map((r,i) => `
+      <tr style="border-bottom:1px solid var(--border-lt)">
+        <td style="padding:8px 10px;font-weight:600">${r.prog==='*'?'الكل':r.prog==='تحليل'?'تحليل السلوك':r.prog==='إدارة'?'إدارة السلوك':r.prog}</td>
+        <td style="padding:8px 10px">${r.track==='*'?'<span style="color:var(--text-3)">الكل</span>':r.track}</td>
+        <td style="padding:8px 10px">${r.ptype==='*'?'<span style="color:var(--text-3)">الكل</span>':r.ptype}</td>
+        <td style="padding:8px 10px">${r.source==='*'?'<span style="color:var(--text-3)">الكل</span>':r.source==='!عصارة'?'غير عصارة':r.source}</td>
+        <td style="padding:8px 10px;text-align:center">
+          <select onchange="updateRuleStep(${i}, this.value)" style="font-size:11px;padding:4px 8px;border-radius:6px;border:1.5px solid var(--border);background:var(--bg);color:${STEPS_COLORS[r.steps]};font-weight:600">
+            ${Object.entries(STEPS_LABELS).map(([k,v])=>`<option value="${k}" ${r.steps===k?'selected':''}>${v}</option>`).join('')}
+          </select>
+        </td>
+        <td style="padding:8px 10px;text-align:center">
+          ${i >= getDefaultRules().length-2 ? '' : `<button class="btn btn-sm" style="color:var(--red);border-color:#fca5a5;padding:3px 7px" onclick="resetRule(${i})" title="إعادة للافتراضي">↺</button>`}
+        </td>
+      </tr>`).join('')}
+    </tbody>
+  </table>
+  <div style="margin-top:10px;display:flex;gap:8px">
+    <button class="btn btn-sm" onclick="resetAllRules()">↺ إعادة الكل للافتراضي</button>
+  </div>`;
+}
+
+function updateRuleStep(idx, steps) {
+  if (!assignmentRules) loadAssignmentRules();
+  assignmentRules[idx].steps = steps;
+  saveAssignmentRules();
+  toast('تم حفظ خريطة الإسناد ✓');
+}
+
+function resetRule(idx) {
+  const defaults = getDefaultRules();
+  if (!assignmentRules) loadAssignmentRules();
+  if (defaults[idx]) {
+    assignmentRules[idx] = { ...defaults[idx] };
+    saveAssignmentRules();
+    renderAssignmentRulesTable();
+    toast('تم إعادة القاعدة للافتراضي ✓');
+  }
+}
+
+function resetAllRules() {
+  if (!confirm('إعادة جميع قواعد الإسناد للإعدادات الافتراضية؟')) return;
+  assignmentRules = getDefaultRules();
+  saveAssignmentRules();
+  renderAssignmentRulesTable();
+  toast('تم الإعادة للافتراضي ✓');
 }
 
 function toggleOpsGroup(header) {
@@ -2481,8 +2774,17 @@ async function addClient() {
     addedBy: session.username || 'المبيعات',
     academyAdded: false, academyAssigned: false,
     createdAt: new Date().toLocaleString('ar-SA', {timeZone:'Asia/Riyadh'}),
+    createdAtISO: new Date().toISOString(),
     log: [{ who: session.username||'المبيعات', action:`تسجيل العميل — ${source}`, time: new Date().toLocaleString('ar-SA') }]
   };
+
+  // تحقق من الإكمال التلقائي
+  if (isAutoComplete(client)) {
+    client.academyAdded    = true;
+    client.academyAssigned = true;
+    client.activatedAt     = new Date().toISOString();
+    client.log.push({ who: session.username||'النظام', action:'اكتمل تلقائياً (عصارة — بدون إسناد)', time: new Date().toLocaleString('ar-SA') });
+  }
 
   const res = await api(null, { action:'addClient', ...client });
   clients.unshift(client);
@@ -2606,6 +2908,97 @@ async function markComplete(ref) {
   updateStats(); render();
   if (selId === ref) renderDetail(ref);
 }
+// ════════════════════════════════
+// البرنامج الثاني
+// ════════════════════════════════
+let _prog2TargetRef = null;
+
+function openProgram2Modal(ref) {
+  _prog2TargetRef = ref;
+  const c = clients.find(x => x.ref === ref);
+  if (!c) return;
+  document.getElementById('p2-modal-sub').textContent = c.name + ' · ' + (c.ref||'');
+  // ملء قوائم البرامج والمصادر
+  const fixed = ['تحليل السلوك التطبيقي','إدارة السلوك التنظيمي','الاقتصاد السلوكي','برامج التعليم المستمر'];
+  document.getElementById('p2-program').innerHTML =
+    '<option value="">اختر البرنامج...</option>' +
+    fixed.map(p=>`<option value="${p}">${p}</option>`).join('');
+  document.getElementById('p2-source').innerHTML =
+    '<option value="">اختر المصدر...</option>' +
+    sources.map(s=>`<option value="${s.name}">${s.name}</option>`).join('');
+  document.getElementById('p2-track').innerHTML = '<option value="">—</option>';
+  document.getElementById('p2-track-wrap').style.display = 'none';
+  document.getElementById('p2-ptype-wrap').style.display = 'none';
+  document.getElementById('p2-modal').classList.add('show');
+}
+
+function onP2ProgramChange() {
+  const p = document.getElementById('p2-program').value;
+  const tracks = PROGRAM_TRACKS[p] || [];
+  const tw = document.getElementById('p2-track-wrap');
+  const ptw = document.getElementById('p2-ptype-wrap');
+  document.getElementById('p2-track').innerHTML =
+    '<option value="">اختر...</option>' + tracks.map(t=>`<option value="${t}">${t}</option>`).join('');
+  tw.style.display  = tracks.length ? 'block' : 'none';
+  ptw.style.display = ['تحليل السلوك التطبيقي','إدارة السلوك التنظيمي'].includes(p) ? 'block' : 'none';
+}
+
+function closeProgram2Modal() {
+  document.getElementById('p2-modal').classList.remove('show');
+  _prog2TargetRef = null;
+}
+
+async function saveProgram2() {
+  const c = clients.find(x => x.ref === _prog2TargetRef);
+  if (!c) return;
+  const program = document.getElementById('p2-program').value;
+  const track   = document.getElementById('p2-track').value;
+  const ptype   = document.getElementById('p2-ptype').value;
+  const source  = document.getElementById('p2-source').value;
+  if (!program || !source) { toast('يرجى اختيار البرنامج والمصدر', false); return; }
+
+  const session = JSON.parse(sessionStorage.getItem('ops_session') || '{}');
+  const p2Steps = getClientSteps({...c, program, track, programType:ptype, source});
+  c.program2 = { program, track, ptype, source, steps:p2Steps, assigned: p2Steps==='auto', addedAt:new Date().toISOString() };
+  if (p2Steps === 'auto') {
+    c.program2.assignedAt = new Date().toISOString();
+  }
+  c.log = c.log || [];
+  c.log.push({ who:session.username||'المبيعات', action:`إضافة برنامج ثاني: ${program}${track?' — '+track:''}`, time:new Date().toLocaleString('ar-SA') });
+  await persistClient(c);
+  toast('تم إضافة البرنامج الثاني ✓');
+  closeProgram2Modal();
+  renderDetail(_prog2TargetRef);
+  render();
+}
+
+async function markProgram2Complete(ref) {
+  const c = clients.find(x => x.ref === ref);
+  if (!c?.program2 || c.program2.assigned) return;
+  const session = JSON.parse(sessionStorage.getItem('ops_session') || '{}');
+  c.program2.assigned   = true;
+  c.program2.assignedAt = new Date().toISOString();
+  c.log = c.log || [];
+  c.log.push({ who:session.username||'التشغيل', action:`اكتمل البرنامج الثاني: ${c.program2.program}`, time:new Date().toLocaleString('ar-SA') });
+  await persistClient(c);
+  toast('اكتمل البرنامج الثاني ✓');
+  updateStats(); render();
+  if (selId === ref) renderDetail(ref);
+}
+
+async function removeProgram2(ref) {
+  const c = clients.find(x => x.ref === ref);
+  if (!c?.program2) return;
+  if (!confirm(`حذف البرنامج الثاني "${c.program2.program}"؟`)) return;
+  const session = JSON.parse(sessionStorage.getItem('ops_session') || '{}');
+  c.log = c.log || [];
+  c.log.push({ who:session.username||'مجهول', action:`حذف البرنامج الثاني: ${c.program2.program}`, time:new Date().toLocaleString('ar-SA') });
+  delete c.program2;
+  await persistClient(c);
+  toast('تم حذف البرنامج الثاني');
+  renderDetail(ref); render();
+}
+
 async function deleteClient() {
   if (!can('settings')) { toast('ليس لديك صلاحية', false); return; }
   const c = clients.find(x => x.ref === selId);
@@ -2723,7 +3116,32 @@ function renderDetail(ref) {
     ${addBtn}
   </div>`;
 
-  if (needsAssign(c.source)) {
+  const cSteps = getClientSteps(c);
+
+  if (cSteps === 'auto') {
+    // تلقائي — مرحلة واحدة فقط
+    stagesHTML += `<div class="stage-row ${asnDone?'s-done':'s-active'}">
+      <div class="stage-icon si-ops">⚡</div>
+      <div class="stage-body"><div class="stage-title">تفعيل تلقائي</div><div class="stage-sub">${asnDone?'مكتمل':'لا يحتاج إجراء يدوي — عصارة'}</div></div>
+      ${!asnDone && canAct ? `<button class="btn btn-sm btn-success" onclick="markComplete('${c.ref}')">تأكيد ✓</button>` : `<div class="stage-ck ${asnDone?'ck-yes':'ck-no'}">${asnDone?'✓':'–'}</div>`}
+    </div>`;
+  } else if (cSteps === 'basecamp') {
+    // Basecamp فقط
+    const bcCls = asnDone ? 's-done' : addDone ? 's-half' : canAct ? 's-active' : '';
+    stagesHTML += `<div class="stage-row ${bcCls}">
+      <div class="stage-icon si-ops">B</div>
+      <div class="stage-body"><div class="stage-title">تفعيل Basecamp</div><div class="stage-sub">${addDone?'تم تفعيل الحساب':'إضافة العميل في Basecamp'}</div></div>
+      ${canAct && !addDone ? `<button class="btn btn-sm btn-success" onclick="markAdded('${c.ref}')">تم Basecamp ✓</button>` : `<div class="stage-ck ${addDone?'ck-yes':'ck-no'}">${addDone?'✓':'–'}</div>`}
+    </div>`;
+    if (addDone && !asnDone) {
+      stagesHTML += `<div class="stage-row s-active">
+        <div class="stage-icon si-ops">✓</div>
+        <div class="stage-body"><div class="stage-title">اكتمال التفعيل</div><div class="stage-sub">تأكيد إتمام العملية</div></div>
+        ${canAct ? `<button class="btn btn-sm btn-primary" onclick="markComplete('${c.ref}')">اكتمل ✓</button>` : '<div class="stage-ck ck-no">–</div>'}
+      </div>`;
+    }
+  } else {
+    // إسناد (مع أو بدون Basecamp)
     const asnCls = asnDone ? 's-done' : addDone && canAct ? 's-active' : 's-locked';
     const asnBtn = canAct && addDone && !asnDone
       ? `<button class="btn btn-sm btn-primary" onclick="markAssigned('${c.ref}')">تم الإسناد ✓</button>`
@@ -2733,11 +3151,23 @@ function renderDetail(ref) {
       <div class="stage-body"><div class="stage-title">التشغيل — إسناد المقررات</div><div class="stage-sub">${asnDone?'تم':'إسناد المقررات في المنصة'}</div></div>
       ${asnBtn}
     </div>`;
-  } else if (addDone && !asnDone && canAct) {
-    stagesHTML += `<div class="stage-row s-active">
-      <div class="stage-icon si-ops">أ</div>
-      <div class="stage-body"><div class="stage-title">التشغيل — إكمال التفعيل</div><div class="stage-sub">عصارة — لا يحتاج إسناد</div></div>
-      <button class="btn btn-sm btn-primary" onclick="markComplete('${c.ref}')">اكتمل ✓</button>
+  }
+
+  // البرنامج الثاني
+  if (c.program2) {
+    const p2Done  = c.program2.assigned;
+    const p2Color = getProgColor(c.program2.program);
+    const p2Steps = getClientSteps({...c, program:c.program2.program, track:c.program2.track, programType:c.program2.ptype, source:c.program2.source});
+    stagesHTML += `<div style="margin-top:12px;padding:10px 12px;border-radius:8px;border:1.5px solid ${p2Color}33;background:${p2Color}08">
+      <div style="font-size:10px;font-weight:700;color:${p2Color};letter-spacing:.05em;margin-bottom:8px">البرنامج الثاني — ${(c.program2.program||'').split('—')[0].trim()} ${c.program2.track?'· '+c.program2.track:''}</div>
+      <div style="display:flex;align-items:center;gap:8px">
+        ${p2Done
+          ? `<span class="pill p-green" style="font-size:11px">✓ مكتمل</span>`
+          : `${canAct ? `<button class="btn btn-sm btn-primary" onclick="markProgram2Complete('${c.ref}')">✓ اكتمل</button>` : ''}
+             <span class="pill p-amber" style="font-size:11px">بانتظار التفعيل</span>
+             <span style="font-size:10px;color:var(--text-3);margin-right:auto">${p2Steps==='auto'?'تلقائي':p2Steps==='basecamp'?'Basecamp':'إسناد'}</span>`
+        }
+      </div>
     </div>`;
   }
 
@@ -2891,19 +3321,69 @@ function openEmail() {
 // التقارير
 // ════════════════════════════════
 function parseClientDate(c) {
-  if (!c.createdAt) return null;
-  const raw = normalizeDigits(c.createdAt).trim();
-  const direct = new Date(raw);
-  if (!isNaN(direct)) return direct;
-  const parts = raw.split(/[،,]/).map(x=>x.trim()).filter(Boolean);
-  const m = (parts[0]||'').match(/^(\d{1,4})[\/\-](\d{1,2})[\/\-](\d{1,4})$/);
-  if (!m) return null;
-  let [,a,b,c3] = m.map(Number);
-  let year,month,day;
-  if (a>31){year=a;month=b;day=c3;} else if(c3>31){day=a;month=b;year=c3;} else return null;
-  const t = (parts[1]||'').match(/(\d{1,2}):(\d{1,2})(?::(\d{1,2}))?/);
-  const d = new Date(year,month-1,day,t?+t[1]:0,t?+t[2]:0,t&&t[3]?+t[3]:0);
-  return isNaN(d)?null:d;
+  if (!c) return null;
+
+  // ١. أولوية: ISO timestamp مخزن في createdAtISO
+  if (c.createdAtISO) {
+    const d = new Date(c.createdAtISO);
+    if (!isNaN(d)) return d;
+  }
+
+  // ٢. createdAt — نحاول نحلله
+  const raw = c.createdAt;
+  if (!raw) return null;
+
+  // تحويل الأرقام العربية/الفارسية
+  const norm = String(raw)
+    .replace(/[٠-٩]/g, d => '٠١٢٣٤٥٦٧٨٩'.indexOf(d))
+    .replace(/[۰-۹]/g, d => '۰۱۲۳۴۵۶۷۸۹'.indexOf(d))
+    .trim();
+
+  // ٣. محاولة مباشرة (ISO or standard)
+  const direct = new Date(norm);
+  if (!isNaN(direct) && direct.getFullYear() > 1970) return direct;
+
+  // ٤. صيغة "dd/mm/yyyy, hh:mm" أو "d/m/yyyy، h:mm"
+  // نفصل التاريخ عن الوقت بفاصلة أو ،
+  const parts = norm.split(/[،,]/).map(x => x.trim()).filter(Boolean);
+  const datePart = parts[0] || '';
+  const timePart = parts[1] || '';
+
+  // نجرب كل الصيغ الممكنة
+  const patterns = [
+    // d/m/yyyy أو dd/mm/yyyy
+    /^(\d{1,2})[\/\-\.](\d{1,2})[\/\-\.](\d{4})$/,
+    // yyyy/m/d
+    /^(\d{4})[\/\-\.](\d{1,2})[\/\-\.](\d{1,2})$/,
+  ];
+
+  for (const pat of patterns) {
+    const m = datePart.match(pat);
+    if (!m) continue;
+    let [, a, b, c3] = m.map(Number);
+    let year, month, day;
+    if (a > 31)        { year = a;  month = b; day = c3; }  // yyyy/m/d
+    else if (c3 > 31)  { day  = a;  month = b; year = c3; } // d/m/yyyy
+    else continue;
+
+    // تحقق من صحة القيم
+    if (month < 1 || month > 12 || day < 1 || day > 31) continue;
+
+    // تحويل السنة الهجرية تقريبياً إذا كانت أقل من 1500
+    if (year < 1500) year = Math.round(year * 0.9702 + 621.5);
+
+    const t = timePart.match(/(\d{1,2}):(\d{1,2})(?::(\d{1,2}))?/);
+    let h = t ? +t[1] : 0, mn = t ? +t[2] : 0, s = t && t[3] ? +t[3] : 0;
+
+    // تصحيح ص/م
+    if (/م|pm/i.test(timePart) && h < 12) h += 12;
+    if (/ص|am/i.test(timePart) && h === 12) h = 0;
+
+    const d = new Date(year, month - 1, day, h, mn, s);
+    if (!isNaN(d)) return d;
+  }
+
+  return null;
 }
 function setSalesPeriod(period) {
   const now=new Date(), today=now.toISOString().split('T')[0];
@@ -3233,7 +3713,7 @@ async function doLogin() {
     sessionStorage.setItem('ops_session', JSON.stringify({username:user.username,role:user.role,fullName:user.fullName||user.username}));
     document.getElementById('login-screen').style.display = 'none';
     document.getElementById('app').classList.add('visible');
-    applyRoleUI(); syncData(); loadNotifications();
+    applyRoleUI(); syncData(); loadNotifications(); startAutoSync();
     if (window.FB) window.FB.watchNotifications(()=>loadNotifications().then(renderNotifDot));
   } else {
     const err = document.getElementById('login-error');
@@ -3272,6 +3752,7 @@ function applyRoleUI() {
 // تشغيل التطبيق
 // ════════════════════════════════
 async function checkSession() {
+  loadAssignmentRules();
   await loadUsers(); await loadCustomLabels(); await loadNotifications();
   const session = sessionStorage.getItem('ops_session');
   if (session) {
@@ -3280,7 +3761,7 @@ async function checkSession() {
     if (!stillExists) { sessionStorage.removeItem('ops_session'); return; }
     document.getElementById('login-screen').style.display='none';
     document.getElementById('app').classList.add('visible');
-    applyRoleUI(); syncData(); renderNotifDot();
+    applyRoleUI(); syncData(); renderNotifDot(); startAutoSync();
     if (window.FB) window.FB.watchNotifications(()=>loadNotifications().then(renderNotifDot));
   }
 }
