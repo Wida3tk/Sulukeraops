@@ -2089,6 +2089,21 @@ let filterType  = '';
 // ════════════════════════════════
 // مساعدات
 // ════════════════════════════════
+// مساعد: تنظيف بيانات العميل — يضمن أن boolean fields هي boolean حقيقية
+function normalizeClient(c) {
+  if (!c) return c;
+  const boolFields = ['academyAdded','academyAssigned'];
+  boolFields.forEach(f => {
+    c[f] = c[f] === true || String(c[f]).toLowerCase() === 'true';
+  });
+  // الأقساط — تأكد أنها مصفوفة
+  if (!Array.isArray(c.installments)) {
+    try { c.installments = c.installments ? JSON.parse(c.installments) : []; }
+    catch { c.installments = []; }
+  }
+  return c;
+}
+
 const ini = n => {
   if (!n) return '؟';
   const p = n.trim().split(' ');
@@ -2171,12 +2186,13 @@ async function syncData() {
         clean.academyAssigned = sc.academyAssigned === true || String(sc.academyAssigned).toLowerCase() === 'true';
         const local = localClients.find(l => l.ref === clean.ref);
         if (local) {
-          return {
+          return normalizeClient({
             ...clean,
             addedBy:      local.addedBy      || clean.addedBy      || '',
             labels:       local.labels       || [],
             notes:        local.notes        || clean.notes        || '',
             opsNotes:     local.opsNotes     || clean.opsNotes     || '',
+            finNotes:     local.finNotes     || clean.finNotes     || '',
             track:        local.track        || clean.track        || '',
             programType:  local.programType  || clean.programType  || '',
             clientType:   local.clientType   || clean.clientType   || '',
@@ -2188,16 +2204,22 @@ async function syncData() {
             acquisitionChannel: local.acquisitionChannel || clean.acquisitionChannel || '',
             academyAdded:    local.academyAdded    !== undefined ? local.academyAdded    : clean.academyAdded,
             academyAssigned: local.academyAssigned !== undefined ? local.academyAssigned : clean.academyAssigned,
+            installments: local.installments || (clean.installments ? (() => { try { return JSON.parse(clean.installments); } catch { return []; } })() : []),
+            price:        local.price        || clean.price        || '',
+            discount:     local.discount     || clean.discount     || 0,
+            finalPrice:   local.finalPrice   || clean.finalPrice   || '',
+            payType:      local.payType      || clean.payType      || '',
+            totalPaid:    local.totalPaid    || clean.totalPaid    || 0,
             log: local.log || [],
-          };
+          });
         }
-        return { ...clean, labels: Array.isArray(clean.labels) ? clean.labels : [], log:[], trialStatus:'' };
+        return normalizeClient({ ...clean, labels: Array.isArray(clean.labels) ? clean.labels : [], log:[], trialStatus:'', installments:[] });
       });
   }
   if (pr.programs) programs = pr.programs;
 
   if (cr.error === 'offline') {
-    clients  = JSON.parse(localStorage.getItem('ops_clients')  || '[]');
+    clients  = JSON.parse(localStorage.getItem('ops_clients')  || '[]').map(normalizeClient);
     programs = JSON.parse(localStorage.getItem('ops_programs') || '[]');
     if (!programs.length) programs = ['تحليل السلوك التطبيقي','إدارة السلوك التنظيمي','الاقتصاد السلوكي','برامج التعليم المستمر','حجز مقعد'];
     toast('وضع غير متصل', false);
@@ -2496,31 +2518,36 @@ function clientLabelsHTML(c) {
 // ════════════════════════════════
 function cardHTML(c, showTrialActions=false) {
   try {
-    const progColor  = getProgColor(c.program);
-    const isTrial    = isTrialClient(c);
-    const isUnint    = c.trialStatus === 'uninterested';
-    const isConv     = c.trialStatus === 'converted';
-    const stage      = c.academyAssigned ? 'done' : c.academyAdded ? 'half' : 'pending';
-    const p2cls      = stage === 'done' ? 'done' : stage === 'half' ? 'half' : 'active';
-    const p3cls      = stage === 'done' ? 'done' : '';
-    const progName   = (c.program||'').split('—')[0].trim() || '—';
+    const progColor   = getProgColor(c.program);
+    const isTrial     = isTrialClient(c);
+    const isUnint     = c.trialStatus === 'uninterested';
+    const isConv      = c.trialStatus === 'converted';
+
+    // نحوّل دائماً لـ boolean حقيقي
+    const addDone = c.academyAdded    === true || String(c.academyAdded).toLowerCase()    === 'true';
+    const asnDone = c.academyAssigned === true || String(c.academyAssigned).toLowerCase() === 'true';
+
+    const stage   = asnDone ? 'done' : addDone ? 'half' : 'pending';
+    const p2cls   = stage === 'done' ? 'done' : stage === 'half' ? 'half' : 'active';
+    const p3cls   = stage === 'done' ? 'done' : '';
+    const progName = (c.program||'').split('—')[0].trim() || '—';
 
     let statusPill = '';
     if (isUnint) statusPill = '<span class="pill p-gray">غير مهتم</span>';
     else if (isTrial && isConv) statusPill = '<span class="pill p-green">تم التحويل ✓</span>';
     else if (isTrial) statusPill = '<span class="pill p-trial">تجربة</span>';
-    else if (c.academyAssigned) statusPill = '<span class="pill p-green">مكتمل ✓</span>';
-    else if (c.academyAdded) statusPill = '<span class="pill p-amber">تمت الإضافة</span>';
+    else if (asnDone) statusPill = '<span class="pill p-green">مكتمل ✓</span>';
+    else if (addDone) statusPill = '<span class="pill p-amber">تمت الإضافة</span>';
     else statusPill = '<span class="pill p-amber">بانتظار التفعيل</span>';
 
-    const needsAsgn = needsAssign(c.source) && !c.academyAssigned;
+    const needsAsgn  = needsAssign(c.source) && !asnDone;
     const assignBadge = needsAsgn && !isTrial ? '<span class="pill p-red" style="font-size:10px">يحتاج إسناد</span>' : '';
 
-    // أزرار التشغيل السريعة (داخل البطاقة في واجهة التشغيل)
+    // أزرار التشغيل السريعة
     let quickActions = '';
-    if (currentView === 'academy' && !isTrial && !c.academyAssigned && can('academy')) {
+    if (currentView === 'academy' && !isTrial && !asnDone && can('academy')) {
       quickActions = `<div class="card-actions">`;
-      if (!c.academyAdded) {
+      if (!addDone) {
         quickActions += `<button class="btn btn-sm btn-success" onclick="event.stopPropagation();markAdded('${c.ref}')">✓ تمت الإضافة في المنصة</button>`;
       } else {
         quickActions += `<span class="pill p-green" style="font-size:11px">✓ تمت الإضافة</span>`;
@@ -3488,7 +3515,7 @@ async function addClient() {
   };
 
   const res = await api(null, { action:'addClient', ...client });
-  clients.unshift(client);
+  clients.unshift(normalizeClient(client));
   localStorage.setItem('ops_clients', JSON.stringify(clients));
   toast(res.error === 'offline' ? 'تم الحفظ محلياً' : `تم تسجيل ${ref} ✓`);
   addNotification(`عميل جديد: ${client.name} — ${client.program}`, 'new_client', client.ref);
