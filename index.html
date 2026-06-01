@@ -2155,8 +2155,31 @@ async function api(params, body=null) {
 }
 
 async function persistClient(c) {
+  // حفظ محلي أولاً دائماً
+  const idx = clients.findIndex(x => x.ref === c.ref);
+  if (idx >= 0) clients[idx] = c;
   localStorage.setItem('ops_clients', JSON.stringify(clients));
-  return await api(null, { action:'updateClient', ...c });
+
+  // إرسال للشيت — نُحضّر النسخة للإرسال
+  const payload = { action: 'updateClient' };
+  Object.keys(c).forEach(k => {
+    const v = c[k];
+    if (Array.isArray(v)) {
+      payload[k] = JSON.stringify(v);
+    } else if (v !== null && v !== undefined) {
+      payload[k] = v;
+    }
+  });
+
+  try {
+    const r = await fetch(WEB_APP_URL, { method: 'POST', body: JSON.stringify(payload) });
+    const res = await r.json();
+    if (res.error) console.warn('persistClient error:', res.error);
+    return res;
+  } catch(e) {
+    console.warn('persistClient offline:', e.message);
+    return { error: 'offline' };
+  }
 }
 
 // ════════════════════════════════
@@ -3100,7 +3123,7 @@ async function updateInstStatus(ref, idx, val) {
   c.installments[idx].status = val;
   c.log = c.log||[];
   c.log.push({ who:session.username||'المالية', action:`القسط ${idx+1}: ${instStatusLabel(val)}`, time:new Date().toLocaleString('ar-SA') });
-  await persistClient(c);
+  persistClient(c); // fire & forget
   renderFinance();
   toast('تم تحديث حالة القسط ✓');
 }
@@ -3139,7 +3162,7 @@ async function confirmPayment() {
   c.log = c.log||[];
   c.log.push({ who:session.username||'المالية', action:`سداد القسط ${idx+1} — ${fmtSAR(c.installments[idx].amount)} — مرجع: ${refNum}`, time:new Date().toLocaleString('ar-SA') });
 
-  await persistClient(c);
+  persistClient(c); // fire & forget
   closePayRefModal();
   toast(`✅ تم تسجيل سداد القسط ${idx+1}`);
   renderFinance();
@@ -3161,7 +3184,7 @@ async function regenInstallments(ref) {
   c.log = c.log||[];
   c.log.push({ who:session.username||'المالية', action:`تعديل جدول الأقساط: ${num} أقساط — إجمالي ${fmtSAR(total)}`, time:new Date().toLocaleString('ar-SA') });
 
-  await persistClient(c);
+  persistClient(c); // fire & forget
   toast('تم إعادة توليد جدول الأقساط ✓');
   renderFinance();
 }
@@ -3184,7 +3207,7 @@ async function saveFinNotesCard(ref) {
   const session = JSON.parse(sessionStorage.getItem('ops_session')||'{}');
   c.log = c.log||[];
   c.log.push({ who:session.username||'المالية', action:'تحديث ملاحظات المالية', time:new Date().toLocaleString('ar-SA') });
-  await persistClient(c);
+  persistClient(c); // fire & forget
   toast('تم حفظ ملاحظات المالية ✓');
 }
 
@@ -3197,7 +3220,7 @@ async function saveFinNotes(ref) {
   const session = JSON.parse(sessionStorage.getItem('ops_session')||'{}');
   c.log = c.log||[];
   c.log.push({ who:session.username||'المالية', action:'تحديث ملاحظات المالية', time:new Date().toLocaleString('ar-SA') });
-  await persistClient(c);
+  persistClient(c); // fire & forget
   toast('تم حفظ ملاحظات المالية ✓');
 }
 
@@ -3569,7 +3592,7 @@ async function confirmConvertTrial() {
   c.log = c.log || [];
   c.log.push({ who: session.username||'المبيعات', action: `تحويل من تجربة إلى اشتراك — ${source}`, time: now });
 
-  await persistClient(c);
+  persistClient(c); // fire & forget
   closeConvertModal();
   toast(`تم تحويل ${c.name} إلى اشتراك ✓`);
   addNotification(`تحويل تجربة: ${c.name} → اشتراك`, 'academy', c.ref);
@@ -3584,7 +3607,7 @@ async function markUninterested(ref) {
   c.trialStatus = 'uninterested';
   c.log = c.log || [];
   c.log.push({ who: session.username||'المبيعات', action: 'انتهت التجربة — غير مهتم', time: now });
-  await persistClient(c);
+  persistClient(c); // fire & forget
   toast('تم تسجيل عدم الاهتمام');
   updateStats(); render();
   if (selId === ref) renderDetail(ref);
@@ -3594,53 +3617,53 @@ async function markUninterested(ref) {
 // إجراءات التشغيل
 // ════════════════════════════════
 async function markAdded(ref) {
-  const c = clients.find(x => x.ref === ref);
-  if (!c) return;
-  const added = c.academyAdded === true || String(c.academyAdded).toLowerCase() === 'true';
-  if (added) return;
+  const idx = clients.findIndex(x => x.ref === ref);
+  if (idx < 0) return;
+  if (clients[idx].academyAdded === true) return;
   const now = new Date().toLocaleString('ar-SA');
   const session = JSON.parse(sessionStorage.getItem('ops_session') || '{}');
-  c.academyAdded = true;
-  c.log = c.log || [];
-  c.log.push({ who: session.username||'التشغيل', action:'تمت إضافة الحساب في المنصة', time:now });
-  await persistClient(c);
+  clients[idx].academyAdded = true;
+  clients[idx].log = clients[idx].log || [];
+  clients[idx].log.push({ who: session.username||'التشغيل', action:'تمت إضافة الحساب في المنصة', time:now });
+  localStorage.setItem('ops_clients', JSON.stringify(clients));
   toast('تم تسجيل إضافة الحساب ✓');
   updateStats(); render();
   if (selId === ref) renderDetail(ref);
+  persistClient(clients[idx]); // بدون await — يرسل في الخلفية
 }
 
 async function markAssigned(ref) {
-  const c = clients.find(x => x.ref === ref);
-  if (!c) return;
-  const added    = c.academyAdded    === true || String(c.academyAdded).toLowerCase()    === 'true';
-  const assigned = c.academyAssigned === true || String(c.academyAssigned).toLowerCase() === 'true';
-  if (!added || assigned) return;
+  const idx = clients.findIndex(x => x.ref === ref);
+  if (idx < 0) return;
+  if (!clients[idx].academyAdded || clients[idx].academyAssigned === true) return;
   const now = new Date().toLocaleString('ar-SA');
   const session = JSON.parse(sessionStorage.getItem('ops_session') || '{}');
-  c.academyAssigned = true; c.activatedAt = new Date().toISOString();
-  c.log = c.log || [];
-  c.log.push({ who: session.username||'التشغيل', action:'تم إسناد المقررات — مكتمل', time:now });
-  await persistClient(c);
+  clients[idx].academyAssigned = true;
+  clients[idx].activatedAt = new Date().toISOString();
+  clients[idx].log = clients[idx].log || [];
+  clients[idx].log.push({ who: session.username||'التشغيل', action:'تم إسناد المقررات — مكتمل', time:now });
+  localStorage.setItem('ops_clients', JSON.stringify(clients));
   toast('تم الإسناد — العميل مكتمل ✓');
   updateStats(); render();
   if (selId === ref) renderDetail(ref);
+  persistClient(clients[idx]); // بدون await
 }
 
 async function markComplete(ref) {
-  const c = clients.find(x => x.ref === ref);
-  if (!c) return;
-  const added    = c.academyAdded    === true || String(c.academyAdded).toLowerCase()    === 'true';
-  const assigned = c.academyAssigned === true || String(c.academyAssigned).toLowerCase() === 'true';
-  if (!added || assigned) return;
+  const idx = clients.findIndex(x => x.ref === ref);
+  if (idx < 0) return;
+  if (!clients[idx].academyAdded || clients[idx].academyAssigned === true) return;
   const now = new Date().toLocaleString('ar-SA');
   const session = JSON.parse(sessionStorage.getItem('ops_session') || '{}');
-  c.academyAssigned = true; c.activatedAt = new Date().toISOString();
-  c.log = c.log || [];
-  c.log.push({ who: session.username||'التشغيل', action:'اكتمل التفعيل (عصارة)', time:now });
-  await persistClient(c);
+  clients[idx].academyAssigned = true;
+  clients[idx].activatedAt = new Date().toISOString();
+  clients[idx].log = clients[idx].log || [];
+  clients[idx].log.push({ who: session.username||'التشغيل', action:'اكتمل التفعيل (عصارة)', time:now });
+  localStorage.setItem('ops_clients', JSON.stringify(clients));
   toast('اكتمل التفعيل ✓');
   updateStats(); render();
   if (selId === ref) renderDetail(ref);
+  persistClient(clients[idx]); // بدون await
 }
 async function deleteClient() {
   if (!can('settings')) { toast('ليس لديك صلاحية', false); return; }
@@ -3870,7 +3893,7 @@ async function saveOpsNotes(ref) {
   const session = JSON.parse(sessionStorage.getItem('ops_session') || '{}');
   c.log = c.log || [];
   c.log.push({ who: session.username||'التشغيل', action: 'تحديث ملاحظات التشغيل', time: new Date().toLocaleString('ar-SA') });
-  await persistClient(c);
+  persistClient(c); // fire & forget
   toast('تم حفظ ملاحظات التشغيل ✓');
 }
 
@@ -3894,7 +3917,7 @@ async function toggleLabel(ref, lid) {
   c.labels = c.labels || [];
   const idx = c.labels.indexOf(lid);
   if (idx >= 0) c.labels.splice(idx, 1); else c.labels.push(lid);
-  await persistClient(c);
+  persistClient(c); // fire & forget
   renderLabelsPicker(c);
   render();
 }
@@ -3936,7 +3959,7 @@ async function saveEdit() {
   c.name=name; c.email=email; c.phone=phone; c.batchNo=batchNo; c.expiry=expiry; c.startDate=startDate; c.notes=notes;
   if (!c.log) c.log=[];
   if (changes.length) c.log.push({ who:session.username||'مجهول', action:'تعديل: '+changes.join(' | '), time:new Date().toLocaleString('ar-SA') });
-  await persistClient(c);
+  persistClient(c); // fire & forget
   toast('تم حفظ التعديلات ✓');
   closeEditModal(); renderDetail(selId); render();
 }
