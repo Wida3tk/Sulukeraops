@@ -3568,7 +3568,9 @@ async function markUninterested(ref) {
 // ════════════════════════════════
 async function markAdded(ref) {
   const c = clients.find(x => x.ref === ref);
-  if (!c || c.academyAdded) return;
+  if (!c) return;
+  const added = c.academyAdded === true || String(c.academyAdded).toLowerCase() === 'true';
+  if (added) return;
   const now = new Date().toLocaleString('ar-SA');
   const session = JSON.parse(sessionStorage.getItem('ops_session') || '{}');
   c.academyAdded = true;
@@ -3579,9 +3581,13 @@ async function markAdded(ref) {
   updateStats(); render();
   if (selId === ref) renderDetail(ref);
 }
+
 async function markAssigned(ref) {
   const c = clients.find(x => x.ref === ref);
-  if (!c || !c.academyAdded || c.academyAssigned) return;
+  if (!c) return;
+  const added    = c.academyAdded    === true || String(c.academyAdded).toLowerCase()    === 'true';
+  const assigned = c.academyAssigned === true || String(c.academyAssigned).toLowerCase() === 'true';
+  if (!added || assigned) return;
   const now = new Date().toLocaleString('ar-SA');
   const session = JSON.parse(sessionStorage.getItem('ops_session') || '{}');
   c.academyAssigned = true; c.activatedAt = new Date().toISOString();
@@ -3592,9 +3598,13 @@ async function markAssigned(ref) {
   updateStats(); render();
   if (selId === ref) renderDetail(ref);
 }
+
 async function markComplete(ref) {
   const c = clients.find(x => x.ref === ref);
-  if (!c || !c.academyAdded || c.academyAssigned) return;
+  if (!c) return;
+  const added    = c.academyAdded    === true || String(c.academyAdded).toLowerCase()    === 'true';
+  const assigned = c.academyAssigned === true || String(c.academyAssigned).toLowerCase() === 'true';
+  if (!added || assigned) return;
   const now = new Date().toLocaleString('ar-SA');
   const session = JSON.parse(sessionStorage.getItem('ops_session') || '{}');
   c.academyAssigned = true; c.activatedAt = new Date().toISOString();
@@ -3737,7 +3747,8 @@ function renderDetail(ref) {
   const isTrial  = isTrialClient(c);
   const isUnint  = c.trialStatus === 'uninterested';
   const isConv   = c.trialStatus === 'converted';
-  const addDone  = c.academyAdded, asnDone = c.academyAssigned;
+  const addDone  = c.academyAdded    === true || String(c.academyAdded).toLowerCase()    === 'true';
+  const asnDone  = c.academyAssigned === true || String(c.academyAssigned).toLowerCase() === 'true';
 
   let stagesHTML = `<div class="stage-row s-done">
     <div class="stage-icon si-sales">م</div>
