@@ -3693,7 +3693,7 @@ document.addEventListener('click', e => {
 // ════════════════════════════════
 function exportCSV() {
   const filtered = getFilteredClients();
-  if (!filtered.length) { toast('لا توجد بيانات للتصدير', false); return; }
+  if (!filtered.length) { toast('لا توجد بيانات للتصدير', true); return; }
   const headers = ['رقم المرجع','الاسم','البريد','الجوال','الدفعة','البرنامج','المسار','النوع','اللغة','نوع العميل','المصدر','كيف عرف عنا؟','شامل الكفاءة','الحالة','التسجيل','أضافه','ملاحظات'];
   const rows = filtered.map(c=>[c.ref,c.name,c.email||'',c.phone||'',c.batchNo||'',c.program,c.track||'',c.programType||'',c.lang||'',c.clientType||'',c.source,c.acquisitionChannel||'',c.efficiencyCheck||'',c.academyAssigned?'مكتمل':'قيد التفعيل',c.createdAt||'',c.addedBy||'',(c.notes||'').replace(/,/g,'؛')]);
   const csv=[headers,...rows].map(r=>r.map(v=>`"${String(v).replace(/"/g,'""')}"`).join(',')).join('\n');
