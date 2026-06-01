@@ -2039,7 +2039,7 @@ const PROG_COLORS = {
   'إدارة السلوك التنظيمي':  '#6C3DBF',
   'الاقتصاد السلوكي':        '#C47A00',
   'برامج التعليم المستمر':   '#0C7A43',
-  'حجز مقعد':                '#8A91A3',
+  'تقييم كفاءة':                '#8A91A3',
 };
 const getProgColor = (prog) => {
   for (const [key, color] of Object.entries(PROG_COLORS)) {
@@ -2052,7 +2052,7 @@ const getProgColor = (prog) => {
 const PROGRAM_TRACKS = {
   'تحليل السلوك التطبيقي': ['QBA','QASP-S','ABAT','CA'],
   'إدارة السلوك التنظيمي': ['P','E','C'],
-  'حجز مقعد': ['تحليل السلوك التطبيقي','إدارة السلوك التنظيمي'],
+  'تقييم كفاءة': ['تحليل السلوك التطبيقي','إدارة السلوك التنظيمي'],
 };
 
 // الصلاحيات
@@ -2244,7 +2244,7 @@ async function syncData() {
   if (cr.error === 'offline') {
     clients  = JSON.parse(localStorage.getItem('ops_clients')  || '[]').map(normalizeClient);
     programs = JSON.parse(localStorage.getItem('ops_programs') || '[]');
-    if (!programs.length) programs = ['تحليل السلوك التطبيقي','إدارة السلوك التنظيمي','الاقتصاد السلوكي','برامج التعليم المستمر','حجز مقعد'];
+    if (!programs.length) programs = ['تقتحليل السلوك التطبيقي','إدارة السلوك التنظيمي','الاقتصاد السلوكي','برامج التعليم المستمر','تقييم كفاءة'];
     toast('وضع غير متصل', false);
   } else {
     localStorage.setItem('ops_clients',  JSON.stringify(clients));
@@ -2300,7 +2300,7 @@ function updateFilterDot() {
 
 function buildFilterSidebar() {
   // برامج فريدة مع عدادات
-  const fixedProgs = ['تحليل السلوك التطبيقي','إدارة السلوك التنظيمي','الاقتصاد السلوكي','برامج التعليم المستمر','حجز مقعد'];
+  const fixedProgs = ['تحليل السلوك التطبيقي','إدارة السلوك التنظيمي','الاقتصاد السلوكي','برامج التعليم المستمر','تقييم كفاءة'];
   const extraProgs = (programs||[]).filter(p => !fixedProgs.some(fp => p.includes(fp)));
   const allProgs   = [...fixedProgs, ...extraProgs];
 
@@ -3226,7 +3226,7 @@ async function saveFinNotes(ref) {
 
 
 function renderSettings() {
-  const fixed = ['تحليل السلوك التطبيقي','إدارة السلوك التنظيمي','الاقتصاد السلوكي','برامج التعليم المستمر','حجز مقعد'];
+  const fixed = ['تحليل السلوك التطبيقي','إدارة السلوك التنظيمي','الاقتصاد السلوكي','برامج التعليم المستمر','تقييم كفاءة'];
   const allProgs = programs.map((p,i)=>({name:p,i}));
 
   const pl = document.getElementById('prog-list');
@@ -4097,7 +4097,7 @@ function renderReports() {
 function fillProgramSelect() {
   const sel = document.getElementById('fp');
   if (!sel) return;
-  const fixed = ['تحليل السلوك التطبيقي','إدارة السلوك التنظيمي','الاقتصاد السلوكي','برامج التعليم المستمر','حجز مقعد'];
+  const fixed = ['تحليل السلوك التطبيقي','إدارة السلوك التنظيمي','الاقتصاد السلوكي','برامج التعليم المستمر','تقييم كفاءة'];
   const extra = (programs||[]).filter(p=>!fixed.some(f=>p.includes(f)));
   sel.innerHTML = '<option value="">اختر البرنامج...</option>' + [...fixed,...extra].map(p=>`<option value="${p}">${p}</option>`).join('');
 }
