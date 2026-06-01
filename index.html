@@ -51,15 +51,20 @@
   --prog-seat: #8A91A3;
 
   /* أبعاد */
-  --sidebar-w: 64px;
-  --sidebar-w-open: 240px;
-  --topbar-h:  56px;
+  --nav-w:     220px;
   --panel-w:   420px;
   --radius:    10px;
   --radius-lg: 16px;
   --shadow-sm: 0 1px 3px rgba(0,0,0,.06), 0 1px 2px rgba(0,0,0,.04);
   --shadow-md: 0 4px 16px rgba(0,0,0,.08);
   --shadow-lg: 0 8px 32px rgba(0,0,0,.12);
+
+  /* ألوان الشريط الجانبي */
+  --nav-bg:    #0F1B5C;
+  --nav-bg2:   #0A1340;
+  --nav-text:  rgba(255,255,255,0.65);
+  --nav-active:#1A3BDB;
+  --nav-hover: rgba(255,255,255,0.08);
 }
 
 /* ══════════════════════════════════════════
@@ -135,130 +140,174 @@ input, select, textarea { font-family: var(--font); }
 }
 
 /* ══════════════════════════════════════════
-   التخطيط الرئيسي
+   التخطيط الرئيسي — شريط جانبي
 ══════════════════════════════════════════ */
 #app { display: none; min-height: 100vh; }
-#app.visible { display: flex; flex-direction: column; }
+#app.visible { display: flex; flex-direction: row; }
 
-/* الشريط العلوي */
-.topbar {
-  height: var(--topbar-h);
-  background: linear-gradient(135deg, #0B1F8C 0%, #1A3BDB 60%, #2248F5 100%);
-  border-bottom: none;
-  box-shadow: 0 2px 16px rgba(15,36,153,0.18);
-  display: flex; align-items: center;
-  padding: 0 1.25rem;
-  gap: 12px;
-  position: sticky; top: 0; z-index: 100;
+/* ── الشريط الجانبي للتنقل ── */
+.nav-sidebar {
+  width: var(--nav-w);
+  flex-shrink: 0;
+  background: var(--nav-bg);
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  position: sticky;
+  top: 0;
+  z-index: 100;
 }
-.topbar-logo {
-  display: flex; align-items: center; gap: 10px;
-  text-decoration: none; flex-shrink: 0;
+
+.nav-logo {
+  padding: 20px 16px 16px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  border-bottom: 1px solid rgba(255,255,255,0.08);
+  flex-shrink: 0;
 }
-.topbar-logo-mark {
-  width: 34px; height: 34px;
-  background: rgba(255,255,255,0.15);
-  border: 1.5px solid rgba(255,255,255,0.25);
-  border-radius: 9px;
+.nav-logo-mark {
+  width: 36px; height: 36px;
+  background: var(--blue);
+  border-radius: 10px;
   display: flex; align-items: center; justify-content: center;
   flex-shrink: 0;
-  backdrop-filter: blur(8px);
 }
-.topbar-logo-mark svg { width: 18px; height: 18px; fill: white; }
-.topbar-logo-text {
-  font-size: 17px; font-weight: 800; color: #fff;
-  letter-spacing: -.3px; line-height: 1;
+.nav-logo-mark svg { width: 20px; height: 20px; fill: white; }
+.nav-logo-text { color: #fff; }
+.nav-logo-text h1 { font-size: 15px; font-weight: 800; letter-spacing: -.2px; line-height: 1; }
+.nav-logo-text span { font-size: 10px; color: rgba(255,255,255,0.45); letter-spacing: .06em; margin-top: 1px; display: block; }
+
+/* ملخص اليوم */
+.nav-daily {
+  margin: 12px 10px;
+  background: rgba(255,255,255,0.06);
+  border-radius: 10px;
+  padding: 10px 12px;
+  flex-shrink: 0;
 }
-.topbar-logo-text span {
-  display: block; font-size: 10px; font-weight: 400;
-  color: rgba(255,255,255,0.6); margin-top: 1px; letter-spacing: .04em;
+.nav-daily-title { font-size: 10px; color: rgba(255,255,255,0.45); font-weight: 600; letter-spacing: .06em; margin-bottom: 8px; }
+.nav-daily-item {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 4px 0;
 }
-.topbar-nav { display: flex; gap: 2px; margin-right: auto; }
-.tnb {
-  display: flex; align-items: center; gap: 6px;
-  padding: 6px 13px; border-radius: 8px;
+.nav-daily-item span { font-size: 11px; color: rgba(255,255,255,0.65); }
+.nav-daily-item strong { font-size: 13px; color: #fff; font-weight: 700; }
+.nav-daily-item.urgent strong { color: #FF6B6B; }
+.nav-daily-item.warn strong { color: #FFD93D; }
+
+/* قسم التنقل */
+.nav-section-title {
+  font-size: 9px; font-weight: 700; color: rgba(255,255,255,0.3);
+  letter-spacing: .1em; text-transform: uppercase;
+  padding: 12px 16px 6px;
+  flex-shrink: 0;
+}
+
+nav.nav-menu {
+  flex: 1;
+  overflow-y: auto;
+  padding: 4px 8px;
+}
+
+.nav-item {
+  display: flex; align-items: center; gap: 10px;
+  padding: 9px 10px; border-radius: 8px;
   border: none; background: transparent;
-  font-size: 13px; font-weight: 500; color: rgba(255,255,255,0.7);
-  transition: all .15s; position: relative;
-  white-space: nowrap;
+  font-size: 13px; font-weight: 500; color: var(--nav-text);
+  cursor: pointer; transition: all .15s;
+  width: 100%; text-align: right;
+  margin-bottom: 2px; position: relative;
+  font-family: var(--font);
 }
-.tnb:hover { background: rgba(255,255,255,0.12); color: #fff; }
-.tnb.active {
-  background: rgba(255,255,255,0.18);
-  color: #fff; font-weight: 700;
-  box-shadow: inset 0 0 0 1px rgba(255,255,255,0.25);
+.nav-item:hover { background: var(--nav-hover); color: #fff; }
+.nav-item.active {
+  background: var(--nav-active);
+  color: #fff; font-weight: 600;
 }
-.tnb svg { opacity: .8; }
-.tnb.active svg { opacity: 1; }
-.tnb .badge {
-  position: absolute; top: 3px; right: 3px;
-  min-width: 16px; height: 16px;
+.nav-item svg { width: 16px; height: 16px; flex-shrink: 0; opacity: .7; }
+.nav-item.active svg { opacity: 1; }
+.nav-item .nav-badge {
+  margin-right: auto;
+  min-width: 18px; height: 18px;
   background: #FF4444; color: #fff;
-  border-radius: 8px; font-size: 10px; font-weight: 700;
+  border-radius: 9px; font-size: 10px; font-weight: 700;
   display: flex; align-items: center; justify-content: center;
-  padding: 0 4px; line-height: 1;
-  border: 1.5px solid rgba(255,255,255,0.3);
+  padding: 0 5px;
 }
-.topbar-end { display: flex; align-items: center; gap: 8px; }
-.sync-btn {
-  display: flex; align-items: center; gap: 5px;
-  padding: 6px 12px; border-radius: 8px;
-  border: 1px solid rgba(255,255,255,0.2);
-  background: rgba(255,255,255,0.1);
-  color: rgba(255,255,255,0.85); font-size: 12px; font-weight: 500;
-  transition: all .15s; backdrop-filter: blur(4px);
-}
-.sync-btn:hover { background: rgba(255,255,255,0.18); color: #fff; }
-.sync-btn.loading { opacity: .5; pointer-events: none; }
-.sync-btn svg { transition: transform .3s; }
-.sync-btn.loading svg { animation: spin 1s linear infinite; }
-@keyframes spin { to { transform: rotate(360deg); } }
+.nav-item.active .nav-badge { background: rgba(255,255,255,0.3); }
+.nav-item .nav-badge.warn { background: #FF8C00; }
 
-.notif-btn {
-  width: 34px; height: 34px; border-radius: 8px;
-  border: 1px solid rgba(255,255,255,0.2);
-  background: rgba(255,255,255,0.1);
-  display: flex; align-items: center; justify-content: center;
-  color: rgba(255,255,255,0.85); position: relative; transition: all .15s;
-}
-.notif-btn:hover { background: rgba(255,255,255,0.18); color: #fff; }
-.notif-dot {
-  position: absolute; top: 6px; right: 6px;
-  width: 7px; height: 7px; border-radius: 50%;
-  background: #FF4444; border: 1.5px solid #1A3BDB;
-  display: none;
-}
-.user-chip {
-  display: flex; align-items: center; gap: 7px;
-  padding: 4px 10px 4px 4px;
-  border-radius: 8px;
-  border: 1px solid rgba(255,255,255,0.2);
-  background: rgba(255,255,255,0.1);
-  backdrop-filter: blur(4px);
-}
-.user-av {
-  width: 26px; height: 26px; border-radius: 6px;
-  background: rgba(255,255,255,0.22); color: #fff;
-  font-size: 11px; font-weight: 700;
-  display: flex; align-items: center; justify-content: center;
-}
-.user-chip span { font-size: 12px; font-weight: 500; color: rgba(255,255,255,0.9); }
+/* فاصل */
+.nav-divider { height: 1px; background: rgba(255,255,255,0.08); margin: 8px 10px; }
 
-/* ══════════════════════════════════════════
-   المحتوى الرئيسي
-══════════════════════════════════════════ */
-.main-body { display: flex; flex: 1; min-height: calc(100vh - var(--topbar-h)); position: relative; }
+/* أسفل الشريط */
+.nav-bottom {
+  padding: 12px 8px;
+  border-top: 1px solid rgba(255,255,255,0.08);
+  flex-shrink: 0;
+}
+.nav-user {
+  display: flex; align-items: center; gap: 10px;
+  padding: 8px 10px; border-radius: 8px;
+  margin-bottom: 6px;
+}
+.nav-user-av {
+  width: 32px; height: 32px; border-radius: 8px;
+  background: rgba(255,255,255,0.15); color: #fff;
+  font-size: 13px; font-weight: 700;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+}
+.nav-user-info { flex: 1; min-width: 0; }
+.nav-user-name { font-size: 12px; color: #fff; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.nav-user-role { font-size: 10px; color: rgba(255,255,255,0.4); }
+
+.nav-actions { display: flex; gap: 6px; }
+.nav-action-btn {
+  flex: 1; display: flex; align-items: center; justify-content: center; gap: 5px;
+  padding: 7px 8px; border-radius: 7px;
+  border: 1px solid rgba(255,255,255,0.12);
+  background: rgba(255,255,255,0.06);
+  color: rgba(255,255,255,0.65); font-size: 11px; font-weight: 500;
+  cursor: pointer; transition: all .15s; font-family: var(--font);
+}
+.nav-action-btn:hover { background: rgba(255,255,255,0.12); color: #fff; }
+.nav-action-btn svg { width: 12px; height: 12px; }
+
+/* ── منطقة المحتوى الرئيسية ── */
+.app-main {
+  flex: 1;
+  display: flex;
+  min-width: 0;
+  min-height: 100vh;
+  background: var(--bg);
+}
 
 /* ── الشريط الجانبي للفلاتر ── */
 .filter-sidebar {
   width: 260px; flex-shrink: 0;
   background: var(--surface);
-  border-left: 1px solid var(--border);
+  border-right: 1px solid var(--border);
   padding: 1.25rem;
   overflow-y: auto;
-  max-height: calc(100vh - var(--topbar-h));
-  position: sticky; top: var(--topbar-h);
+  max-height: 100vh;
+  position: fixed;
+  top: 0; right: 0;
+  z-index: 150;
+  box-shadow: var(--shadow-lg);
+  transform: translateX(100%);
+  transition: transform .22s cubic-bezier(.4,0,.2,1);
 }
+.filter-sidebar.open {
+  transform: translateX(0);
+}
+.filter-overlay {
+  display: none; position: fixed; inset: 0;
+  background: rgba(0,0,0,.3); z-index: 149;
+  backdrop-filter: blur(2px);
+}
+.filter-overlay.show { display: block; }
 .fs-title {
   font-size: 10px; font-weight: 700; color: var(--text-3);
   letter-spacing: .08em; text-transform: uppercase;
@@ -322,13 +371,102 @@ input, select, textarea { font-family: var(--font); }
 }
 .clear-filters-btn:hover { background: var(--red-lt); color: var(--red); border-color: #fca5a5; }
 
+/* ── شريط رأس الصفحة ── */
+.page-header {
+  display: flex; align-items: center; gap: 10px;
+  margin-bottom: 1.25rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid var(--border);
+}
+.page-title {
+  font-size: 16px; font-weight: 700; color: var(--text);
+  flex: 1;
+}
+.page-title span {
+  font-size: 12px; color: var(--text-3); font-weight: 400; margin-right: 8px;
+}
+.filter-toggle-btn {
+  display: flex; align-items: center; gap: 6px;
+  padding: 7px 12px; border-radius: 8px;
+  border: 1.5px solid var(--border); background: var(--surface);
+  color: var(--text-2); font-size: 12px; font-weight: 600;
+  cursor: pointer; transition: all .12s; font-family: var(--font);
+}
+.filter-toggle-btn:hover { background: var(--bg); border-color: var(--blue-mid); color: var(--blue); }
+.filter-toggle-btn.active { background: var(--blue-lt); border-color: var(--blue-mid); color: var(--blue); }
+.filter-toggle-btn svg { width: 14px; height: 14px; }
+.filter-active-dot {
+  width: 7px; height: 7px; border-radius: 50%;
+  background: var(--blue); display: none;
+}
+.filter-active-dot.show { display: inline-block; }
+
+/* quick search في شريط الرأس */
+.quick-search {
+  position: relative; flex: 1; max-width: 260px;
+}
+.quick-search input {
+  width: 100%; padding: 7px 34px 7px 10px;
+  border: 1.5px solid var(--border); border-radius: 8px;
+  font-size: 13px; color: var(--text); outline: none;
+  background: var(--bg); transition: all .12s; font-family: var(--font);
+}
+.quick-search input:focus { border-color: var(--blue); background: #fff; box-shadow: 0 0 0 3px var(--blue-lt); }
+.quick-search svg { position: absolute; left: 10px; top: 50%; transform: translateY(-50%); color: var(--text-3); pointer-events: none; }
+
+/* تصدير */
+.export-btn {
+  display: flex; align-items: center; gap: 5px;
+  padding: 7px 11px; border-radius: 8px;
+  border: 1.5px solid var(--border); background: var(--surface);
+  color: var(--text-2); font-size: 12px; font-weight: 600;
+  cursor: pointer; transition: all .12s; font-family: var(--font);
+}
+.export-btn:hover { background: var(--green-lt); border-color: var(--green-mid); color: var(--green); }
+.export-btn svg { width: 13px; height: 13px; }
+
 /* ── منطقة المحتوى ── */
-.content-area { flex: 1; padding: 1.25rem; overflow-y: auto; min-width: 0; }
+.content-area { flex: 1; padding: 1.25rem; overflow-y: auto; min-width: 0; max-height: 100vh; }
+/* ملخص الصباح */
+.morning-banner {
+  display: none;
+  position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(10,12,20,.6);
+  backdrop-filter: blur(8px);
+  z-index: 9000;
+  align-items: center; justify-content: center;
+}
+.morning-banner.show { display: flex; }
+.morning-box {
+  background: var(--surface); border-radius: 20px;
+  padding: 2rem 2.5rem; width: 420px; max-width: 94vw;
+  box-shadow: 0 24px 64px rgba(0,0,0,.25);
+  animation: modalIn .25s ease; text-align: center;
+}
+.morning-emoji { font-size: 48px; margin-bottom: 12px; }
+.morning-greeting { font-size: 20px; font-weight: 800; color: var(--text); margin-bottom: 4px; }
+.morning-date { font-size: 12px; color: var(--text-3); margin-bottom: 1.5rem; }
+.morning-stats { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 1.5rem; }
+.morning-stat { background: var(--bg); border-radius: 12px; padding: 14px 10px; border: 1.5px solid var(--border); }
+.morning-stat .n { font-size: 28px; font-weight: 800; color: var(--text); line-height: 1; }
+.morning-stat .l { font-size: 11px; color: var(--text-3); margin-top: 4px; }
+.morning-stat.red   { background: var(--red-lt);   border-color: #FCA5A5; }
+.morning-stat.red .n   { color: var(--red); }
+.morning-stat.amber { background: var(--amber-lt); border-color: var(--amber-mid); }
+.morning-stat.amber .n { color: var(--amber); }
+.morning-stat.blue  { background: var(--blue-lt);  border-color: var(--blue-mid); }
+.morning-stat.blue .n  { color: var(--blue); }
+.morning-stat.green { background: var(--green-lt); border-color: var(--green-mid); }
+.morning-stat.green .n { color: var(--green); }
+.morning-msg {
+  font-size: 13px; color: var(--text-2); line-height: 1.7;
+  margin-bottom: 1.5rem; background: var(--bg);
+  border-radius: 10px; padding: 10px 14px; text-align: right;
+}
 
 /* ══════════════════════════════════════════
    الإحصائيات
 ══════════════════════════════════════════ */
-.stats-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 1.25rem; }
 .stat-card {
   background: var(--surface); border: 1px solid var(--border);
   border-radius: var(--radius); padding: 14px 16px;
@@ -716,8 +854,121 @@ input, select, textarea { font-family: var(--font); }
 .modal-btns { display: flex; gap: 8px; justify-content: flex-end; margin-top: 1.25rem; }
 
 /* ══════════════════════════════════════════
-   المالية / التقارير / الإعدادات
+   المالية — جدول الأقساط
 ══════════════════════════════════════════ */
+.fin-card {
+  background: var(--surface); border: 1.5px solid var(--border);
+  border-radius: var(--radius); padding: 0;
+  margin-bottom: 8px; overflow: hidden;
+  box-shadow: var(--shadow-sm); transition: all .15s;
+}
+.fin-card:hover { border-color: var(--blue-mid); }
+.fin-card.fc-red   { border-right: 3px solid var(--red);   background: #fff8f8; }
+.fin-card.fc-amber { border-right: 3px solid var(--amber); background: #fffbf0; }
+.fin-card.fc-green { border-right: 3px solid var(--green); background: #f0faf4; }
+
+.fin-card-header {
+  display: flex; align-items: center; gap: 10px;
+  padding: 12px 14px; cursor: pointer;
+}
+.fin-card-name  { font-size: 14px; font-weight: 600; color: var(--text); flex: 1; }
+.fin-card-meta  { display: flex; gap: 6px; align-items: center; }
+.fin-card-body  { padding: 0 14px 14px; border-top: 1px solid var(--border-lt); }
+
+/* ملخص مالي */
+.fin-summary {
+  display: grid; grid-template-columns: repeat(3,1fr); gap: 8px;
+  padding: 10px 0 12px;
+}
+.fin-sum-item { text-align: center; }
+.fin-sum-item .val { font-size: 15px; font-weight: 700; color: var(--text); }
+.fin-sum-item .lbl { font-size: 10px; color: var(--text-3); margin-top: 2px; }
+.fin-sum-item.paid .val { color: var(--green); }
+.fin-sum-item.remain .val { color: var(--red); }
+
+/* جدول الأقساط */
+.inst-table { width: 100%; border-collapse: collapse; font-size: 12px; }
+.inst-table th {
+  background: var(--bg); padding: 6px 8px;
+  text-align: right; color: var(--text-3);
+  font-weight: 600; font-size: 10px; letter-spacing: .04em;
+  border-bottom: 1px solid var(--border);
+}
+.inst-table td {
+  padding: 8px 8px; border-bottom: 1px solid var(--border-lt);
+  vertical-align: middle;
+}
+.inst-table tr:last-child td { border-bottom: none; }
+.inst-table tr:hover td { background: var(--bg); }
+
+/* حالة القسط */
+.inst-status {
+  padding: 3px 8px; border-radius: 20px;
+  font-size: 10px; font-weight: 600; white-space: nowrap;
+  cursor: pointer; border: 1.5px solid transparent;
+  font-family: var(--font);
+}
+.is-upcoming  { background: var(--bg); color: var(--text-3); border-color: var(--border); }
+.is-remind1   { background: #EFF6FF; color: #2563EB; border-color: #BFDBFE; }
+.is-remind2   { background: #FEF9C3; color: #CA8A04; border-color: #FDE68A; }
+.is-remind3   { background: var(--amber-lt); color: var(--amber); border-color: var(--amber-mid); }
+.is-late      { background: var(--red-lt); color: var(--red); border-color: #FCA5A5; }
+.is-warning   { background: #FFF1F2; color: #BE123C; border-color: #FECDD3; }
+.is-policy    { background: #1F2937; color: #fff; border-color: #374151; }
+.is-paid      { background: var(--green-lt); color: var(--green); border-color: var(--green-mid); }
+
+/* أدوات القسط */
+.inst-actions { display: flex; gap: 5px; align-items: center; justify-content: flex-end; }
+
+/* جدول تعديل الأقساط */
+.inst-editor {
+  background: var(--bg); border-radius: 10px;
+  padding: 14px; margin-top: 10px;
+  border: 1px solid var(--border);
+}
+.inst-editor-title {
+  font-size: 11px; font-weight: 700; color: var(--text-2);
+  margin-bottom: 12px; display: flex; align-items: center; gap: 6px;
+}
+.inst-editor-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; }
+.inst-editor input, .inst-editor select {
+  padding: 7px 10px; border: 1.5px solid var(--border);
+  border-radius: 7px; background: var(--surface);
+  font-size: 12px; font-family: var(--font); outline: none;
+  color: var(--text); width: 100%;
+}
+.inst-editor input:focus, .inst-editor select:focus {
+  border-color: var(--blue); box-shadow: 0 0 0 3px var(--blue-lt);
+}
+
+/* مودال الرقم المرجعي */
+.ref-modal-box { max-width: 360px; }
+
+/* تنبيه يوم 25 */
+.fin-alert-banner {
+  background: linear-gradient(135deg, #1A3BDB, #0F2499);
+  border-radius: var(--radius); padding: 14px 18px;
+  margin-bottom: 1.25rem; color: #fff;
+  display: flex; align-items: center; gap: 14px;
+}
+.fin-alert-banner svg { flex-shrink: 0; opacity: .8; }
+.fin-alert-banner h4 { font-size: 13px; font-weight: 700; margin-bottom: 2px; }
+.fin-alert-banner p  { font-size: 11px; opacity: .75; }
+
+/* ملاحظات المالية */
+.finance-notes-wrap {
+  margin-top: 10px; padding-top: 10px;
+  border-top: 1px solid var(--border-lt);
+}
+
+/* الإعدادات المالية — جدول التعديل */
+.inst-table select.inst-status-sel {
+  padding: 3px 6px; border-radius: 6px;
+  border: 1.5px solid var(--border); background: var(--bg);
+  font-size: 11px; font-family: var(--font);
+  color: var(--text); outline: none; cursor: pointer;
+}
+
 .settings-panel {
   background: var(--surface); border: 1.5px solid var(--border);
   border-radius: var(--radius-lg); padding: 1.25rem;
@@ -746,7 +997,7 @@ input, select, textarea { font-family: var(--font); }
 ══════════════════════════════════════════ */
 .notif-panel {
   display: none; position: fixed;
-  top: calc(var(--topbar-h) + 6px); left: 60px;
+  bottom: 80px; right: 16px;
   width: 320px; background: var(--surface);
   border: 1px solid var(--border); border-radius: var(--radius-lg);
   box-shadow: var(--shadow-lg); z-index: 300;
@@ -762,12 +1013,12 @@ input, select, textarea { font-family: var(--font); }
 /* ══════════════════════════════════════════
    المودالات العامة
 ══════════════════════════════════════════ */
-#edit-modal, #convert-trial-modal, #edit-perms-modal, #p2-modal {
+#edit-modal, #convert-trial-modal, #edit-perms-modal {
   display: none; position: fixed; inset: 0;
   background: rgba(15,17,23,.4); backdrop-filter: blur(4px);
   z-index: 600; align-items: center; justify-content: center;
 }
-#edit-modal.show, #convert-trial-modal.show, #edit-perms-modal.show, #p2-modal.show { display: flex; }
+#edit-modal.show, #convert-trial-modal.show, #edit-perms-modal.show { display: flex; }
 
 /* تنبيه */
 .main-alert {
@@ -790,11 +1041,9 @@ input, select, textarea { font-family: var(--font); }
 ══════════════════════════════════════════ */
 @media (max-width: 768px) {
   .stats-row { grid-template-columns: repeat(2, 1fr); }
-  .filter-sidebar { display: none; position: fixed; top: var(--topbar-h); right: 0; z-index: 150; box-shadow: var(--shadow-lg); }
-  .filter-sidebar.mobile-open { display: block; }
-  .filter-toggle-btn { display: flex; }
-  .topbar-nav .tnb span { display: none; }
-  /* المودال على موبايل — عمود واحد */
+  .nav-sidebar { width: 60px; }
+  .nav-logo-text, .nav-item span, .nav-user-info, .nav-daily { display: none; }
+  .nav-item { justify-content: center; padding: 10px; }
   #dpanel {
     width: 100%; max-width: 100%;
     max-height: 92vh;
@@ -807,7 +1056,7 @@ input, select, textarea { font-family: var(--font); }
   .dp-col:first-child { border-left: none; border-bottom: 1px solid var(--border); }
 }
 @media (min-width: 769px) {
-  .filter-toggle-btn { display: none; }
+  .filter-toggle-btn { display: flex; }
 }
 </style>
 </head>
@@ -835,71 +1084,119 @@ input, select, textarea { font-family: var(--font); }
 
 <!-- ══ التطبيق الرئيسي ══ -->
 <div id="app">
-  <!-- الشريط العلوي -->
-  <header class="topbar">
-    <div class="topbar-logo">
-      <div class="topbar-logo-mark">
+
+  <!-- ══ الشريط الجانبي للتنقل ══ -->
+  <aside class="nav-sidebar">
+    <!-- اللوغو -->
+    <div class="nav-logo">
+      <div class="nav-logo-mark">
         <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
           <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 14H9V8h2v8zm4 0h-2V8h2v8z" fill="white"/>
         </svg>
       </div>
-      <div class="topbar-logo-text">
-        سلوكيرا
-        <span>Operations</span>
+      <div class="nav-logo-text">
+        <h1>سلوكيرا</h1>
+        <span>OPS SYSTEM</span>
       </div>
     </div>
 
-    <nav class="topbar-nav">
-      <button class="tnb active ns" id="btn-sales" onclick="setView('sales',this)">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+    <!-- ملخص اليوم -->
+    <div class="nav-daily" id="nav-daily-wrap">
+      <div class="nav-daily-title">لوحة اليوم</div>
+      <div class="nav-daily-item" id="nd-activation">
+        <span>بانتظار التفعيل</span>
+        <strong id="nd-act-count">0</strong>
+      </div>
+      <div class="nav-daily-item" id="nd-assignment">
+        <span>بانتظار الإسناد</span>
+        <strong id="nd-asgn-count">0</strong>
+      </div>
+    </div>
+
+    <!-- قائمة التنقل -->
+    <nav class="nav-menu">
+      <div class="nav-section-title">القوائم الرئيسية</div>
+
+      <button class="nav-item active ns" id="btn-sales" onclick="setView('sales',this)">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
         <span>المبيعات</span>
       </button>
-      <button class="tnb na" id="btn-academy" onclick="setView('academy',this)" style="display:none">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c3 3 9 3 12 0v-5"/></svg>
-        <span>التشغيل</span>
-        <span class="badge" id="ops-badge" style="display:none">0</span>
+
+      <button class="nav-item na" id="btn-academy" onclick="setView('academy',this)" style="display:none">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c3 3 9 3 12 0v-5"/></svg>
+        <span>العمليات</span>
+        <span class="nav-badge" id="ops-badge" style="display:none">0</span>
       </button>
-      <button class="tnb" id="btn-completed" onclick="setView('completed',this)">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
-        <span>المكتملون</span>
-        <span class="badge" id="completed-badge" style="display:none">0</span>
+
+      <button class="nav-item na" id="btn-assign" onclick="setView('assign',this)" style="display:none">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
+        <span>الإسناد</span>
+        <span class="nav-badge" id="assign-badge" style="display:none">0</span>
       </button>
-      <button class="tnb nf" id="btn-finance" onclick="setView('finance',this)" style="display:none">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+
+      <button class="nav-item nf" id="btn-finance" onclick="setView('finance',this)" style="display:none">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
         <span>المالية</span>
       </button>
-      <button class="tnb nr" id="btn-reports" onclick="setView('reports',this)" style="display:none">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+
+      <div class="nav-divider"></div>
+      <div class="nav-section-title">البيانات</div>
+
+      <button class="nav-item" id="btn-completed" onclick="setView('completed',this)">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+        <span>قاعدة العملاء</span>
+        <span class="nav-badge" id="completed-badge" style="display:none">0</span>
+      </button>
+
+      <button class="nav-item nr" id="btn-reports" onclick="setView('reports',this)" style="display:none">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
         <span>التقارير</span>
       </button>
-      <button class="tnb" id="btn-settings" onclick="setView('settings',this)" style="display:none">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
-        <span>الإعدادات</span>
-      </button>
+
     </nav>
 
-    <div class="topbar-end">
-      <span id="last-sync-time" style="font-size:10px;color:rgba(255,255,255,0.45);white-space:nowrap"></span>
-          <button class="sync-btn" id="sync-btn" onclick="syncData()">
-        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
-        مزامنة
-      </button>
-      <button class="notif-btn" id="notif-btn" onclick="toggleNotifications()">
-        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
-        <span class="notif-dot" id="notif-dot"></span>
-      </button>
-      <div class="user-chip">
-        <div class="user-av" id="user-av-chip">م</div>
-        <span id="user-display-name">—</span>
+    <!-- أسفل القائمة -->
+    <div class="nav-bottom">
+      <div class="nav-user">
+        <div class="nav-user-av" id="user-av-chip">م</div>
+        <div class="nav-user-info">
+          <div class="nav-user-name" id="user-display-name">—</div>
+          <div class="nav-user-role" id="user-role-label">—</div>
+        </div>
+      </div>
+      <div class="nav-actions">
+        <button class="nav-action-btn" id="sync-btn" onclick="syncData()" title="مزامنة">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
+          <span>مزامنة</span>
+        </button>
+        <button class="nav-action-btn" id="notif-btn" onclick="toggleNotifications()" title="الإشعارات" style="position:relative">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+          <span class="notif-dot" id="notif-dot" style="position:absolute;top:4px;right:4px"></span>
+        </button>
+        <button class="nav-action-btn" id="btn-settings" onclick="setView('settings',document.getElementById('btn-settings'))" title="الإعدادات" style="display:none">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+        </button>
+        <button class="nav-action-btn" onclick="doLogout()" title="خروج" style="color:#FF6B6B">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+        </button>
       </div>
     </div>
-  </header>
+  </aside>
+
+  <!-- ══ Overlay للفلاتر ══ -->
+  <div class="filter-overlay" id="filter-overlay" onclick="toggleFilters()"></div>
 
   <!-- ══ جسم التطبيق ══ -->
-  <div class="main-body">
+  <div class="app-main">
 
     <!-- الشريط الجانبي للفلاتر -->
     <aside class="filter-sidebar" id="filter-sidebar">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem">
+        <span style="font-size:13px;font-weight:700;color:var(--text)">الفلاتر والبحث</span>
+        <button onclick="toggleFilters()" style="width:28px;height:28px;border-radius:6px;border:1px solid var(--border);background:var(--bg);cursor:pointer;display:flex;align-items:center;justify-content:center;color:var(--text-3)">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+      </div>
       <div class="search-wrap">
         <input type="text" id="search-input" placeholder="بحث عن عميل..." oninput="renderFiltered()">
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
@@ -919,12 +1216,12 @@ input, select, textarea { font-family: var(--font); }
       </div>
 
       <div class="fs-title">المصدر</div>
-      <select class="filter-select" id="filter-source" onchange="renderFiltered()">
+      <select class="filter-select" id="filter-source" onchange="renderFiltered();updateFilterDot()">
         <option value="">كل المصادر</option>
       </select>
 
       <div class="fs-title">الحالة</div>
-      <select class="filter-select" id="filter-status" onchange="renderFiltered()">
+      <select class="filter-select" id="filter-status" onchange="renderFiltered();updateFilterDot()">
         <option value="">الكل</option>
         <option value="pending">بانتظار التفعيل</option>
         <option value="done">مكتملون</option>
@@ -933,7 +1230,7 @@ input, select, textarea { font-family: var(--font); }
       </select>
 
       <div class="fs-title">الفترة</div>
-      <select class="filter-select" id="filter-date" onchange="renderFiltered()">
+      <select class="filter-select" id="filter-date" onchange="renderFiltered();updateFilterDot()">
         <option value="">كل الأوقات</option>
         <option value="today">اليوم</option>
         <option value="week">هذا الأسبوع</option>
@@ -941,12 +1238,12 @@ input, select, textarea { font-family: var(--font); }
       </select>
 
       <div class="fs-title">الليبل</div>
-      <select class="filter-select" id="filter-label" onchange="renderFiltered()">
+      <select class="filter-select" id="filter-label" onchange="renderFiltered();updateFilterDot()">
         <option value="">كل الليبلات</option>
       </select>
 
       <div class="fs-title">كيف عرف عنا؟</div>
-      <select class="filter-select" id="filter-acquisition" onchange="renderFiltered()">
+      <select class="filter-select" id="filter-acquisition" onchange="renderFiltered();updateFilterDot()">
         <option value="">الكل</option>
         <option value="لينكدإن">لينكدإن</option>
         <option value="انستقرام">انستقرام</option>
@@ -957,13 +1254,6 @@ input, select, textarea { font-family: var(--font); }
       </select>
 
       <button class="clear-filters-btn" onclick="clearFilters()">مسح الفلاتر ✕</button>
-
-      <div style="margin-top:1.5rem;padding-top:1rem;border-top:1px solid var(--border)">
-        <button class="btn btn-ghost" style="width:100%;justify-content:center;color:var(--red)" onclick="doLogout()">
-          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
-          تسجيل الخروج
-        </button>
-      </div>
     </aside>
 
     <!-- المحتوى -->
@@ -971,12 +1261,22 @@ input, select, textarea { font-family: var(--font); }
 
       <!-- ───── المبيعات ───── -->
       <div id="v-sales" style="display:none">
-        <!-- الإحصائيات -->
-        <div class="stats-row">
-          <div class="stat-card s-blue"><div class="stat-num" id="st0">0</div><div class="stat-lbl">إجمالي العملاء</div></div>
-          <div class="stat-card s-amber"><div class="stat-num" id="st1">0</div><div class="stat-lbl">بانتظار التفعيل</div></div>
-          <div class="stat-card s-green"><div class="stat-num" id="st2">0</div><div class="stat-lbl">مكتملون</div></div>
-          <div class="stat-card s-red"><div class="stat-num" id="st3">0</div><div class="stat-lbl">يحتاج إسناد</div></div>
+        <!-- رأس الصفحة -->
+        <div class="page-header">
+          <div class="page-title">المبيعات <span id="sales-total-count"></span></div>
+          <div class="quick-search">
+            <input type="text" id="search-input-quick" placeholder="بحث سريع..." oninput="quickSearch(this.value)">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+          </div>
+          <button class="export-btn" onclick="exportCSV()" title="تصدير Excel">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+            تصدير
+          </button>
+          <button class="filter-toggle-btn" id="filter-btn" onclick="toggleFilters()">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="4" y1="6" x2="20" y2="6"/><line x1="8" y1="12" x2="16" y2="12"/><line x1="11" y1="18" x2="13" y2="18"/></svg>
+            فلترة
+            <span class="filter-active-dot" id="filter-dot"></span>
+          </button>
         </div>
 
         <!-- فورم إضافة عميل -->
@@ -984,12 +1284,14 @@ input, select, textarea { font-family: var(--font); }
           <div class="add-form-header">
             <div class="add-form-title">
               تسجيل عميل جديد
-              <span id="step-label">الخطوة 1 من 2</span>
+              <span id="step-label">الخطوة 1 من 3</span>
             </div>
             <div class="step-indicator">
               <div class="step-dot current" id="sdot-1">1</div>
               <div class="step-line" id="sline-1"></div>
               <div class="step-dot" id="sdot-2">2</div>
+              <div class="step-line" id="sline-2"></div>
+              <div class="step-dot" id="sdot-3">3</div>
             </div>
           </div>
 
@@ -1036,7 +1338,6 @@ input, select, textarea { font-family: var(--font); }
                   <option value="مسجل">مسجل (Recorded)</option>
                 </select>
               </div>
-              <!-- شامل تقييم الكفاءة — يظهر فقط لأخصائي تحليل السلوك -->
               <div class="fg" id="fefficiency-wrap" style="display:none">
                 <label>شامل تقييم الكفاءة؟</label>
                 <select id="fefficiency">
@@ -1060,7 +1361,6 @@ input, select, textarea { font-family: var(--font); }
                 </select>
               </div>
               <div class="fg"><label>رقم الدفعة</label><input id="fbatch" placeholder="مثال: B24"></div>
-              <!-- قناة الاكتساب -->
               <div class="fg">
                 <label>كيف عرف عنا؟</label>
                 <select id="facquisition" onchange="onAcquisitionChange()">
@@ -1082,6 +1382,59 @@ input, select, textarea { font-family: var(--font); }
             <div class="form-hint" id="assign-hint">⚠️ هذا المصدر يتطلب إسناد يدوي في المنصة</div>
             <div class="form-btns">
               <button class="btn" onclick="goStep1()">← رجوع</button>
+              <button class="btn btn-primary" onclick="goStep3()">التالي ← (المالية)</button>
+            </div>
+          </div>
+
+          <!-- خطوة 3: البيانات المالية -->
+          <div class="form-step" id="form-step-3">
+            <div class="fg2">
+              <div class="fg">
+                <label>سعر الاشتراك (SAR) *</label>
+                <input id="fprice" type="text" inputmode="decimal" placeholder="0.00" oninput="calcPaymentPreview()">
+              </div>
+              <div class="fg">
+                <label>الخصم</label>
+                <select id="fdiscount" onchange="calcPaymentPreview()">
+                  <option value="0">0%</option>
+                  <option value="5">5%</option>
+                  <option value="25">25%</option>
+                  <option value="30">30%</option>
+                  <option value="50">50%</option>
+                </select>
+              </div>
+              <div class="fg">
+                <label>طريقة الدفع *</label>
+                <select id="fpaytype" onchange="onPayTypeChange()">
+                  <option value="">اختر...</option>
+                  <option value="كامل">دفع كامل</option>
+                  <option value="أقساط">أقساط</option>
+                </select>
+              </div>
+            </div>
+
+            <!-- ملخص سريع -->
+            <div id="fprice-summary" style="display:none;margin:12px 0;padding:12px 14px;background:var(--blue-lt);border-radius:10px;border:1px solid var(--blue-mid)">
+              <div style="display:flex;justify-content:space-between;font-size:12px;color:var(--text-2);margin-bottom:4px">
+                <span>السعر الأصلي</span><span id="fps-original">—</span>
+              </div>
+              <div id="fps-discount-row" style="display:none;display:flex;justify-content:space-between;font-size:12px;color:var(--red);margin-bottom:4px">
+                <span>الخصم</span><span id="fps-discount">—</span>
+              </div>
+              <div style="display:flex;justify-content:space-between;font-size:14px;font-weight:700;color:var(--blue);border-top:1px solid var(--blue-mid);padding-top:6px;margin-top:4px">
+                <span>السعر النهائي</span><span id="fps-final">—</span>
+              </div>
+              <div id="fps-installments" style="display:none;margin-top:8px;padding-top:8px;border-top:1px solid var(--blue-mid);font-size:12px;color:var(--text-2)">
+                <span>7 أقساط تلقائية ← </span><span id="fps-per">—</span><span> لكل قسط</span>
+              </div>
+            </div>
+
+            <div class="form-hint show" style="display:block;background:var(--amber-lt);color:var(--amber);padding:8px 12px;border-radius:8px;font-size:11px;margin-bottom:8px">
+              💡 موظف المالية سيتولى ضبط جدول الأقساط التفصيلي من بطاقة المتدرب
+            </div>
+
+            <div class="form-btns">
+              <button class="btn" onclick="goStep2()">← رجوع</button>
               <button class="btn btn-primary" id="add-btn" onclick="addClient()">
                 <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
                 تسجيل وإرسال للتشغيل
@@ -1120,6 +1473,14 @@ input, select, textarea { font-family: var(--font); }
 
       <!-- ───── التشغيل ───── -->
       <div id="v-academy" style="display:none">
+        <!-- رأس الصفحة -->
+        <div class="page-header">
+          <div class="page-title">العمليات</div>
+          <button class="filter-toggle-btn" onclick="toggleFilters()">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="4" y1="6" x2="20" y2="6"/><line x1="8" y1="12" x2="16" y2="12"/><line x1="11" y1="18" x2="13" y2="18"/></svg>
+            فلترة
+          </button>
+        </div>
         <!-- شريط التقدم اليومي -->
         <div class="daily-progress" id="daily-progress-bar">
           <div class="dp-texts">
@@ -1152,15 +1513,53 @@ input, select, textarea { font-family: var(--font); }
         <div id="al-pending-trial" class="clients-list"></div>
       </div>
 
-      <!-- ───── المكتملون ───── -->
+      <!-- ───── الإسناد ───── -->
+      <div id="v-assign" style="display:none">
+        <!-- رأس الصفحة -->
+        <div class="page-header">
+          <div class="page-title">الإسناد</div>
+          <button class="filter-toggle-btn" onclick="toggleFilters()">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="4" y1="6" x2="20" y2="6"/><line x1="8" y1="12" x2="16" y2="12"/><line x1="11" y1="18" x2="13" y2="18"/></svg>
+            فلترة
+          </button>
+        </div>
+        <div class="daily-progress">
+          <div class="dp-texts">
+            <h3>إسناد اليوم</h3>
+            <p id="dp-fraction-assign">0 / 0</p>
+          </div>
+          <div class="dp-bar-wrap">
+            <div class="dp-bar-track"><div class="dp-bar-fill" id="dp-fill-assign" style="width:0%"></div></div>
+            <div class="dp-bar-label" id="dp-pct-assign">0% مكتمل</div>
+          </div>
+        </div>
+        <div class="sec-head">
+          <span class="sec-title">بانتظار الإسناد</span>
+          <span class="sec-badge active" id="asgn-pend-total">0</span>
+        </div>
+        <div id="al-assign-groups"></div>
+      </div>
+
+      <!-- ───── قاعدة العملاء ───── -->
       <div id="v-completed" style="display:none">
+        <div class="page-header">
+          <div class="page-title">قاعدة العملاء</div>
+          <button class="export-btn" onclick="exportCSV()">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+            تصدير
+          </button>
+          <button class="filter-toggle-btn" onclick="toggleFilters()">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="4" y1="6" x2="20" y2="6"/><line x1="8" y1="12" x2="16" y2="12"/><line x1="11" y1="18" x2="13" y2="18"/></svg>
+            فلترة
+          </button>
+        </div>
         <div class="stats-row">
-          <div class="stat-card s-green"><div class="stat-num" id="comp-total">0</div><div class="stat-lbl">إجمالي المكتملين</div></div>
-          <div class="stat-card s-blue"><div class="stat-num" id="comp-today">0</div><div class="stat-lbl">مكتملو اليوم</div></div>
+          <div class="stat-card s-green"><div class="stat-num" id="comp-total">0</div><div class="stat-lbl">إجمالي العملاء</div></div>
+          <div class="stat-card s-blue"><div class="stat-num" id="comp-today">0</div><div class="stat-lbl">اكتملوا اليوم</div></div>
           <div class="stat-card s-blue" style="border-top-color:#6C3DBF"><div class="stat-num" id="comp-month">0</div><div class="stat-lbl">هذا الشهر</div></div>
         </div>
         <div class="sec-head" style="margin-top:1rem">
-          <span class="sec-title">المكتملون حسب البرنامج</span>
+          <span class="sec-title">العملاء حسب البرنامج</span>
           <span class="sec-badge" id="comp-count-badge">0</span>
         </div>
         <div id="comp-groups"></div>
@@ -1168,12 +1567,70 @@ input, select, textarea { font-family: var(--font); }
 
       <!-- ───── المالية ───── -->
       <div id="v-finance" style="display:none">
-        <div class="sec-head">
-          <span class="sec-title">السجل المالي</span>
-          <span class="sec-badge" id="fin-count">0</span>
+        <!-- رأس الصفحة -->
+        <div class="page-header">
+          <div class="page-title">المالية</div>
+          <button class="filter-toggle-btn" onclick="toggleFilters()">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="4" y1="6" x2="20" y2="6"/><line x1="8" y1="12" x2="16" y2="12"/><line x1="11" y1="18" x2="13" y2="18"/></svg>
+            فلترة
+          </button>
         </div>
-        <div id="fl" class="clients-list"></div>
+
+        <!-- تنبيه يوم 25 -->
+        <div class="fin-alert-banner" id="fin-alert-25" style="display:none">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+          <div>
+            <h4>تذكير — أقساط مستحقة قريباً</h4>
+            <p id="fin-alert-25-text">يوجد أقساط مستحقة في 27 من الشهر الحالي</p>
+          </div>
+        </div>
+
+        <!-- قوائم المالية -->
+        <div class="sec-head">
+          <span class="sec-title" style="color:var(--red)">🔴 متأخرون / إنذار</span>
+          <span class="sec-badge" id="fin-count-late" style="background:var(--red-lt);color:var(--red)">0</span>
+        </div>
+        <div id="fl-late"></div>
+
+        <div class="sec-head" style="margin-top:1rem">
+          <span class="sec-title" style="color:var(--amber)">🟡 قسط قادم خلال 3 أيام</span>
+          <span class="sec-badge" id="fin-count-soon" style="background:var(--amber-lt);color:var(--amber)">0</span>
+        </div>
+        <div id="fl-soon"></div>
+
+        <div class="sec-head" style="margin-top:1rem">
+          <span class="sec-title">أقساط نشطة</span>
+          <span class="sec-badge" id="fin-count-active">0</span>
+        </div>
+        <div id="fl-active"></div>
+
+        <div class="sec-head" style="margin-top:1rem">
+          <span class="sec-title" style="color:var(--green)">✅ مكتملو الدفع / دفع مباشر</span>
+          <span class="sec-badge" id="fin-count-done">0</span>
+        </div>
+        <div id="fl-done"></div>
       </div>
+
+      <!-- ══ مودال الرقم المرجعي ══ -->
+      <div class="modal-overlay" id="pay-ref-modal">
+        <div class="modal-box ref-modal-box">
+          <div class="modal-title">✅ تسجيل السداد</div>
+          <div class="modal-sub" id="pay-ref-sub">القسط رقم —</div>
+          <div class="fg" style="margin-bottom:10px">
+            <label>الرقم المرجعي للسداد</label>
+            <input id="pay-ref-input" placeholder="REF-XXXXXXX" dir="ltr" style="font-family:monospace">
+          </div>
+          <div class="fg">
+            <label>تاريخ السداد</label>
+            <input id="pay-ref-date" type="date">
+          </div>
+          <div class="modal-btns">
+            <button class="btn" onclick="closePayRefModal()">إلغاء</button>
+            <button class="btn btn-success" onclick="confirmPayment()">✅ تأكيد السداد</button>
+          </div>
+        </div>
+      </div>
+
 
       <!-- ───── التقارير ───── -->
       <div id="v-reports" style="display:none">
@@ -1233,14 +1690,6 @@ input, select, textarea { font-family: var(--font); }
         </div>
         <div id="src-list" class="clients-list" style="margin-bottom:1.5rem"></div>
 
-        <div class="sec-head" style="margin-top:1.5rem">
-          <span class="sec-title">🗺 خريطة الإسناد</span>
-          <span style="font-size:11px;color:var(--text-3)">تحكم في الخطوات المطلوبة لكل حالة</span>
-        </div>
-        <div class="settings-panel" style="padding:0;overflow:hidden">
-          <div id="assignment-rules-table" style="overflow-x:auto"></div>
-        </div>
-
         <div class="sec-head"><span class="sec-title">إدارة الليبلات</span></div>
         <div class="settings-panel">
           <div class="fg2" style="margin-bottom:.75rem">
@@ -1295,7 +1744,7 @@ input, select, textarea { font-family: var(--font); }
       </div>
 
     </main><!-- /content-area -->
-  </div><!-- /main-body -->
+  </div><!-- /app-main -->
 </div><!-- /app -->
 
 <!-- ══ البانل الجانبي للتفاصيل ══ -->
@@ -1352,17 +1801,25 @@ input, select, textarea { font-family: var(--font); }
           <div class="dp-fields" id="d-fields"></div>
         </div>
 
+        <!-- المالية داخل البطاقة -->
+        <div class="dp-section" id="d-finance-section">
+          <div class="dp-section-title">
+            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
+            المالية
+          </div>
+          <div id="d-finance-body"></div>
+        </div>
+
         <div class="dp-section">
           <div class="dp-section-title">
             <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
             ليبلات التشغيل
           </div>
           <div class="labels-picker" id="d-labels-picker"></div>
-          <div id="d-program2-wrap" style="margin-top:8px"></div>
         </div>
       </div>
 
-      <!-- العمود الأيسر: المراحل والسجل -->
+      <!-- العمود الأيسر: المراحل والسجل والملاحظات -->
       <div class="dp-col">
         <div class="dp-section">
           <div class="dp-section-title">
@@ -1370,6 +1827,30 @@ input, select, textarea { font-family: var(--font); }
             مراحل العملية
           </div>
           <div id="d-stages"></div>
+        </div>
+
+        <!-- ملاحظات التشغيل (العمليات + الإسناد) -->
+        <div class="dp-section">
+          <div class="dp-section-title">
+            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+            ملاحظات التشغيل
+          </div>
+          <div style="display:flex;gap:6px;align-items:flex-start">
+            <textarea id="ops-notes-input" rows="3" style="flex:1;padding:7px 10px;border:1.5px solid var(--border);border-radius:8px;font-family:var(--font);font-size:12px;resize:vertical;background:var(--bg)" placeholder="ملاحظات العمليات والإسناد..."></textarea>
+            <button onclick="saveOpsNotes(selId)" class="btn btn-sm btn-primary" style="white-space:nowrap;flex-shrink:0">حفظ</button>
+          </div>
+        </div>
+
+        <!-- ملاحظات المالية -->
+        <div class="dp-section" id="d-fin-notes-section">
+          <div class="dp-section-title">
+            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+            ملاحظات المالية
+          </div>
+          <div style="display:flex;gap:6px;align-items:flex-start">
+            <textarea id="fin-notes-input" rows="2" style="flex:1;padding:7px 10px;border:1.5px solid var(--border);border-radius:8px;font-family:var(--font);font-size:12px;resize:vertical;background:var(--bg)" placeholder="ملاحظات المالية..."></textarea>
+            <button onclick="saveFinNotes(selId)" class="btn btn-sm" style="white-space:nowrap;flex-shrink:0;border-color:var(--blue-mid);color:var(--blue)">حفظ</button>
+          </div>
         </div>
 
         <div class="dp-section">
@@ -1381,32 +1862,6 @@ input, select, textarea { font-family: var(--font); }
         </div>
       </div>
 
-    </div>
-  </div>
-</div>
-
-<!-- ══ مودال البرنامج الثاني ══ -->
-<div id="p2-modal">
-  <div class="modal-box">
-    <div class="modal-title">إضافة برنامج ثاني</div>
-    <div class="modal-sub" id="p2-modal-sub">—</div>
-    <div class="fg2">
-      <div class="fg full"><label>البرنامج *</label>
-        <select id="p2-program" onchange="onP2ProgramChange()"><option value="">اختر البرنامج...</option></select>
-      </div>
-      <div class="fg" id="p2-track-wrap" style="display:none"><label>المسار</label>
-        <select id="p2-track"><option value="">—</option></select>
-      </div>
-      <div class="fg" id="p2-ptype-wrap" style="display:none"><label>نوع البرنامج</label>
-        <select id="p2-ptype"><option value="">اختر...</option><option value="مباشر">مباشر (Live)</option><option value="مسجل">مسجل (Recorded)</option></select>
-      </div>
-      <div class="fg full"><label>مصدر الدفع *</label>
-        <select id="p2-source"><option value="">اختر المصدر...</option></select>
-      </div>
-    </div>
-    <div class="modal-btns">
-      <button class="btn" onclick="closeProgram2Modal()">إلغاء</button>
-      <button class="btn btn-primary" onclick="saveProgram2()">✅ إضافة البرنامج</button>
     </div>
   </div>
 </div>
@@ -1639,88 +2094,11 @@ const ini = n => {
   const p = n.trim().split(' ');
   return p.length >= 2 ? p[0][0] + p[p.length-1][0] : n.slice(0,2);
 };
-// ════════════════════════════════
-// خريطة الإسناد الذكية
-// ════════════════════════════════
-// كل قاعدة: { prog, track, ptype, source, steps }
-// steps: 'auto' | 'basecamp' | 'assign' | 'assign+basecamp'
-// source: 'عصارة' | '*' (أي مصدر) | '!عصارة' (أي مصدر غير عصارة)
-let assignmentRules = null;
-
-function getDefaultRules() {
-  return [
-    // تحليل السلوك — ABAT
-    { prog:'تحليل', track:'ABAT', ptype:'مسجل',  source:'عصارة',   steps:'auto'   },
-    { prog:'تحليل', track:'ABAT', ptype:'مسجل',  source:'!عصارة',  steps:'assign' },
-    { prog:'تحليل', track:'ABAT', ptype:'مباشر', source:'*',       steps:'assign' },
-    // تحليل السلوك — QBA & QASP-S
-    { prog:'تحليل', track:'QBA',    ptype:'مسجل', source:'عصارة',  steps:'basecamp' },
-    { prog:'تحليل', track:'QBA',    ptype:'مسجل', source:'!عصارة', steps:'assign'   },
-    { prog:'تحليل', track:'QASP-S', ptype:'مسجل', source:'عصارة',  steps:'basecamp' },
-    { prog:'تحليل', track:'QASP-S', ptype:'مسجل', source:'!عصارة', steps:'assign'   },
-    // تحليل السلوك — CA
-    { prog:'تحليل', track:'CA', ptype:'*', source:'*', steps:'assign' },
-    // إدارة السلوك — عصارة مسجل
-    { prog:'إدارة', track:'*', ptype:'مسجل', source:'عصارة',  steps:'auto'   },
-    { prog:'إدارة', track:'*', ptype:'*',    source:'!عصارة', steps:'assign' },
-    { prog:'إدارة', track:'*', ptype:'مباشر',source:'*',      steps:'assign' },
-    // باقي البرامج — الافتراضي
-    { prog:'*', track:'*', ptype:'*', source:'عصارة',  steps:'auto'   },
-    { prog:'*', track:'*', ptype:'*', source:'!عصارة', steps:'assign' },
-  ];
-}
-
-function loadAssignmentRules() {
-  const saved = localStorage.getItem('ops_assignment_rules');
-  assignmentRules = saved ? JSON.parse(saved) : getDefaultRules();
-}
-
-function saveAssignmentRules() {
-  localStorage.setItem('ops_assignment_rules', JSON.stringify(assignmentRules));
-}
-
-// حساب خطوات العميل بناءً على خريطة الإسناد
-function getClientSteps(c) {
-  if (!assignmentRules) loadAssignmentRules();
-  const prog  = c.program  || '';
-  const track = c.track    || '';
-  const ptype = c.programType || '';
-  const src   = c.source   || '';
-
-  for (const rule of assignmentRules) {
-    const mProg  = rule.prog  === '*' || prog.includes(rule.prog);
-    const mTrack = rule.track === '*' || track === rule.track;
-    const mPtype = rule.ptype === '*' || ptype === rule.ptype;
-    let   mSrc   = false;
-    if      (rule.source === '*')       mSrc = true;
-    else if (rule.source === '!عصارة') mSrc = src !== 'عصارة';
-    else                                mSrc = src === rule.source;
-
-    if (mProg && mTrack && mPtype && mSrc) return rule.steps;
-  }
-  return 'assign'; // افتراضي
-}
-
-// هل يحتاج إسناد؟ (للتوافق مع الكود القديم)
-const needsAssign = (src, c) => {
-  if (c) {
-    const steps = getClientSteps(c);
-    return steps === 'assign' || steps === 'assign+basecamp';
-  }
-  // fallback قديم للتوافق
+const needsAssign = src => {
   if (src === 'عصارة') return false;
   const s = sources.find(x => x.name === src);
   return s ? s.assign : true;
 };
-
-// هل يحتاج Basecamp؟
-const needsBasecamp = c => {
-  const steps = getClientSteps(c);
-  return steps === 'basecamp' || steps === 'assign+basecamp';
-};
-
-// هل مكتمل تلقائياً؟
-const isAutoComplete = c => getClientSteps(c) === 'auto';
 const isTrialClient    = c => c?.clientType === 'تجربة';
 const isUninterested   = c => c?.trialStatus === 'uninterested';
 const isConverted      = c => c?.trialStatus === 'converted';
@@ -1762,7 +2140,6 @@ async function api(params, body=null) {
 }
 
 async function persistClient(c) {
-  c.updatedAt = new Date().toISOString();
   localStorage.setItem('ops_clients', JSON.stringify(clients));
   return await api(null, { action:'updateClient', ...c });
 }
@@ -1784,82 +2161,37 @@ async function syncData() {
       if (s.startsWith('#') || s === 'undefined' || s === 'null') return '';
       return s;
     };
-
-    // مساعد: هل القيمة الشيت أحدث من المحلية؟
-    // نقارن بـ updatedAt إذا موجود، وإلا نفضّل الشيت (المصدر الحقيقي)
-    const sheetIsNewer = (local, sheet) => {
-      if (!local.updatedAt) return true;   // local قديم بدون timestamp → الشيت أحدث
-      if (!sheet.updatedAt) return false;  // الشيت بدون timestamp → نحافظ على local
-      return new Date(sheet.updatedAt) > new Date(local.updatedAt);
-    };
-
     const localClients = JSON.parse(localStorage.getItem('ops_clients') || '[]');
-
     clients = cr.clients
       .filter(sc => sc && cleanVal(sc.ref) && cleanVal(sc.name))
       .map(sc => {
-        // تنظيف القيم من الشيت
         const clean = {};
         Object.keys(sc).forEach(k => { clean[k] = cleanVal(sc[k]); });
-
-        // تحويل Boolean
         clean.academyAdded    = sc.academyAdded    === true || String(sc.academyAdded).toLowerCase()    === 'true';
         clean.academyAssigned = sc.academyAssigned === true || String(sc.academyAssigned).toLowerCase() === 'true';
-
         const local = localClients.find(l => l.ref === clean.ref);
-        if (!local) {
-          // عميل جديد من الشيت — لا يوجد locally
+        if (local) {
           return {
             ...clean,
-            labels:      Array.isArray(clean.labels) ? clean.labels : [],
-            log:         [],
-            trialStatus: clean.trialStatus || '',
+            addedBy:      local.addedBy      || clean.addedBy      || '',
+            labels:       local.labels       || [],
+            notes:        local.notes        || clean.notes        || '',
+            opsNotes:     local.opsNotes     || clean.opsNotes     || '',
+            track:        local.track        || clean.track        || '',
+            programType:  local.programType  || clean.programType  || '',
+            clientType:   local.clientType   || clean.clientType   || '',
+            batchNo:      local.batchNo      || clean.batchNo      || '',
+            trialStatus:  local.trialStatus  || clean.trialStatus  || '',
+            startDate:    local.startDate    || clean.startDate    || '',
+            activatedAt:  local.activatedAt  || clean.activatedAt  || '',
+            efficiencyCheck:    local.efficiencyCheck    || clean.efficiencyCheck    || '',
+            acquisitionChannel: local.acquisitionChannel || clean.acquisitionChannel || '',
+            academyAdded:    local.academyAdded    !== undefined ? local.academyAdded    : clean.academyAdded,
+            academyAssigned: local.academyAssigned !== undefined ? local.academyAssigned : clean.academyAssigned,
+            log: local.log || [],
           };
         }
-
-        // ══ منطق الدمج الذكي ══
-        // القاعدة: بيانات الشيت هي المصدر الحقيقي للحالات الرئيسية
-        // بيانات local تحتفظ بالبيانات الغنية (labels, log, opsNotes, program2)
-        // للحقول الحساسة (academyAdded, academyAssigned): نأخذ أعلى قيمة (true يفوز)
-        const mergedAcademyAdded    = clean.academyAdded    || local.academyAdded    || false;
-        const mergedAcademyAssigned = clean.academyAssigned || local.academyAssigned || false;
-
-        // للحقول النصية: نفضّل الشيت إذا أحدث، وإلا local
-        const useSheet = sheetIsNewer(local, clean);
-
-        return {
-          // أساس: بيانات الشيت (المصدر الحقيقي)
-          ...clean,
-
-          // الحالات: أعلى قيمة تفوز (true يفوز على false دائماً)
-          academyAdded:    mergedAcademyAdded,
-          academyAssigned: mergedAcademyAssigned,
-
-          // activatedAt: خذ الأقدم غير فارغ (أول مرة تفعيل)
-          activatedAt: clean.activatedAt || local.activatedAt || '',
-
-          // بيانات غنية محلية فقط (غير موجودة في الشيت)
-          labels:      local.labels      || [],
-          log:         local.log         || [],
-          opsNotes:    local.opsNotes    || clean.opsNotes    || '',
-          program2:    local.program2    || null,
-          createdAtISO: local.createdAtISO || clean.createdAtISO || '',
-
-          // البيانات النصية: الشيت أحدث → خذ الشيت، وإلا خذ local إذا موجود
-          notes:       useSheet ? (clean.notes || local.notes || '') : (local.notes || clean.notes || ''),
-          trialStatus: useSheet ? (clean.trialStatus || local.trialStatus || '') : (local.trialStatus || clean.trialStatus || ''),
-          startDate:   clean.startDate  || local.startDate  || '',
-          batchNo:     clean.batchNo    || local.batchNo    || '',
-          expiry:      clean.expiry     || local.expiry     || '',
-
-          // البيانات الثابتة: local تفوز (محفوظة محلياً بدقة)
-          addedBy:            local.addedBy            || clean.addedBy            || '',
-          track:              local.track              || clean.track              || '',
-          programType:        local.programType        || clean.programType        || '',
-          clientType:         local.clientType         || clean.clientType         || '',
-          efficiencyCheck:    local.efficiencyCheck    || clean.efficiencyCheck    || '',
-          acquisitionChannel: local.acquisitionChannel || clean.acquisitionChannel || '',
-        };
+        return { ...clean, labels: Array.isArray(clean.labels) ? clean.labels : [], log:[], trialStatus:'' };
       });
   }
   if (pr.programs) programs = pr.programs;
@@ -1884,26 +2216,43 @@ async function syncData() {
   render();
 
   btn.classList.remove('loading');
-  btn.innerHTML = '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg> مزامنة';
-  const lastSyncEl = document.getElementById('last-sync-time');
-  if (lastSyncEl) lastSyncEl.textContent = 'آخر مزامنة: ' + new Date().toLocaleTimeString('ar-SA', {hour:'2-digit', minute:'2-digit'});
-  setTimeout(() => { updateStats(); render(); }, 200);
-}
-
-// مزامنة تلقائية كل 90 ثانية
-let _autoSyncTimer = null;
-function startAutoSync() {
-  if (_autoSyncTimer) clearInterval(_autoSyncTimer);
-  _autoSyncTimer = setInterval(() => {
-    // لا تزامن إذا كان هناك موديل مفتوح
-    const anyModal = document.querySelector('.modal-overlay.show, #dpanel-overlay.show');
-    if (!anyModal) syncData();
-  }, 90000);
+  btn.innerHTML = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg><span>مزامنة</span>';
+  setTimeout(() => { updateStats(); render(); checkMorningSummary(); }, 200);
 }
 
 // ════════════════════════════════
-// الفلاتر الجانبية — Cascading
+// الفلاتر — فتح/إغلاق
 // ════════════════════════════════
+let filtersOpen = false;
+function toggleFilters() {
+  filtersOpen = !filtersOpen;
+  const sidebar  = document.getElementById('filter-sidebar');
+  const overlay  = document.getElementById('filter-overlay');
+  const btn      = document.getElementById('filter-btn');
+  if (sidebar) sidebar.classList.toggle('open', filtersOpen);
+  if (overlay) overlay.classList.toggle('show', filtersOpen);
+  if (btn)     btn.classList.toggle('active', filtersOpen);
+}
+
+function quickSearch(val) {
+  // مزامنة مع حقل البحث في الفلاتر
+  const si = document.getElementById('search-input');
+  if (si) { si.value = val; renderFiltered(); }
+}
+
+function updateFilterDot() {
+  const dot = document.getElementById('filter-dot');
+  if (!dot) return;
+  const active = filterProg || filterTrack || filterType ||
+    document.getElementById('filter-source')?.value ||
+    document.getElementById('filter-status')?.value ||
+    document.getElementById('filter-label')?.value ||
+    document.getElementById('filter-date')?.value ||
+    document.getElementById('filter-acquisition')?.value;
+  dot.classList.toggle('show', !!active);
+}
+
+
 function buildFilterSidebar() {
   // برامج فريدة مع عدادات
   const fixedProgs = ['تحليل السلوك التطبيقي','إدارة السلوك التنظيمي','الاقتصاد السلوكي','برامج التعليم المستمر','حجز مقعد'];
@@ -1947,18 +2296,21 @@ function setProgFilter(prog) {
   filterType  = '';
   buildFilterSidebar();
   renderFiltered();
+  updateFilterDot();
 }
 
 function setTrackFilter(track) {
   filterTrack = filterTrack === track ? '' : track;
   updateTrackChips();
   renderFiltered();
+  updateFilterDot();
 }
 
 function setTypeFilter(type) {
   filterType = filterType === type ? '' : type;
   updateTypeChips();
   renderFiltered();
+  updateFilterDot();
 }
 
 function updateTrackFilter() {
@@ -2010,10 +2362,11 @@ function updateLabelFilter() {
 
 function clearFilters() {
   filterProg = ''; filterTrack = ''; filterType = '';
-  ['search-input','filter-source','filter-status','filter-label','filter-date','filter-acquisition']
+  ['search-input','search-input-quick','filter-source','filter-status','filter-label','filter-date','filter-acquisition']
     .forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; });
   buildFilterSidebar();
   renderFiltered();
+  updateFilterDot();
 }
 
 // ════════════════════════════════
@@ -2027,7 +2380,9 @@ function daysSince(c) {
 }
 
 function getFilteredClients() {
-  const q           = (document.getElementById('search-input')?.value || '').toLowerCase();
+  const qMain  = (document.getElementById('search-input')?.value || '').toLowerCase();
+  const qQuick = (document.getElementById('search-input-quick')?.value || '').toLowerCase();
+  const q      = qMain || qQuick;
   const src         = document.getElementById('filter-source')?.value      || '';
   const status      = document.getElementById('filter-status')?.value      || '';
   const labelId     = document.getElementById('filter-label')?.value       || '';
@@ -2070,16 +2425,10 @@ function getFilteredClients() {
     let matchDate = true;
     if (dateF) {
       const cd = parseClientDate(c);
-      if (!cd) {
-        // إذا ما قدرنا نحلل التاريخ — نُظهره في "الكل" فقط، نخفيه في الفلاتر الزمنية
-        matchDate = false;
-      } else {
-        const cdD = new Date(cd.getFullYear(), cd.getMonth(), cd.getDate());
-        const nowD = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-        if      (dateF === 'today') matchDate = cdD.getTime() === nowD.getTime();
-        else if (dateF === 'week')  matchDate = (nowD - cdD) <= 7 * 86400000;
-        else if (dateF === 'month') matchDate = cd.getMonth() === now.getMonth() && cd.getFullYear() === now.getFullYear();
-      }
+      if (!cd) matchDate = false;
+      else if (dateF === 'today') matchDate = cd.toDateString() === now.toDateString();
+      else if (dateF === 'week')  matchDate = (now - cd) <= 7 * 86400000;
+      else if (dateF === 'month') matchDate = cd.getMonth()===now.getMonth() && cd.getFullYear()===now.getFullYear();
     }
 
     return matchQ && matchProg && matchTrack && matchType && matchSrc && matchStatus && matchLabel && matchAcquisition && matchDate;
@@ -2089,6 +2438,7 @@ function getFilteredClients() {
 function renderFiltered() {
   if (currentView === 'sales') render();
   else if (currentView === 'academy') render();
+  else if (currentView === 'assign') renderAssign();
   else if (currentView === 'completed') renderCompleted();
   else if (currentView === 'finance') renderFinance();
 }
@@ -2110,22 +2460,24 @@ function srcPill(s) {
 
 function toolLabelsHTML(c) {
   let h = '';
-  const prog = c.program || '';
-  const track = c.track || '';
-  if (prog.includes('تحليل السلوك')) {
-    if (['QBA','QASP-S','CA'].includes(track))
-      h += '<span class="pill" style="background:#FFF3E0;color:#E65100;font-size:10px">Basecamp</span>';
-    h += '<span class="pill" style="background:#E8F5E9;color:#1B5E20;font-size:10px">Database</span>';
-  } else if (prog.includes('إدارة السلوك')) {
-    h += '<span class="pill" style="background:#FFF3E0;color:#E65100;font-size:10px">Basecamp</span>';
-    h += '<span class="pill" style="background:#E8F5E9;color:#1B5E20;font-size:10px">Database</span>';
-  }
-  // ليبل البرنامج الثاني
-  if (c.program2) {
-    const col2 = getProgColor(c.program2.program);
-    const done2 = c.program2.assigned;
-    h += `<span class="pill" style="background:${col2}18;color:${col2};border:1px solid ${col2}44;font-size:10px;font-weight:700">● برنامجان${done2?' ✓':''}</span>`;
-  }
+  const prog  = c.program || '';
+  const track = c.track   || '';
+  const ptype = c.programType || '';
+
+  // قاعدة Basecamp
+  const hasBasecamp =
+    (prog.includes('تحليل السلوك') && ['QBA','QASP-S','CA'].includes(track)) ||
+    (prog.includes('إدارة السلوك') && ptype === 'مباشر');
+
+  // قاعدة واتساب
+  const hasWhatsApp =
+    hasBasecamp ||
+    (prog.includes('تحليل السلوك') && track === 'ABAT' && ptype === 'مباشر') ||
+    prog.includes('التعليم المستمر');
+
+  if (hasBasecamp) h += '<span class="pill" style="background:#FFF3E0;color:#E65100;font-size:10px">Basecamp</span>';
+  if (hasWhatsApp) h += '<span class="pill" style="background:#E8F5E9;color:#1B5E20;font-size:10px">واتساب</span>';
+
   return h;
 }
 
@@ -2161,35 +2513,21 @@ function cardHTML(c, showTrialActions=false) {
     else if (c.academyAdded) statusPill = '<span class="pill p-amber">تمت الإضافة</span>';
     else statusPill = '<span class="pill p-amber">بانتظار التفعيل</span>';
 
-    const steps      = getClientSteps(c);
-    const isAutoC     = steps === 'auto';
-    const needsBC     = steps === 'basecamp' || steps === 'assign+basecamp';
-    const needsAsgn   = (steps === 'assign' || steps === 'assign+basecamp') && !c.academyAssigned;
+    const needsAsgn = needsAssign(c.source) && !c.academyAssigned;
     const assignBadge = needsAsgn && !isTrial ? '<span class="pill p-red" style="font-size:10px">يحتاج إسناد</span>' : '';
 
     // أزرار التشغيل السريعة (داخل البطاقة في واجهة التشغيل)
     let quickActions = '';
     if (currentView === 'academy' && !isTrial && !c.academyAssigned && can('academy')) {
       quickActions = `<div class="card-actions">`;
-      if (isAutoC) {
-        // تلقائي — زر اكتمال مباشر
-        quickActions += `<span class="pill" style="font-size:10px;background:#E8F5E9;color:#1B5E20">⚡ تلقائي</span>`;
-        quickActions += `<button class="btn btn-sm btn-success" onclick="event.stopPropagation();markComplete('${c.ref}')" style="margin-right:auto">✓ تأكيد الاكتمال</button>`;
-      } else if (needsBC && !needsAsgn) {
-        // Basecamp فقط
-        if (!c.academyAdded) {
-          quickActions += `<button class="btn btn-sm btn-success" onclick="event.stopPropagation();markAdded('${c.ref}')">✓ تفعيل Basecamp</button>`;
-        } else {
-          quickActions += `<span class="pill p-green" style="font-size:11px">✓ Basecamp مفعّل</span>`;
-          quickActions += `<button class="btn btn-sm btn-primary" onclick="event.stopPropagation();markComplete('${c.ref}')" style="margin-right:auto">✓ اكتمل</button>`;
-        }
+      if (!c.academyAdded) {
+        quickActions += `<button class="btn btn-sm btn-success" onclick="event.stopPropagation();markAdded('${c.ref}')">✓ تمت الإضافة في المنصة</button>`;
       } else {
-        // إسناد (مع أو بدون Basecamp)
-        if (!c.academyAdded) {
-          quickActions += `<button class="btn btn-sm btn-success" onclick="event.stopPropagation();markAdded('${c.ref}')">✓ تمت الإضافة في المنصة</button>`;
-        } else {
-          quickActions += `<span class="pill p-green" style="font-size:11px">✓ تمت الإضافة</span>`;
+        quickActions += `<span class="pill p-green" style="font-size:11px">✓ تمت الإضافة</span>`;
+        if (needsAssign(c.source)) {
           quickActions += `<button class="btn btn-sm btn-primary" onclick="event.stopPropagation();markAssigned('${c.ref}')" style="margin-right:auto">✓ تم الإسناد — اكتمل</button>`;
+        } else {
+          quickActions += `<button class="btn btn-sm btn-primary" onclick="event.stopPropagation();markComplete('${c.ref}')" style="margin-right:auto">✓ اكتمل التفعيل</button>`;
         }
       }
       quickActions += `</div>`;
@@ -2197,7 +2535,7 @@ function cardHTML(c, showTrialActions=false) {
 
     // أزرار التجربة
     let trialActions = '';
-    if (showTrialActions && isTrial && !isUnint && !isConv && can('academy')) {
+    if (showTrialActions && isTrial && !isUnint && !isConv && (can('academy') || can('addClient'))) {
       trialActions = `<div class="trial-actions">
         <span class="trial-label">⏳ بانتظار قرار التجربة</span>
         <button class="btn btn-sm btn-success" onclick="event.stopPropagation();openConvertModal('${c.ref}')">✅ اشتراك</button>
@@ -2270,39 +2608,53 @@ function cardHTML(c, showTrialActions=false) {
 // الإحصائيات
 // ════════════════════════════════
 function updateStats() {
-  const pending  = clients.filter(c => !c.academyAssigned && !isTrialClient(c)).length;
-  const done     = clients.filter(c => c.academyAssigned).length;
-  const needAsgn = clients.filter(c => needsAssign(c.source) && !c.academyAssigned && !isTrialClient(c)).length;
-  const total    = clients.length;
+  const pending      = clients.filter(c => !c.academyAdded && !c.academyAssigned && !isTrialClient(c)).length;
+  const pendingAsgn  = clients.filter(c => c.academyAdded && !c.academyAssigned && needsAssign(c.source) && !isTrialClient(c)).length;
+  const done         = clients.filter(c => c.academyAssigned).length;
+  const needAsgn     = clients.filter(c => needsAssign(c.source) && !c.academyAssigned && !isTrialClient(c)).length;
+  const total        = clients.length;
 
-  document.getElementById('st0').textContent = total;
-  document.getElementById('st1').textContent = pending;
-  document.getElementById('st2').textContent = done;
-  document.getElementById('st3').textContent = needAsgn;
+  // إحصائيات المبيعات
+  const st0 = document.getElementById('st0'); if (st0) st0.textContent = total;
+  const st1 = document.getElementById('st1'); if (st1) st1.textContent = pending;
+  const st2 = document.getElementById('st2'); if (st2) st2.textContent = done;
+  const st3 = document.getElementById('st3'); if (st3) st3.textContent = needAsgn;
 
-  // badge التشغيل — معلقون + حرجون (يبدأون خلال 48 ساعة)
+  // ملخص اليوم في الشريط الجانبي
+  const ndAct  = document.getElementById('nd-act-count');  if (ndAct)  ndAct.textContent  = pending;
+  const ndAsgn = document.getElementById('nd-asgn-count'); if (ndAsgn) ndAsgn.textContent = pendingAsgn;
+
+  // تلوين عاجل
+  const ndActEl  = document.getElementById('nd-activation');
+  const ndAsgnEl = document.getElementById('nd-assignment');
+  if (ndActEl)  ndActEl.className  = 'nav-daily-item' + (pending > 0 ? ' urgent' : '');
+  if (ndAsgnEl) ndAsgnEl.className = 'nav-daily-item' + (pendingAsgn > 0 ? ' warn' : '');
+
+  // badge العمليات — فقط بانتظار التفعيل (لم يُضافوا بعد)
   const badge = document.getElementById('ops-badge');
   if (badge) {
-    const pendTotal = clients.filter(c => !c.academyAssigned && !isTrialClient(c)).length;
+    badge.textContent = pending;
+    badge.style.display = pending > 0 ? 'flex' : 'none';
     const urgentCount = clients.filter(c => {
-      if (!c.startDate || c.academyAssigned) return false;
+      if (!c.startDate || c.academyAdded) return false;
       const diff = Math.ceil((new Date(c.startDate) - new Date()) / 86400000);
       return diff <= 2;
     }).length;
-    badge.textContent = pendTotal;
-    badge.style.display = pendTotal > 0 ? 'flex' : 'none';
-    badge.style.background = urgentCount > 0 ? '#FF8C00' : '';
-    badge.title = urgentCount > 0 ? `${urgentCount} عميل يبدأ برنامجه خلال 48 ساعة` : '';
+    badge.className = 'nav-badge' + (urgentCount > 0 ? ' warn' : '');
   }
 
-  // شريط التقدم اليومي — مكتملون اليوم من إجمالي المسجلين اليوم
+  // badge الإسناد — فقط بانتظار الإسناد
+  const asgnBadge = document.getElementById('assign-badge');
+  if (asgnBadge) {
+    asgnBadge.textContent = pendingAsgn;
+    asgnBadge.style.display = pendingAsgn > 0 ? 'flex' : 'none';
+  }
+
+  // شريط التقدم اليومي (العمليات)
   const todayStr = new Date().toDateString();
   const todayDone = clients.filter(c => {
-    if (!c.academyAssigned || !c.activatedAt) return false;
-    try {
-      const d = new Date(c.activatedAt);
-      return !isNaN(d) && d.toDateString() === todayStr;
-    } catch { return false; }
+    if (!c.academyAdded || !c.activatedAt) return false;
+    try { const d = new Date(c.activatedAt); return !isNaN(d) && d.toDateString() === todayStr; } catch { return false; }
   }).length;
   const todayRegistered = clients.filter(c => {
     const d = parseClientDate(c);
@@ -2317,15 +2669,17 @@ function updateStats() {
   if (frac) frac.textContent = `${todayDone} / ${todayTotal}`;
   if (pctEl) pctEl.textContent = pct + '% مكتمل اليوم';
 
-  // عدادات التشغيل
+  // عداد التجربة
   const acaPendTrial = clients.filter(c => isTrialClient(c) && !c.trialStatus).length;
   const el1 = document.getElementById('aca-pend-trial-count');
   if (el1) el1.textContent = acaPendTrial;
-  const pendingOps = clients.filter(c => !c.academyAssigned && !isTrialClient(c)).length;
+  const pendingOps = clients.filter(c => !c.academyAdded && !c.academyAssigned && !isTrialClient(c)).length;
   const el2 = document.getElementById('aca-pend-total');
   if (el2) el2.textContent = pendingOps;
+  const el3 = document.getElementById('asgn-pend-total');
+  if (el3) el3.textContent = pendingAsgn;
 
-  // badge المكتملون في الـ topbar
+  // badge قاعدة العملاء
   const compBadgeNav = document.getElementById('completed-badge');
   if (compBadgeNav) {
     compBadgeNav.textContent = done;
@@ -2339,27 +2693,73 @@ function updateStats() {
 function render() {
   if (currentView === 'sales') renderSales();
   else if (currentView === 'academy') renderAcademy();
+  else if (currentView === 'assign') renderAssign();
   else if (currentView === 'completed') renderCompleted();
   else if (currentView === 'finance') renderFinance();
   else if (currentView === 'settings') renderSettings();
 }
 
-// مساعد الفرز: الأحدث أولاً
-function sortByDateDesc(arr) {
-  return [...arr].sort((a, b) => {
-    const da = parseClientDate(a), db = parseClientDate(b);
-    if (da && db) return db - da;
-    if (da) return -1;
-    if (db) return 1;
-    return (b.ref || '').localeCompare(a.ref || '');
+function renderAssign() {
+  const allFiltered = getFilteredClients();
+  // فقط العملاء الذين أُضيفوا في المنصة ولم يُسندوا بعد ويحتاجون إسناداً
+  const pending = allFiltered.filter(c => c.academyAdded && !c.academyAssigned && needsAssign(c.source) && !isTrialClient(c));
+
+  const countEl = document.getElementById('asgn-pend-total');
+  if (countEl) countEl.textContent = pending.length;
+
+  // تجميع حسب البرنامج
+  const groups = {};
+  pending.forEach(c => {
+    const key = [(c.program||'عام').split('—')[0].trim(), c.track||''].filter(Boolean).join(' — ');
+    if (!groups[key]) groups[key] = { prog: c.program||'', track: c.track||'', clients: [] };
+    groups[key].clients.push(c);
   });
+
+  const groupsEl = document.getElementById('al-assign-groups');
+  if (!groupsEl) return;
+  if (!Object.keys(groups).length) {
+    groupsEl.innerHTML = '<div class="empty-state">✅ لا يوجد عملاء بانتظار الإسناد</div>';
+    return;
+  }
+  groupsEl.innerHTML = Object.entries(groups).map(([key, g]) => {
+    const color = getProgColor(g.prog);
+    return `<div class="ops-group">
+      <div class="ops-group-header" onclick="toggleOpsGroup(this)">
+        <div class="ops-group-prog-dot" style="background:${color}"></div>
+        <div class="ops-group-name">${key}</div>
+        <div class="ops-group-count">${g.clients.length}</div>
+        <svg class="ops-group-chevron open" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
+      </div>
+      <div class="ops-group-body">
+        ${g.clients.map(c => cardHTML(c)).join('')}
+      </div>
+    </div>`;
+  }).join('');
+
+  // شريط التقدم
+  const todayStr = new Date().toDateString();
+  const todayDone = clients.filter(c => {
+    if (!c.academyAssigned || !c.activatedAt) return false;
+    try { return new Date(c.activatedAt).toDateString() === todayStr; } catch { return false; }
+  }).length;
+  const fill = document.getElementById('dp-fill-assign');
+  const frac = document.getElementById('dp-fraction-assign');
+  const pctEl = document.getElementById('dp-pct-assign');
+  const total = Math.max(todayDone + pending.length, 1);
+  const pct = Math.round(todayDone / total * 100);
+  if (fill) fill.style.width = pct + '%';
+  if (frac) frac.textContent = `${todayDone} / ${total}`;
+  if (pctEl) pctEl.textContent = pct + '% مكتمل';
 }
 
 function renderSales() {
   const filtered     = getFilteredClients();
-  const regular      = sortByDateDesc(filtered.filter(c => !isTrialClient(c) && !c.academyAssigned));
-  const trial        = sortByDateDesc(filtered.filter(c => isTrialClient(c) && c.trialStatus !== 'uninterested'));
-  const uninterested = sortByDateDesc(filtered.filter(c => c.trialStatus === 'uninterested'));
+  const regular      = filtered.filter(c => !isTrialClient(c) && !c.academyAssigned);
+  const trial        = filtered.filter(c => isTrialClient(c) && c.trialStatus !== 'uninterested');
+  const uninterested = filtered.filter(c => c.trialStatus === 'uninterested');
+
+  const totalCountEl = document.getElementById('sales-total-count');
+  if (totalCountEl) totalCountEl.textContent = `(${clients.length} عميل)`;
 
   document.getElementById('sales-regular-count').textContent = regular.length;
   document.getElementById('sales-trial-count').textContent   = trial.length;
@@ -2431,21 +2831,17 @@ function renderCompleted() {
   let done = getFilteredClients().filter(c => c.academyAssigned);
 
   // فرز حسب تاريخ الإكمال — الأحدث أولاً
-  const getActivatedDate = c => {
-    if (c.activatedAt) { const d = new Date(c.activatedAt); if (!isNaN(d)) return d; }
-    return parseClientDate(c) || new Date(0);
-  };
-  done.sort((a, b) => getActivatedDate(b) - getActivatedDate(a));
+  done.sort((a,b) => (new Date(b.activatedAt||b.createdAt||0)) - (new Date(a.activatedAt||a.createdAt||0)));
 
   // إحصائيات
   const todayStr = new Date().toDateString();
   const monthNow = new Date();
   const todayCount = done.filter(c => {
-    try { return getActivatedDate(c).toDateString() === todayStr; } catch { return false; }
+    try { return new Date(c.activatedAt||c.createdAt).toDateString() === todayStr; } catch { return false; }
   }).length;
   const monthCount = done.filter(c => {
     try {
-      const d = getActivatedDate(c);
+      const d = new Date(c.activatedAt||c.createdAt);
       return d.getMonth() === monthNow.getMonth() && d.getFullYear() === monthNow.getFullYear();
     } catch { return false; }
   }).length;
@@ -2489,19 +2885,295 @@ function renderCompleted() {
   }).join('');
 }
 
-function renderFinance() {
-  document.getElementById('fin-count').textContent = clients.length;
-  document.getElementById('fl').innerHTML = clients.length ? clients.map(c => {
-    const statusPill = c.academyAssigned ? '<span class="pill p-green">مكتمل</span>' : '<span class="pill p-amber">جارٍ</span>';
-    return `<div class="client-card${selId===c.ref?' selected':''}" onclick="openDetail('${c.ref}')">
-      <div class="card-prog-bar" style="background:${getProgColor(c.program)}"></div>
-      <div class="card-body">
-        <div class="card-top"><span class="card-name">${c.name||'—'}</span><span class="card-ref">${c.ref||''}</span></div>
-        <div class="card-meta">${srcPill(c.source||'')}${statusPill}<span style="font-size:11px;color:var(--text-3)">${c.createdAt||''}</span></div>
-      </div>
-    </div>`;
-  }).join('') : '<div class="empty-state">لا يوجد سجلات</div>';
+// ════════════════════════════════
+// المالية — عرض كامل
+// ════════════════════════════════
+const INST_STATUSES = [
+  { val:'upcoming',  label:'قادم',           cls:'is-upcoming'  },
+  { val:'remind1',   label:'تذكير أول',      cls:'is-remind1'   },
+  { val:'remind2',   label:'تذكير ثاني',     cls:'is-remind2'   },
+  { val:'remind3',   label:'تذكير ثالث',     cls:'is-remind3'   },
+  { val:'late',      label:'متأخر',          cls:'is-late'      },
+  { val:'warning',   label:'إنذار',          cls:'is-warning'   },
+  { val:'policy',    label:'تطبيق السياسة',  cls:'is-policy'    },
+  { val:'paid',      label:'مدفوع ✓',        cls:'is-paid'      },
+];
+
+function instStatusLabel(s) {
+  return INST_STATUSES.find(x => x.val===s)?.label || s;
 }
+function instStatusCls(s) {
+  return INST_STATUSES.find(x => x.val===s)?.cls || 'is-upcoming';
+}
+
+function getFinCardColor(c) {
+  const insts = c.installments || [];
+  if (c.payType !== 'أقساط') return '';
+  const hasLate    = insts.some(i => ['late','warning','policy'].includes(i.status));
+  const hasSoon    = insts.some(i => {
+    if (i.status === 'paid') return false;
+    const diff = Math.ceil((new Date(i.due) - new Date()) / 86400000);
+    return diff >= 0 && diff <= 3;
+  });
+  const allPaid    = insts.length > 0 && insts.every(i => i.status === 'paid');
+  if (allPaid)  return 'fc-green';
+  if (hasLate)  return 'fc-red';
+  if (hasSoon)  return 'fc-amber';
+  return '';
+}
+
+function renderFinance() {
+  const today = new Date();
+  const day   = today.getDate();
+
+  // تنبيه يوم 25
+  const alert25 = document.getElementById('fin-alert-25');
+  if (alert25) {
+    const showAlert = day >= 25 && day <= 27;
+    alert25.style.display = showAlert ? 'flex' : 'none';
+    if (showAlert) {
+      const upcoming27 = clients.filter(c => {
+        const insts = c.installments || [];
+        return insts.some(i => i.status !== 'paid' && new Date(i.due).getDate() === 27
+          && new Date(i.due).getMonth() === today.getMonth()
+          && new Date(i.due).getFullYear() === today.getFullYear());
+      }).length;
+      const t = document.getElementById('fin-alert-25-text');
+      if (t) t.textContent = `${upcoming27} عميل لديهم أقساط مستحقة يوم 27 من هذا الشهر`;
+    }
+  }
+
+  // تقسيم العملاء
+  const withFin = clients.filter(c => c.payType);
+  const late    = withFin.filter(c => (c.installments||[]).some(i => ['late','warning','policy'].includes(i.status)));
+  const soon    = withFin.filter(c => !late.includes(c) && (c.installments||[]).some(i => {
+    if (i.status==='paid') return false;
+    const d = Math.ceil((new Date(i.due)-new Date())/86400000);
+    return d>=0 && d<=3;
+  }));
+  const allPaidList = withFin.filter(c => c.payType==='أقساط' && (c.installments||[]).length>0 && (c.installments||[]).every(i=>i.status==='paid'));
+  const direct  = withFin.filter(c => c.payType==='كامل');
+  const active  = withFin.filter(c => !late.includes(c) && !soon.includes(c) && !allPaidList.includes(c) && !direct.includes(c) && c.payType==='أقساط');
+
+  const setEl = (id, n) => { const el=document.getElementById(id); if(el) el.textContent=n; };
+  setEl('fin-count-late',   late.length);
+  setEl('fin-count-soon',   soon.length);
+  setEl('fin-count-active', active.length);
+  setEl('fin-count-done',   allPaidList.length + direct.length);
+
+  const renderList = (id, list) => {
+    const el = document.getElementById(id);
+    if (!el) return;
+    el.innerHTML = list.length ? list.map(c => finCardHTML(c)).join('') : '<div class="empty-state">—</div>';
+  };
+  renderList('fl-late',   late);
+  renderList('fl-soon',   soon);
+  renderList('fl-active', active);
+  renderList('fl-done',   [...allPaidList, ...direct]);
+}
+
+function finCardHTML(c) {
+  const col   = getFinCardColor(c);
+  const insts = c.installments || [];
+  const totalPaid = insts.filter(i=>i.status==='paid').reduce((s,i)=>s+i.amount,0);
+  const remaining = (c.finalPrice||0) - totalPaid;
+
+  const instRows = insts.map((inst,idx) => {
+    const sCls   = instStatusCls(inst.status);
+    const sLabel = instStatusLabel(inst.status);
+    const statusOpts = INST_STATUSES.map(s =>
+      `<option value="${s.val}" ${inst.status===s.val?'selected':''}>${s.label}</option>`
+    ).join('');
+    return `<tr>
+      <td style="color:var(--text-3);font-weight:600">${inst.n}</td>
+      <td dir="ltr">${inst.due||'—'}</td>
+      <td style="font-weight:600">${fmtSAR(inst.amount)}</td>
+      <td>
+        <select class="inst-status-sel" onchange="updateInstStatus('${c.ref}',${idx},this.value)">
+          ${statusOpts}
+        </select>
+      </td>
+      <td>
+        <div class="inst-actions">
+          ${inst.status==='paid'
+            ? `<span style="font-size:10px;color:var(--text-3)">${inst.paidRef||''}</span>`
+            : `<button class="btn btn-sm btn-success" style="padding:3px 8px;font-size:10px" onclick="openPayRef('${c.ref}',${idx})">سُدد</button>`
+          }
+          <button class="btn btn-sm" style="padding:3px 7px;font-size:10px" title="واتساب تذكير"
+            onclick="openWhatsAppFinance('${c.ref}',${idx})">📱</button>
+        </div>
+      </td>
+    </tr>`;
+  }).join('');
+
+  return `<div class="fin-card ${col}" id="fc-${c.ref}">
+    <div class="fin-card-header" onclick="toggleFinCard('${c.ref}')">
+      <div style="width:8px;height:8px;border-radius:50%;background:${getProgColor(c.program)};flex-shrink:0"></div>
+      <div class="fin-card-name">${c.name}</div>
+      <div class="fin-card-meta">
+        <span class="pill ${c.payType==='أقساط'?'p-blue':'p-green'}" style="font-size:10px">${c.payType||'—'}</span>
+        ${c.discount?`<span class="pill p-amber" style="font-size:10px">خصم ${c.discount}%</span>`:''}
+      </div>
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="fin-chevron" id="fchev-${c.ref}"><polyline points="6 9 12 15 18 9"/></svg>
+    </div>
+    <div class="fin-card-body" id="fcb-${c.ref}" style="display:none">
+      <div class="fin-summary">
+        <div class="fin-sum-item"><div class="val">${fmtSAR(c.finalPrice||0)}</div><div class="lbl">الإجمالي</div></div>
+        <div class="fin-sum-item paid"><div class="val">${fmtSAR(totalPaid)}</div><div class="lbl">المدفوع</div></div>
+        <div class="fin-sum-item remain"><div class="val">${fmtSAR(remaining)}</div><div class="lbl">المتبقي</div></div>
+      </div>
+      ${insts.length ? `
+      <table class="inst-table">
+        <thead><tr><th>#</th><th>الاستحقاق</th><th>المبلغ</th><th>الحالة</th><th></th></tr></thead>
+        <tbody>${instRows}</tbody>
+      </table>
+      <!-- تعديل الجدول -->
+      <div class="inst-editor" style="margin-top:10px">
+        <div class="inst-editor-title">⚙️ تعديل جدول الأقساط</div>
+        <div class="inst-editor-grid">
+          <div class="fg"><label style="font-size:10px">عدد الأقساط</label>
+            <input id="ie-num-${c.ref}" type="number" min="1" max="36" value="${insts.length}" placeholder="7"></div>
+          <div class="fg"><label style="font-size:10px">تاريخ البدء</label>
+            <input id="ie-start-${c.ref}" type="date" value="${insts[0]?.due||''}"></div>
+          <div class="fg"><label style="font-size:10px">إجمالي القسط</label>
+            <input id="ie-total-${c.ref}" type="text" value="${c.finalPrice||''}" placeholder="المبلغ الكلي"></div>
+        </div>
+        <div style="margin-top:8px;display:flex;justify-content:flex-end">
+          <button class="btn btn-sm btn-primary" onclick="regenInstallments('${c.ref}')">إعادة توليد الجدول</button>
+        </div>
+      </div>
+      ` : `<div style="font-size:12px;color:var(--text-3);text-align:center;padding:12px">دفع مباشر — لا أقساط</div>`}
+      <!-- ملاحظات المالية -->
+      <div class="finance-notes-wrap">
+        <div style="font-size:10px;font-weight:700;color:var(--text-3);letter-spacing:.04em;margin-bottom:6px">ملاحظات المالية</div>
+        <div style="display:flex;gap:6px">
+          <textarea rows="2" style="flex:1;padding:6px 8px;border:1.5px solid var(--border);border-radius:7px;font-family:var(--font);font-size:12px;background:var(--bg)"
+            id="fnnote-${c.ref}" placeholder="ملاحظة...">${c.finNotes||''}</textarea>
+          <button class="btn btn-sm" onclick="saveFinNotesCard('${c.ref}')" style="flex-shrink:0">حفظ</button>
+        </div>
+      </div>
+    </div>
+  </div>`;
+}
+
+function toggleFinCard(ref) {
+  const body  = document.getElementById(`fcb-${ref}`);
+  const chev  = document.getElementById(`fchev-${ref}`);
+  if (!body) return;
+  const open = body.style.display !== 'none';
+  body.style.display = open ? 'none' : 'block';
+  if (chev) chev.style.transform = open ? '' : 'rotate(180deg)';
+}
+
+async function updateInstStatus(ref, idx, val) {
+  const c = clients.find(x => x.ref===ref);
+  if (!c || !c.installments) return;
+  if (val === 'paid') { openPayRef(ref, idx); return; }
+  const session = JSON.parse(sessionStorage.getItem('ops_session')||'{}');
+  c.installments[idx].status = val;
+  c.log = c.log||[];
+  c.log.push({ who:session.username||'المالية', action:`القسط ${idx+1}: ${instStatusLabel(val)}`, time:new Date().toLocaleString('ar-SA') });
+  await persistClient(c);
+  renderFinance();
+  toast('تم تحديث حالة القسط ✓');
+}
+
+let payRefData = null;
+function openPayRef(ref, idx) {
+  payRefData = { ref, idx };
+  const c = clients.find(x=>x.ref===ref);
+  const inst = c?.installments?.[idx];
+  if (!inst) return;
+  const sub = document.getElementById('pay-ref-sub');
+  if (sub) sub.textContent = `القسط ${idx+1} — ${fmtSAR(inst.amount)} — ${inst.due}`;
+  const inp = document.getElementById('pay-ref-input'); if(inp) inp.value='';
+  const dt  = document.getElementById('pay-ref-date');  if(dt) dt.value=new Date().toISOString().split('T')[0];
+  document.getElementById('pay-ref-modal').classList.add('show');
+}
+function closePayRefModal() {
+  document.getElementById('pay-ref-modal').classList.remove('show');
+  payRefData = null;
+}
+async function confirmPayment() {
+  if (!payRefData) return;
+  const { ref, idx } = payRefData;
+  const c = clients.find(x=>x.ref===ref);
+  if (!c || !c.installments) return;
+  const refNum  = document.getElementById('pay-ref-input')?.value.trim();
+  const paidDt  = document.getElementById('pay-ref-date')?.value || new Date().toISOString().split('T')[0];
+  if (!refNum) { toast('يرجى إدخال الرقم المرجعي', false); return; }
+
+  const session = JSON.parse(sessionStorage.getItem('ops_session')||'{}');
+  c.installments[idx].status   = 'paid';
+  c.installments[idx].paidRef  = refNum;
+  c.installments[idx].paidDate = paidDt;
+  // تحديث المدفوع
+  c.totalPaid = c.installments.filter(i=>i.status==='paid').reduce((s,i)=>s+i.amount,0);
+  c.log = c.log||[];
+  c.log.push({ who:session.username||'المالية', action:`سداد القسط ${idx+1} — ${fmtSAR(c.installments[idx].amount)} — مرجع: ${refNum}`, time:new Date().toLocaleString('ar-SA') });
+
+  await persistClient(c);
+  closePayRefModal();
+  toast(`✅ تم تسجيل سداد القسط ${idx+1}`);
+  renderFinance();
+}
+
+async function regenInstallments(ref) {
+  const c = clients.find(x=>x.ref===ref);
+  if (!c) return;
+  const num   = parseInt(document.getElementById(`ie-num-${ref}`)?.value)||7;
+  const start = document.getElementById(`ie-start-${ref}`)?.value || new Date().toISOString().split('T')[0];
+  const total = parseFloat(document.getElementById(`ie-total-${ref}`)?.value)||c.finalPrice||0;
+
+  if (!total) { toast('يرجى إدخال المبلغ الإجمالي', false); return; }
+
+  const session = JSON.parse(sessionStorage.getItem('ops_session')||'{}');
+  c.installments = generateInstallments(total, num, start);
+  c.finalPrice   = total;
+  c.totalPaid    = 0;
+  c.log = c.log||[];
+  c.log.push({ who:session.username||'المالية', action:`تعديل جدول الأقساط: ${num} أقساط — إجمالي ${fmtSAR(total)}`, time:new Date().toLocaleString('ar-SA') });
+
+  await persistClient(c);
+  toast('تم إعادة توليد جدول الأقساط ✓');
+  renderFinance();
+}
+
+function openWhatsAppFinance(ref, idx) {
+  const c = clients.find(x=>x.ref===ref);
+  if (!c?.phone) { toast('لا يوجد رقم جوال', false); return; }
+  const inst = c.installments?.[idx];
+  if (!inst) return;
+  const phone = normalizePhoneForWhatsApp(c.phone);
+  const msg = `السلام عليكم ${c.name} 💙\nنود تذكيركم بموعد سداد القسط رقم ${inst.n}\nالمبلغ: ${fmtSAR(inst.amount)}\nتاريخ الاستحقاق: ${inst.due}\n\nشاكرين تعاونكم 💙\nفريق سلوكيرا`;
+  window.open('https://wa.me/' + phone + '?text=' + encodeURIComponent(msg), '_blank');
+}
+
+async function saveFinNotesCard(ref) {
+  const c = clients.find(x=>x.ref===ref);
+  if (!c) return;
+  const txt = document.getElementById(`fnnote-${ref}`)?.value?.trim()||'';
+  c.finNotes = txt;
+  const session = JSON.parse(sessionStorage.getItem('ops_session')||'{}');
+  c.log = c.log||[];
+  c.log.push({ who:session.username||'المالية', action:'تحديث ملاحظات المالية', time:new Date().toLocaleString('ar-SA') });
+  await persistClient(c);
+  toast('تم حفظ ملاحظات المالية ✓');
+}
+
+// ملاحظات المالية من البانل
+async function saveFinNotes(ref) {
+  const c = clients.find(x=>x.ref===ref);
+  if (!c) return;
+  const txt = document.getElementById('fin-notes-input')?.value?.trim()||'';
+  c.finNotes = txt;
+  const session = JSON.parse(sessionStorage.getItem('ops_session')||'{}');
+  c.log = c.log||[];
+  c.log.push({ who:session.username||'المالية', action:'تحديث ملاحظات المالية', time:new Date().toLocaleString('ar-SA') });
+  await persistClient(c);
+  toast('تم حفظ ملاحظات المالية ✓');
+}
+
 
 function renderSettings() {
   const fixed = ['تحليل السلوك التطبيقي','إدارة السلوك التنظيمي','الاقتصاد السلوكي','برامج التعليم المستمر','حجز مقعد'];
@@ -2545,86 +3217,6 @@ function renderSettings() {
   </div>`).join('') || '<div class="empty-state">لا توجد ليبلات</div>';
 
   renderUsersList();
-  renderAssignmentRulesTable();
-}
-
-function renderAssignmentRulesTable() {
-  const el = document.getElementById('assignment-rules-table');
-  if (!el) return;
-  if (!assignmentRules) loadAssignmentRules();
-
-  const STEPS_LABELS = {
-    'auto':           '⚡ تلقائي',
-    'basecamp':       '📋 Basecamp فقط',
-    'assign':         '📌 إسناد مقررات',
-    'assign+basecamp':'📌📋 إسناد + Basecamp',
-  };
-  const STEPS_COLORS = {
-    'auto':           'var(--green)',
-    'basecamp':       '#E65100',
-    'assign':         'var(--blue)',
-    'assign+basecamp':'var(--red)',
-  };
-
-  el.innerHTML = `
-  <table style="width:100%;border-collapse:collapse;font-size:12px">
-    <thead>
-      <tr style="border-bottom:2px solid var(--border)">
-        <th style="text-align:right;padding:8px 10px;color:var(--text-3);font-size:10px;font-weight:700">البرنامج</th>
-        <th style="text-align:right;padding:8px 10px;color:var(--text-3);font-size:10px;font-weight:700">المسار</th>
-        <th style="text-align:right;padding:8px 10px;color:var(--text-3);font-size:10px;font-weight:700">النوع</th>
-        <th style="text-align:right;padding:8px 10px;color:var(--text-3);font-size:10px;font-weight:700">المصدر</th>
-        <th style="text-align:center;padding:8px 10px;color:var(--text-3);font-size:10px;font-weight:700">الخطوات المطلوبة</th>
-        <th style="padding:8px 10px;width:60px"></th>
-      </tr>
-    </thead>
-    <tbody>
-      ${assignmentRules.map((r,i) => `
-      <tr style="border-bottom:1px solid var(--border-lt)">
-        <td style="padding:8px 10px;font-weight:600">${r.prog==='*'?'الكل':r.prog==='تحليل'?'تحليل السلوك':r.prog==='إدارة'?'إدارة السلوك':r.prog}</td>
-        <td style="padding:8px 10px">${r.track==='*'?'<span style="color:var(--text-3)">الكل</span>':r.track}</td>
-        <td style="padding:8px 10px">${r.ptype==='*'?'<span style="color:var(--text-3)">الكل</span>':r.ptype}</td>
-        <td style="padding:8px 10px">${r.source==='*'?'<span style="color:var(--text-3)">الكل</span>':r.source==='!عصارة'?'غير عصارة':r.source}</td>
-        <td style="padding:8px 10px;text-align:center">
-          <select onchange="updateRuleStep(${i}, this.value)" style="font-size:11px;padding:4px 8px;border-radius:6px;border:1.5px solid var(--border);background:var(--bg);color:${STEPS_COLORS[r.steps]};font-weight:600">
-            ${Object.entries(STEPS_LABELS).map(([k,v])=>`<option value="${k}" ${r.steps===k?'selected':''}>${v}</option>`).join('')}
-          </select>
-        </td>
-        <td style="padding:8px 10px;text-align:center">
-          ${i >= getDefaultRules().length-2 ? '' : `<button class="btn btn-sm" style="color:var(--red);border-color:#fca5a5;padding:3px 7px" onclick="resetRule(${i})" title="إعادة للافتراضي">↺</button>`}
-        </td>
-      </tr>`).join('')}
-    </tbody>
-  </table>
-  <div style="margin-top:10px;display:flex;gap:8px">
-    <button class="btn btn-sm" onclick="resetAllRules()">↺ إعادة الكل للافتراضي</button>
-  </div>`;
-}
-
-function updateRuleStep(idx, steps) {
-  if (!assignmentRules) loadAssignmentRules();
-  assignmentRules[idx].steps = steps;
-  saveAssignmentRules();
-  toast('تم حفظ خريطة الإسناد ✓');
-}
-
-function resetRule(idx) {
-  const defaults = getDefaultRules();
-  if (!assignmentRules) loadAssignmentRules();
-  if (defaults[idx]) {
-    assignmentRules[idx] = { ...defaults[idx] };
-    saveAssignmentRules();
-    renderAssignmentRulesTable();
-    toast('تم إعادة القاعدة للافتراضي ✓');
-  }
-}
-
-function resetAllRules() {
-  if (!confirm('إعادة جميع قواعد الإسناد للإعدادات الافتراضية؟')) return;
-  assignmentRules = getDefaultRules();
-  saveAssignmentRules();
-  renderAssignmentRulesTable();
-  toast('تم الإعادة للافتراضي ✓');
 }
 
 function toggleOpsGroup(header) {
@@ -2639,9 +3231,9 @@ function toggleOpsGroup(header) {
 // ════════════════════════════════
 function setView(view, btn) {
   currentView = view;
-  document.querySelectorAll('.tnb').forEach(b => b.classList.remove('active'));
-  btn.classList.add('active');
-  ['v-sales','v-academy','v-completed','v-finance','v-reports','v-settings'].forEach(id => {
+  document.querySelectorAll('.nav-item').forEach(b => b.classList.remove('active'));
+  if (btn) btn.classList.add('active');
+  ['v-sales','v-academy','v-assign','v-completed','v-finance','v-reports','v-settings'].forEach(id => {
     const el = document.getElementById(id);
     if (el) el.style.display = 'none';
   });
@@ -2650,6 +3242,7 @@ function setView(view, btn) {
   closeDetail();
   if (view === 'reports') renderReports();
   else if (view === 'completed') renderCompleted();
+  else if (view === 'assign') renderAssign();
   else render();
 }
 
@@ -2664,27 +3257,124 @@ function toggleAddForm() {
   goStep1();
 }
 function goStep1() {
-  document.getElementById('form-step-1').classList.add('active');
-  document.getElementById('form-step-2').classList.remove('active');
-  document.getElementById('sdot-1').className = 'step-dot current';
-  document.getElementById('sdot-2').className = 'step-dot';
-  document.getElementById('sline-1').className = 'step-line';
-  document.getElementById('step-label').textContent = 'الخطوة 1 من 2';
+  ['form-step-1','form-step-2','form-step-3'].forEach((id,i) => {
+    const el = document.getElementById(id);
+    if (el) el.className = 'form-step' + (i===0?' active':'');
+  });
+  const s1 = document.getElementById('sdot-1'); if(s1) s1.className = 'step-dot current';
+  const s2 = document.getElementById('sdot-2'); if(s2) s2.className = 'step-dot';
+  const s3 = document.getElementById('sdot-3'); if(s3) s3.className = 'step-dot';
+  const l1 = document.getElementById('sline-1'); if(l1) l1.className = 'step-line';
+  const l2 = document.getElementById('sline-2'); if(l2) l2.className = 'step-line';
+  const sl = document.getElementById('step-label'); if(sl) sl.textContent = 'الخطوة 1 من 3';
 }
 function goStep2() {
-  const name  = document.getElementById('fn').value.trim();
-  const email = document.getElementById('fe').value.trim();
-  const phone = document.getElementById('fphone').value.trim();
-  const type  = document.getElementById('fclienttype').value;
+  const name  = document.getElementById('fn')?.value.trim()||'';
+  const email = document.getElementById('fe')?.value.trim()||'';
+  const phone = document.getElementById('fphone')?.value.trim()||'';
+  const type  = document.getElementById('fclienttype')?.value||'';
   if (!name || !email || !phone || !type) { toast('يرجى تعبئة جميع الحقول', false); return; }
   if (!/^[\d\s\+\-\(\)]{7,15}$/.test(phone)) { toast('رقم الجوال غير صحيح', false); return; }
-  document.getElementById('form-step-1').classList.remove('active');
-  document.getElementById('form-step-2').classList.add('active');
-  document.getElementById('sdot-1').className = 'step-dot done';
-  document.getElementById('sdot-2').className = 'step-dot current';
-  document.getElementById('sline-1').className = 'step-line done';
-  document.getElementById('step-label').textContent = 'الخطوة 2 من 2';
+  ['form-step-1','form-step-2','form-step-3'].forEach((id,i) => {
+    const el = document.getElementById(id);
+    if (el) el.className = 'form-step' + (i===1?' active':'');
+  });
+  const s1 = document.getElementById('sdot-1'); if(s1) s1.className = 'step-dot done';
+  const s2 = document.getElementById('sdot-2'); if(s2) s2.className = 'step-dot current';
+  const s3 = document.getElementById('sdot-3'); if(s3) s3.className = 'step-dot';
+  const l1 = document.getElementById('sline-1'); if(l1) l1.className = 'step-line done';
+  const l2 = document.getElementById('sline-2'); if(l2) l2.className = 'step-line';
+  const sl = document.getElementById('step-label'); if(sl) sl.textContent = 'الخطوة 2 من 3';
 }
+function goStep3() {
+  const program = document.getElementById('fp').value;
+  const source  = document.getElementById('fs').value;
+  if (!program || !source) { toast('يرجى اختيار البرنامج والمصدر', false); return; }
+  const ptReq = ['تحليل السلوك التطبيقي','إدارة السلوك التنظيمي'].includes(program);
+  if (ptReq && !document.getElementById('fptype').value) { toast('يرجى اختيار نوع البرنامج', false); return; }
+  ['form-step-1','form-step-2','form-step-3'].forEach((id,i) => {
+    const el = document.getElementById(id);
+    if (el) el.className = 'form-step' + (i===2?' active':'');
+  });
+  document.getElementById('sdot-1').className = 'step-dot done';
+  document.getElementById('sdot-2').className = 'step-dot done';
+  document.getElementById('sdot-3').className = 'step-dot current';
+  document.getElementById('sline-1').className = 'step-line done';
+  document.getElementById('sline-2').className = 'step-line done';
+  document.getElementById('step-label').textContent = 'الخطوة 3 من 3';
+  calcPaymentPreview();
+}
+// ════════════════════════════════
+// الحسابات المالية — الفورم
+// ════════════════════════════════
+function onPayTypeChange() {
+  calcPaymentPreview();
+}
+
+function calcPaymentPreview() {
+  const priceRaw  = parseFloat(document.getElementById('fprice')?.value?.replace(/,/g,'')) || 0;
+  const discount  = parseFloat(document.getElementById('fdiscount')?.value) || 0;
+  const payType   = document.getElementById('fpaytype')?.value || '';
+  const summaryEl = document.getElementById('fprice-summary');
+  if (!summaryEl) return;
+
+  if (!priceRaw) { summaryEl.style.display = 'none'; return; }
+  summaryEl.style.display = 'block';
+
+  const discountAmt = priceRaw * (discount / 100);
+  const finalPrice  = priceRaw - discountAmt;
+  const numInst     = 7;
+  const perInst     = Math.round(finalPrice / numInst * 100) / 100;
+
+  document.getElementById('fps-original').textContent = fmtSAR(priceRaw);
+  const discRow = document.getElementById('fps-discount-row');
+  const discEl  = document.getElementById('fps-discount');
+  if (discount > 0) {
+    discRow.style.display = 'flex';
+    discEl.textContent = `- ${fmtSAR(discountAmt)} (${discount}%)`;
+  } else {
+    discRow.style.display = 'none';
+  }
+  document.getElementById('fps-final').textContent = fmtSAR(finalPrice);
+
+  const instRow = document.getElementById('fps-installments');
+  if (payType === 'أقساط') {
+    instRow.style.display = 'block';
+    document.getElementById('fps-per').textContent = fmtSAR(perInst);
+  } else {
+    instRow.style.display = 'none';
+  }
+}
+
+function fmtSAR(n) {
+  return Number(n).toLocaleString('en-US', {minimumFractionDigits:2, maximumFractionDigits:2}) + ' SAR';
+}
+
+// توليد جدول الأقساط التلقائي
+function generateInstallments(totalPrice, numInst, startDate) {
+  if (!totalPrice || !numInst) return [];
+  const perInst = Math.round(totalPrice / numInst * 100) / 100;
+  const insts = [];
+  for (let i = 0; i < numInst; i++) {
+    const d = new Date(startDate || new Date());
+    d.setMonth(d.getMonth() + i);
+    // ضبط يوم 27
+    d.setDate(27);
+    const amt = i === numInst - 1
+      ? Math.round((totalPrice - perInst * (numInst - 1)) * 100) / 100
+      : perInst;
+    insts.push({
+      n: i + 1,
+      due: d.toISOString().split('T')[0],
+      amount: amt,
+      status: 'upcoming',
+      paidRef: '',
+      paidDate: ''
+    });
+  }
+  return insts;
+}
+
 function onClientTypeChange() {
   const t = document.getElementById('fclienttype').value;
   document.getElementById('fexpiry-wrap').style.display = t === 'تجربة' ? 'block' : 'none';
@@ -2756,6 +3446,12 @@ async function addClient() {
   const acquisitionOther = document.getElementById('facquisition-other')?.value.trim() || '';
   const acquisitionChannel = acquisitionRaw === 'غير ذلك' ? (acquisitionOther || 'غير ذلك') : acquisitionRaw;
 
+  // البيانات المالية (خطوة 3)
+  const priceRaw  = parseFloat(document.getElementById('fprice')?.value?.replace(/,/g,'')) || 0;
+  const discount  = parseFloat(document.getElementById('fdiscount')?.value) || 0;
+  const payType   = document.getElementById('fpaytype')?.value || '';
+  const finalPrice = Math.round(priceRaw * (1 - discount/100) * 100) / 100;
+
   if (!name||!email||!phone||!clientType||!program||!source) { toast('يرجى تعبئة جميع الحقول الإلزامية', false); return; }
   const ptReq = ['تحليل السلوك التطبيقي','إدارة السلوك التنظيمي'].includes(program);
   if (ptReq && !programType) { toast('يرجى اختيار نوع البرنامج', false); return; }
@@ -2766,25 +3462,30 @@ async function addClient() {
 
   const session = JSON.parse(sessionStorage.getItem('ops_session') || '{}');
   const ref = genRef();
+
+  // توليد الأقساط تلقائياً لو اختار أقساط
+  let installments = [];
+  if (payType === 'أقساط' && finalPrice > 0) {
+    installments = generateInstallments(finalPrice, 7, startDate || new Date().toISOString().split('T')[0]);
+  }
+
   const client = {
     ref, name, email, phone, program, source, expiry, clientType,
     track, programType, lang, continuousText, batchNo, startDate,
-    efficiencyCheck, acquisitionChannel, notes: '',
+    efficiencyCheck, acquisitionChannel, notes: '', opsNotes: '', finNotes: '',
     trialStatus: '',
     addedBy: session.username || 'المبيعات',
     academyAdded: false, academyAssigned: false,
+    // المالية
+    price: priceRaw,
+    discount: discount,
+    finalPrice: finalPrice,
+    payType: payType,
+    installments: installments,
+    totalPaid: 0,
     createdAt: new Date().toLocaleString('ar-SA', {timeZone:'Asia/Riyadh'}),
-    createdAtISO: new Date().toISOString(),
-    log: [{ who: session.username||'المبيعات', action:`تسجيل العميل — ${source}`, time: new Date().toLocaleString('ar-SA') }]
+    log: [{ who: session.username||'المبيعات', action:`تسجيل العميل — ${source}${payType?' — '+payType:''}`, time: new Date().toLocaleString('ar-SA') }]
   };
-
-  // تحقق من الإكمال التلقائي
-  if (isAutoComplete(client)) {
-    client.academyAdded    = true;
-    client.academyAssigned = true;
-    client.activatedAt     = new Date().toISOString();
-    client.log.push({ who: session.username||'النظام', action:'اكتمل تلقائياً (عصارة — بدون إسناد)', time: new Date().toLocaleString('ar-SA') });
-  }
 
   const res = await api(null, { action:'addClient', ...client });
   clients.unshift(client);
@@ -2796,14 +3497,10 @@ async function addClient() {
   btn.innerHTML = '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg> تسجيل وإرسال للتشغيل';
 }
 function clearForm() {
-  ['fn','fe','fphone','fbatch','fcontinuous','fstartdate','facquisition-other'].forEach(id => { const el = document.getElementById(id); if(el) el.value=''; });
-  ['fp','fs','fexpiry','fptype','ftrack','fclienttype','flang','fefficiency','facquisition'].forEach(id => { const el = document.getElementById(id); if(el) el.value=''; });
-  const sdWrap = document.getElementById('fstartdate-wrap'); if(sdWrap) sdWrap.style.display='none';
-  const efWrap = document.getElementById('fefficiency-wrap'); if(efWrap) efWrap.style.display='none';
-  const acWrap = document.getElementById('facquisition-other-wrap'); if(acWrap) acWrap.style.display='none';
-  ['assign-hint'].forEach(id => { const el = document.getElementById(id); if(el) el.className='form-hint'; });
-  ['fexpiry-wrap','ftrack-wrap','fcontinuous-wrap','flang-wrap'].forEach(id => { const el = document.getElementById(id); if(el) el.style.display='none'; });
-  const ptWrap = document.getElementById('fptype-wrap'); if(ptWrap) ptWrap.style.display='none';
+  ['fn','fe','fphone','fbatch','fcontinuous','fstartdate','facquisition-other','fprice'].forEach(id => { const el = document.getElementById(id); if(el) el.value=''; });
+  ['fp','fs','fexpiry','fptype','ftrack','fclienttype','flang','fefficiency','facquisition','fdiscount','fpaytype'].forEach(id => { const el = document.getElementById(id); if(el) el.value = el.tagName==='SELECT' && id==='fdiscount'?'0':''; });
+  ['fstartdate-wrap','fefficiency-wrap','facquisition-other-wrap','fexpiry-wrap','ftrack-wrap','fcontinuous-wrap','flang-wrap','fptype-wrap','fprice-summary'].forEach(id => { const el = document.getElementById(id); if(el) el.style.display='none'; });
+  const hint = document.getElementById('assign-hint'); if(hint) hint.className='form-hint';
   goStep1();
 }
 
@@ -2908,97 +3605,6 @@ async function markComplete(ref) {
   updateStats(); render();
   if (selId === ref) renderDetail(ref);
 }
-// ════════════════════════════════
-// البرنامج الثاني
-// ════════════════════════════════
-let _prog2TargetRef = null;
-
-function openProgram2Modal(ref) {
-  _prog2TargetRef = ref;
-  const c = clients.find(x => x.ref === ref);
-  if (!c) return;
-  document.getElementById('p2-modal-sub').textContent = c.name + ' · ' + (c.ref||'');
-  // ملء قوائم البرامج والمصادر
-  const fixed = ['تحليل السلوك التطبيقي','إدارة السلوك التنظيمي','الاقتصاد السلوكي','برامج التعليم المستمر'];
-  document.getElementById('p2-program').innerHTML =
-    '<option value="">اختر البرنامج...</option>' +
-    fixed.map(p=>`<option value="${p}">${p}</option>`).join('');
-  document.getElementById('p2-source').innerHTML =
-    '<option value="">اختر المصدر...</option>' +
-    sources.map(s=>`<option value="${s.name}">${s.name}</option>`).join('');
-  document.getElementById('p2-track').innerHTML = '<option value="">—</option>';
-  document.getElementById('p2-track-wrap').style.display = 'none';
-  document.getElementById('p2-ptype-wrap').style.display = 'none';
-  document.getElementById('p2-modal').classList.add('show');
-}
-
-function onP2ProgramChange() {
-  const p = document.getElementById('p2-program').value;
-  const tracks = PROGRAM_TRACKS[p] || [];
-  const tw = document.getElementById('p2-track-wrap');
-  const ptw = document.getElementById('p2-ptype-wrap');
-  document.getElementById('p2-track').innerHTML =
-    '<option value="">اختر...</option>' + tracks.map(t=>`<option value="${t}">${t}</option>`).join('');
-  tw.style.display  = tracks.length ? 'block' : 'none';
-  ptw.style.display = ['تحليل السلوك التطبيقي','إدارة السلوك التنظيمي'].includes(p) ? 'block' : 'none';
-}
-
-function closeProgram2Modal() {
-  document.getElementById('p2-modal').classList.remove('show');
-  _prog2TargetRef = null;
-}
-
-async function saveProgram2() {
-  const c = clients.find(x => x.ref === _prog2TargetRef);
-  if (!c) return;
-  const program = document.getElementById('p2-program').value;
-  const track   = document.getElementById('p2-track').value;
-  const ptype   = document.getElementById('p2-ptype').value;
-  const source  = document.getElementById('p2-source').value;
-  if (!program || !source) { toast('يرجى اختيار البرنامج والمصدر', false); return; }
-
-  const session = JSON.parse(sessionStorage.getItem('ops_session') || '{}');
-  const p2Steps = getClientSteps({...c, program, track, programType:ptype, source});
-  c.program2 = { program, track, ptype, source, steps:p2Steps, assigned: p2Steps==='auto', addedAt:new Date().toISOString() };
-  if (p2Steps === 'auto') {
-    c.program2.assignedAt = new Date().toISOString();
-  }
-  c.log = c.log || [];
-  c.log.push({ who:session.username||'المبيعات', action:`إضافة برنامج ثاني: ${program}${track?' — '+track:''}`, time:new Date().toLocaleString('ar-SA') });
-  await persistClient(c);
-  toast('تم إضافة البرنامج الثاني ✓');
-  closeProgram2Modal();
-  renderDetail(_prog2TargetRef);
-  render();
-}
-
-async function markProgram2Complete(ref) {
-  const c = clients.find(x => x.ref === ref);
-  if (!c?.program2 || c.program2.assigned) return;
-  const session = JSON.parse(sessionStorage.getItem('ops_session') || '{}');
-  c.program2.assigned   = true;
-  c.program2.assignedAt = new Date().toISOString();
-  c.log = c.log || [];
-  c.log.push({ who:session.username||'التشغيل', action:`اكتمل البرنامج الثاني: ${c.program2.program}`, time:new Date().toLocaleString('ar-SA') });
-  await persistClient(c);
-  toast('اكتمل البرنامج الثاني ✓');
-  updateStats(); render();
-  if (selId === ref) renderDetail(ref);
-}
-
-async function removeProgram2(ref) {
-  const c = clients.find(x => x.ref === ref);
-  if (!c?.program2) return;
-  if (!confirm(`حذف البرنامج الثاني "${c.program2.program}"؟`)) return;
-  const session = JSON.parse(sessionStorage.getItem('ops_session') || '{}');
-  c.log = c.log || [];
-  c.log.push({ who:session.username||'مجهول', action:`حذف البرنامج الثاني: ${c.program2.program}`, time:new Date().toLocaleString('ar-SA') });
-  delete c.program2;
-  await persistClient(c);
-  toast('تم حذف البرنامج الثاني');
-  renderDetail(ref); render();
-}
-
 async function deleteClient() {
   if (!can('settings')) { toast('ليس لديك صلاحية', false); return; }
   const c = clients.find(x => x.ref === selId);
@@ -3087,24 +3693,81 @@ function renderDetail(ref) {
       return `<div class="dp-field"><label>موعد بدء البرنامج</label><span style="color:${color};font-weight:700">${c.startDate} <span style="font-size:11px">(${label})</span></span></div>`;
     })() : ''}
     ${c.notes ? `<div class="dp-field" style="grid-column:1/-1"><label>ملاحظات المبيعات</label><span>${c.notes}</span></div>` : ''}
-    <div class="dp-field" style="grid-column:1/-1">
-      <label>ملاحظات التشغيل</label>
-      <div style="display:flex;gap:6px;align-items:flex-start;margin-top:2px">
-        <textarea id="ops-notes-input" rows="2" style="flex:1;padding:7px 10px;border:1.5px solid var(--border);border-radius:8px;font-family:var(--font);font-size:12px;resize:vertical;background:var(--bg)"
-          placeholder="أضف ملاحظة للتشغيل...">${c.opsNotes||''}</textarea>
-        <button onclick="saveOpsNotes('${c.ref}')" class="btn btn-sm btn-primary" style="white-space:nowrap;flex-shrink:0">حفظ</button>
-      </div>
-    </div>
   `;
 
+  // قسم المالية داخل البانل
+  const finSection = document.getElementById('d-finance-section');
+  const finBody    = document.getElementById('d-finance-body');
+  if (finBody) {
+    if (c.payType) {
+      const insts = c.installments || [];
+      const totalPaid = insts.filter(i=>i.status==='paid').reduce((s,i)=>s+i.amount,0);
+      const remaining = (c.finalPrice||0) - totalPaid;
+      finBody.innerHTML = `
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:10px">
+          <div style="text-align:center"><div style="font-size:14px;font-weight:700;color:var(--text)">${fmtSAR(c.finalPrice||0)}</div><div style="font-size:10px;color:var(--text-3)">الإجمالي</div></div>
+          <div style="text-align:center"><div style="font-size:14px;font-weight:700;color:var(--green)">${fmtSAR(totalPaid)}</div><div style="font-size:10px;color:var(--text-3)">المدفوع</div></div>
+          <div style="text-align:center"><div style="font-size:14px;font-weight:700;color:var(--red)">${fmtSAR(remaining)}</div><div style="font-size:10px;color:var(--text-3)">المتبقي</div></div>
+        </div>
+        <div style="font-size:11px;color:var(--text-2)">
+          <span class="pill ${c.payType==='أقساط'?'p-blue':'p-green'}">${c.payType}</span>
+          ${c.discount?`<span class="pill p-amber" style="margin-right:4px">خصم ${c.discount}%</span>`:''}
+          <span style="margin-right:6px;color:var(--text-3)">${insts.length} قسط</span>
+        </div>
+        ${insts.length ? `<div style="margin-top:8px;font-size:11px;color:var(--blue);cursor:pointer" onclick="setView('finance',document.getElementById('btn-finance'))">← عرض الجدول الكامل في تبويب المالية</div>` : ''}
+      `;
+    } else {
+      finBody.innerHTML = '<div style="font-size:12px;color:var(--text-3)">لم تُدخل بيانات مالية بعد</div>';
+    }
+  }
+
+  // ملاحظات التشغيل والمالية
+  const opsNi = document.getElementById('ops-notes-input');
+  if (opsNi) opsNi.value = c.opsNotes || '';
+  const finNi = document.getElementById('fin-notes-input');
+  if (finNi) finNi.value = c.finNotes || '';
+
+  // إظهار ملاحظات المالية فقط للمالية والمدير
+  const finNoteSec = document.getElementById('d-fin-notes-section');
+  if (finNoteSec) finNoteSec.style.display = (can('finance') || can('settings')) ? '' : 'none';
+
   // مراحل
-  const canAct = can('academy');
-  const addDone = c.academyAdded, asnDone = c.academyAssigned;
+  const canAct   = can('academy');
+  const canSales = can('addClient');
+  const isTrial  = isTrialClient(c);
+  const isUnint  = c.trialStatus === 'uninterested';
+  const isConv   = c.trialStatus === 'converted';
+  const addDone  = c.academyAdded, asnDone = c.academyAssigned;
+
   let stagesHTML = `<div class="stage-row s-done">
     <div class="stage-icon si-sales">م</div>
     <div class="stage-body"><div class="stage-title">المبيعات — تسجيل البيانات</div><div class="stage-sub">تم · ${c.createdAt||''}</div></div>
     <div class="stage-ck ck-yes">✓</div>
   </div>`;
+
+  // أزرار التجربة — للمبيعات والعمليات
+  if (isTrial && !isUnint && !isConv && (canSales || canAct)) {
+    stagesHTML += `<div class="stage-row s-half">
+      <div class="stage-icon" style="background:var(--amber-lt);color:var(--amber);font-size:11px">تج</div>
+      <div class="stage-body"><div class="stage-title">قرار التجربة</div><div class="stage-sub">بانتظار التحويل أو إنهاء التجربة</div></div>
+      <div style="display:flex;gap:6px">
+        <button class="btn btn-sm btn-success" onclick="openConvertModal('${c.ref}')">✅ اشتراك</button>
+        <button class="btn btn-sm" style="color:var(--red);border-color:#fca5a5" onclick="markUninterested('${c.ref}')">❌ إنهاء</button>
+      </div>
+    </div>`;
+  } else if (isTrial && isConv) {
+    stagesHTML += `<div class="stage-row s-done">
+      <div class="stage-icon" style="background:var(--green-lt);color:var(--green)">✓</div>
+      <div class="stage-body"><div class="stage-title">تم التحويل إلى اشتراك</div></div>
+      <div class="stage-ck ck-yes">✓</div>
+    </div>`;
+  } else if (isTrial && isUnint) {
+    stagesHTML += `<div class="stage-row s-locked">
+      <div class="stage-icon" style="font-size:11px">غ</div>
+      <div class="stage-body"><div class="stage-title">انتهت التجربة — غير مهتم</div></div>
+      <div class="stage-ck ck-no">–</div>
+    </div>`;
+  }
 
   const addCls = addDone ? 's-done' : canAct ? 's-active' : 's-locked';
   const addBtn = canAct && !addDone
@@ -3116,32 +3779,7 @@ function renderDetail(ref) {
     ${addBtn}
   </div>`;
 
-  const cSteps = getClientSteps(c);
-
-  if (cSteps === 'auto') {
-    // تلقائي — مرحلة واحدة فقط
-    stagesHTML += `<div class="stage-row ${asnDone?'s-done':'s-active'}">
-      <div class="stage-icon si-ops">⚡</div>
-      <div class="stage-body"><div class="stage-title">تفعيل تلقائي</div><div class="stage-sub">${asnDone?'مكتمل':'لا يحتاج إجراء يدوي — عصارة'}</div></div>
-      ${!asnDone && canAct ? `<button class="btn btn-sm btn-success" onclick="markComplete('${c.ref}')">تأكيد ✓</button>` : `<div class="stage-ck ${asnDone?'ck-yes':'ck-no'}">${asnDone?'✓':'–'}</div>`}
-    </div>`;
-  } else if (cSteps === 'basecamp') {
-    // Basecamp فقط
-    const bcCls = asnDone ? 's-done' : addDone ? 's-half' : canAct ? 's-active' : '';
-    stagesHTML += `<div class="stage-row ${bcCls}">
-      <div class="stage-icon si-ops">B</div>
-      <div class="stage-body"><div class="stage-title">تفعيل Basecamp</div><div class="stage-sub">${addDone?'تم تفعيل الحساب':'إضافة العميل في Basecamp'}</div></div>
-      ${canAct && !addDone ? `<button class="btn btn-sm btn-success" onclick="markAdded('${c.ref}')">تم Basecamp ✓</button>` : `<div class="stage-ck ${addDone?'ck-yes':'ck-no'}">${addDone?'✓':'–'}</div>`}
-    </div>`;
-    if (addDone && !asnDone) {
-      stagesHTML += `<div class="stage-row s-active">
-        <div class="stage-icon si-ops">✓</div>
-        <div class="stage-body"><div class="stage-title">اكتمال التفعيل</div><div class="stage-sub">تأكيد إتمام العملية</div></div>
-        ${canAct ? `<button class="btn btn-sm btn-primary" onclick="markComplete('${c.ref}')">اكتمل ✓</button>` : '<div class="stage-ck ck-no">–</div>'}
-      </div>`;
-    }
-  } else {
-    // إسناد (مع أو بدون Basecamp)
+  if (needsAssign(c.source)) {
     const asnCls = asnDone ? 's-done' : addDone && canAct ? 's-active' : 's-locked';
     const asnBtn = canAct && addDone && !asnDone
       ? `<button class="btn btn-sm btn-primary" onclick="markAssigned('${c.ref}')">تم الإسناد ✓</button>`
@@ -3151,23 +3789,11 @@ function renderDetail(ref) {
       <div class="stage-body"><div class="stage-title">التشغيل — إسناد المقررات</div><div class="stage-sub">${asnDone?'تم':'إسناد المقررات في المنصة'}</div></div>
       ${asnBtn}
     </div>`;
-  }
-
-  // البرنامج الثاني
-  if (c.program2) {
-    const p2Done  = c.program2.assigned;
-    const p2Color = getProgColor(c.program2.program);
-    const p2Steps = getClientSteps({...c, program:c.program2.program, track:c.program2.track, programType:c.program2.ptype, source:c.program2.source});
-    stagesHTML += `<div style="margin-top:12px;padding:10px 12px;border-radius:8px;border:1.5px solid ${p2Color}33;background:${p2Color}08">
-      <div style="font-size:10px;font-weight:700;color:${p2Color};letter-spacing:.05em;margin-bottom:8px">البرنامج الثاني — ${(c.program2.program||'').split('—')[0].trim()} ${c.program2.track?'· '+c.program2.track:''}</div>
-      <div style="display:flex;align-items:center;gap:8px">
-        ${p2Done
-          ? `<span class="pill p-green" style="font-size:11px">✓ مكتمل</span>`
-          : `${canAct ? `<button class="btn btn-sm btn-primary" onclick="markProgram2Complete('${c.ref}')">✓ اكتمل</button>` : ''}
-             <span class="pill p-amber" style="font-size:11px">بانتظار التفعيل</span>
-             <span style="font-size:10px;color:var(--text-3);margin-right:auto">${p2Steps==='auto'?'تلقائي':p2Steps==='basecamp'?'Basecamp':'إسناد'}</span>`
-        }
-      </div>
+  } else if (addDone && !asnDone && canAct) {
+    stagesHTML += `<div class="stage-row s-active">
+      <div class="stage-icon si-ops">أ</div>
+      <div class="stage-body"><div class="stage-title">التشغيل — إكمال التفعيل</div><div class="stage-sub">عصارة — لا يحتاج إسناد</div></div>
+      <button class="btn btn-sm btn-primary" onclick="markComplete('${c.ref}')">اكتمل ✓</button>
     </div>`;
   }
 
@@ -3321,69 +3947,19 @@ function openEmail() {
 // التقارير
 // ════════════════════════════════
 function parseClientDate(c) {
-  if (!c) return null;
-
-  // ١. أولوية: ISO timestamp مخزن في createdAtISO
-  if (c.createdAtISO) {
-    const d = new Date(c.createdAtISO);
-    if (!isNaN(d)) return d;
-  }
-
-  // ٢. createdAt — نحاول نحلله
-  const raw = c.createdAt;
-  if (!raw) return null;
-
-  // تحويل الأرقام العربية/الفارسية
-  const norm = String(raw)
-    .replace(/[٠-٩]/g, d => '٠١٢٣٤٥٦٧٨٩'.indexOf(d))
-    .replace(/[۰-۹]/g, d => '۰۱۲۳۴۵۶۷۸۹'.indexOf(d))
-    .trim();
-
-  // ٣. محاولة مباشرة (ISO or standard)
-  const direct = new Date(norm);
-  if (!isNaN(direct) && direct.getFullYear() > 1970) return direct;
-
-  // ٤. صيغة "dd/mm/yyyy, hh:mm" أو "d/m/yyyy، h:mm"
-  // نفصل التاريخ عن الوقت بفاصلة أو ،
-  const parts = norm.split(/[،,]/).map(x => x.trim()).filter(Boolean);
-  const datePart = parts[0] || '';
-  const timePart = parts[1] || '';
-
-  // نجرب كل الصيغ الممكنة
-  const patterns = [
-    // d/m/yyyy أو dd/mm/yyyy
-    /^(\d{1,2})[\/\-\.](\d{1,2})[\/\-\.](\d{4})$/,
-    // yyyy/m/d
-    /^(\d{4})[\/\-\.](\d{1,2})[\/\-\.](\d{1,2})$/,
-  ];
-
-  for (const pat of patterns) {
-    const m = datePart.match(pat);
-    if (!m) continue;
-    let [, a, b, c3] = m.map(Number);
-    let year, month, day;
-    if (a > 31)        { year = a;  month = b; day = c3; }  // yyyy/m/d
-    else if (c3 > 31)  { day  = a;  month = b; year = c3; } // d/m/yyyy
-    else continue;
-
-    // تحقق من صحة القيم
-    if (month < 1 || month > 12 || day < 1 || day > 31) continue;
-
-    // تحويل السنة الهجرية تقريبياً إذا كانت أقل من 1500
-    if (year < 1500) year = Math.round(year * 0.9702 + 621.5);
-
-    const t = timePart.match(/(\d{1,2}):(\d{1,2})(?::(\d{1,2}))?/);
-    let h = t ? +t[1] : 0, mn = t ? +t[2] : 0, s = t && t[3] ? +t[3] : 0;
-
-    // تصحيح ص/م
-    if (/م|pm/i.test(timePart) && h < 12) h += 12;
-    if (/ص|am/i.test(timePart) && h === 12) h = 0;
-
-    const d = new Date(year, month - 1, day, h, mn, s);
-    if (!isNaN(d)) return d;
-  }
-
-  return null;
+  if (!c.createdAt) return null;
+  const raw = normalizeDigits(c.createdAt).trim();
+  const direct = new Date(raw);
+  if (!isNaN(direct)) return direct;
+  const parts = raw.split(/[،,]/).map(x=>x.trim()).filter(Boolean);
+  const m = (parts[0]||'').match(/^(\d{1,4})[\/\-](\d{1,2})[\/\-](\d{1,4})$/);
+  if (!m) return null;
+  let [,a,b,c3] = m.map(Number);
+  let year,month,day;
+  if (a>31){year=a;month=b;day=c3;} else if(c3>31){day=a;month=b;year=c3;} else return null;
+  const t = (parts[1]||'').match(/(\d{1,2}):(\d{1,2})(?::(\d{1,2}))?/);
+  const d = new Date(year,month-1,day,t?+t[1]:0,t?+t[2]:0,t&&t[3]?+t[3]:0);
+  return isNaN(d)?null:d;
 }
 function setSalesPeriod(period) {
   const now=new Date(), today=now.toISOString().split('T')[0];
@@ -3693,7 +4269,7 @@ document.addEventListener('click', e => {
 // ════════════════════════════════
 function exportCSV() {
   const filtered = getFilteredClients();
-  if (!filtered.length) { toast('لا توجد بيانات للتصدير', true); return; }
+  if (!filtered.length) { toast('لا توجد بيانات للتصدير', false); return; }
   const headers = ['رقم المرجع','الاسم','البريد','الجوال','الدفعة','البرنامج','المسار','النوع','اللغة','نوع العميل','المصدر','كيف عرف عنا؟','شامل الكفاءة','الحالة','التسجيل','أضافه','ملاحظات'];
   const rows = filtered.map(c=>[c.ref,c.name,c.email||'',c.phone||'',c.batchNo||'',c.program,c.track||'',c.programType||'',c.lang||'',c.clientType||'',c.source,c.acquisitionChannel||'',c.efficiencyCheck||'',c.academyAssigned?'مكتمل':'قيد التفعيل',c.createdAt||'',c.addedBy||'',(c.notes||'').replace(/,/g,'؛')]);
   const csv=[headers,...rows].map(r=>r.map(v=>`"${String(v).replace(/"/g,'""')}"`).join(',')).join('\n');
@@ -3702,8 +4278,86 @@ function exportCSV() {
 }
 
 // ════════════════════════════════
-// تسجيل الدخول والخروج
+// ملخص الصباح
 // ════════════════════════════════
+function showMorningSummary() {
+  const now  = new Date();
+  const hour = now.getHours();
+
+  // تحية حسب الوقت
+  let emoji, greeting;
+  if (hour < 12)      { emoji = '☀️';  greeting = 'صباح الخير'; }
+  else if (hour < 17) { emoji = '🌤';  greeting = 'مساء الخير'; }
+  else                { emoji = '🌙';  greeting = 'مساء النور'; }
+
+  const u = currentUser();
+  const name = u.fullName || u.username || '';
+
+  // التاريخ
+  const dateStr = now.toLocaleDateString('ar-SA', {
+    weekday:'long', year:'numeric', month:'long', day:'numeric'
+  });
+
+  // الأرقام
+  const pending      = clients.filter(c => !c.academyAdded && !c.academyAssigned && !isTrialClient(c)).length;
+  const pendingAsgn  = clients.filter(c => c.academyAdded && !c.academyAssigned && needsAssign(c.source) && !isTrialClient(c)).length;
+  const lateInst     = clients.filter(c => (c.installments||[]).some(i => ['late','warning','policy'].includes(i.status))).length;
+  const due27        = clients.filter(c => {
+    const insts = c.installments || [];
+    return insts.some(i => {
+      if (i.status === 'paid') return false;
+      const d = new Date(i.due);
+      return d.getDate() === 27 &&
+        d.getMonth() === now.getMonth() &&
+        d.getFullYear() === now.getFullYear();
+    });
+  }).length;
+
+  // بناء الإحصائيات
+  const stats = [
+    { n: pending,     l: 'بانتظار التفعيل', cls: pending > 0 ? 'amber' : '' },
+    { n: pendingAsgn, l: 'بانتظار الإسناد',  cls: pendingAsgn > 0 ? 'blue' : '' },
+    { n: lateInst,    l: 'أقساط متأخرة',    cls: lateInst > 0 ? 'red' : '' },
+    { n: due27,       l: 'أقساط يوم 27',    cls: due27 > 0 ? 'amber' : 'green' },
+  ];
+
+  // رسالة ذكية
+  const msgs = [];
+  if (pending > 0)     msgs.push(`${pending} عميل بانتظار التفعيل`);
+  if (pendingAsgn > 0) msgs.push(`${pendingAsgn} بانتظار الإسناد`);
+  if (lateInst > 0)    msgs.push(`⚠️ ${lateInst} قسط متأخر يحتاج متابعة`);
+  if (due27 > 0)       msgs.push(`📅 ${due27} قسط مستحق يوم 27 من الشهر`);
+  const msgTxt = msgs.length
+    ? msgs.join(' · ')
+    : '✅ لا يوجد مهام عاجلة اليوم — يوم رائع!';
+
+  // تحديث العناصر
+  document.getElementById('morning-emoji').textContent    = emoji;
+  document.getElementById('morning-greeting').textContent = `${greeting}${name ? '، ' + name.split(' ')[0] : ''} 👋`;
+  document.getElementById('morning-date').textContent     = dateStr;
+  document.getElementById('morning-stats').innerHTML      = stats.map(s =>
+    `<div class="morning-stat ${s.cls}"><div class="n">${s.n}</div><div class="l">${s.l}</div></div>`
+  ).join('');
+  document.getElementById('morning-msg').textContent = msgTxt;
+
+  document.getElementById('morning-banner').classList.add('show');
+}
+
+function closeMorning() {
+  document.getElementById('morning-banner').classList.remove('show');
+  // حفظ تاريخ آخر ظهور عشان ما يظهر مرتين نفس اليوم
+  localStorage.setItem('morning_shown', new Date().toDateString());
+}
+
+function checkMorningSummary() {
+  const last = localStorage.getItem('morning_shown');
+  const today = new Date().toDateString();
+  if (last !== today) {
+    showMorningSummary();
+  }
+}
+
+
 async function doLogin() {
   const username = document.getElementById('login-user').value.trim();
   const password = document.getElementById('login-pass').value;
@@ -3713,7 +4367,7 @@ async function doLogin() {
     sessionStorage.setItem('ops_session', JSON.stringify({username:user.username,role:user.role,fullName:user.fullName||user.username}));
     document.getElementById('login-screen').style.display = 'none';
     document.getElementById('app').classList.add('visible');
-    applyRoleUI(); syncData(); loadNotifications(); startAutoSync();
+    applyRoleUI(); syncData(); loadNotifications();
     if (window.FB) window.FB.watchNotifications(()=>loadNotifications().then(renderNotifDot));
   } else {
     const err = document.getElementById('login-error');
@@ -3729,9 +4383,12 @@ function doLogout() {
 }
 function applyRoleUI() {
   const showAcademy=can('academy'), showFinance=can('finance'), showReports=can('reports'), showSettings=can('settings'), showAdd=can('addClient');
-  [['btn-academy',showAcademy],['btn-finance',showFinance],['btn-reports',showReports],['btn-settings',showSettings]].forEach(([id,show])=>{
+
+  // إظهار/إخفاء عناصر الشريط الجانبي
+  [['btn-academy',showAcademy],['btn-assign',showAcademy],['btn-finance',showFinance],['btn-reports',showReports],['btn-settings',showSettings]].forEach(([id,show])=>{
     const el=document.getElementById(id); if(el) el.style.display=show?'':'none';
   });
+
   const addFormCard=document.getElementById('add-form-card');
   const addToggle=document.getElementById('add-form-toggle');
   if(showAdd){if(addToggle)addToggle.style.display='block';}
@@ -3740,8 +4397,10 @@ function applyRoleUI() {
   const u = currentUser();
   const nameEl = document.getElementById('user-display-name');
   const avEl   = document.getElementById('user-av-chip');
+  const roleEl = document.getElementById('user-role-label');
   if (nameEl) nameEl.textContent = u.fullName || u.username || '—';
   if (avEl)   avEl.textContent   = (u.fullName||u.username||'م')[0];
+  if (roleEl) roleEl.textContent = ROLE_LABELS[u.role] || u.role || '—';
 
   const firstTab = can('addClient')?'sales':can('academy')?'academy':can('finance')?'finance':can('reports')?'reports':'sales';
   const tabBtn = document.getElementById('btn-'+firstTab)||document.getElementById('btn-sales');
@@ -3752,7 +4411,6 @@ function applyRoleUI() {
 // تشغيل التطبيق
 // ════════════════════════════════
 async function checkSession() {
-  loadAssignmentRules();
   await loadUsers(); await loadCustomLabels(); await loadNotifications();
   const session = sessionStorage.getItem('ops_session');
   if (session) {
@@ -3761,11 +4419,25 @@ async function checkSession() {
     if (!stillExists) { sessionStorage.removeItem('ops_session'); return; }
     document.getElementById('login-screen').style.display='none';
     document.getElementById('app').classList.add('visible');
-    applyRoleUI(); syncData(); renderNotifDot(); startAutoSync();
+    applyRoleUI(); syncData(); renderNotifDot();
     if (window.FB) window.FB.watchNotifications(()=>loadNotifications().then(renderNotifDot));
   }
 }
 checkSession();
 </script>
+<!-- ══ ملخص الصباح ══ -->
+<div class="morning-banner" id="morning-banner">
+  <div class="morning-box">
+    <div class="morning-emoji" id="morning-emoji">☀️</div>
+    <div class="morning-greeting" id="morning-greeting">صباح الخير</div>
+    <div class="morning-date" id="morning-date"></div>
+    <div class="morning-stats" id="morning-stats"></div>
+    <div class="morning-msg" id="morning-msg"></div>
+    <button class="btn btn-primary" style="width:100%;justify-content:center;font-size:14px" onclick="closeMorning()">
+      ابدأ يومك ←
+    </button>
+  </div>
+</div>
+
 </body>
 </html>
