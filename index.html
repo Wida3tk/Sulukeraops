@@ -2089,14 +2089,14 @@ let filterType  = '';
 // ════════════════════════════════
 // مساعدات
 // ════════════════════════════════
-// مساعد: تنظيف بيانات العميل — يضمن أن boolean fields هي boolean حقيقية
+// مساعد عالمي — تحويل أي قيمة لـ boolean
+const isTrue = v => v === true || v === 'true' || v === 'TRUE' || v === 1 || v === '1';
+
+// مساعد: تنظيف بيانات العميل
 function normalizeClient(c) {
   if (!c) return c;
-  const boolFields = ['academyAdded','academyAssigned'];
-  boolFields.forEach(f => {
-    c[f] = c[f] === true || String(c[f]).toLowerCase() === 'true';
-  });
-  // الأقساط — تأكد أنها مصفوفة
+  c.academyAdded    = isTrue(c.academyAdded);
+  c.academyAssigned = isTrue(c.academyAssigned);
   if (!Array.isArray(c.installments)) {
     try { c.installments = c.installments ? JSON.parse(c.installments) : []; }
     catch { c.installments = []; }
@@ -2547,8 +2547,8 @@ function cardHTML(c, showTrialActions=false) {
     const isConv      = c.trialStatus === 'converted';
 
     // نحوّل دائماً لـ boolean حقيقي
-    const addDone = c.academyAdded    === true || String(c.academyAdded).toLowerCase()    === 'true';
-    const asnDone = c.academyAssigned === true || String(c.academyAssigned).toLowerCase() === 'true';
+    const addDone = isTrue(c.academyAdded);
+    const asnDone = isTrue(c.academyAssigned);
 
     const stage   = asnDone ? 'done' : addDone ? 'half' : 'pending';
     const p2cls   = stage === 'done' ? 'done' : stage === 'half' ? 'half' : 'active';
@@ -3619,7 +3619,8 @@ async function markUninterested(ref) {
 async function markAdded(ref) {
   const idx = clients.findIndex(x => x.ref === ref);
   if (idx < 0) return;
-  if (clients[idx].academyAdded === true) return;
+  const _isAdded = v => v === true || v === 'true' || v === 'TRUE' || v === 1 || v === '1';
+  if (_isAdded(clients[idx].academyAdded)) return;
   const now = new Date().toLocaleString('ar-SA');
   const session = JSON.parse(sessionStorage.getItem('ops_session') || '{}');
   clients[idx].academyAdded = true;
@@ -3634,25 +3635,40 @@ async function markAdded(ref) {
 
 async function markAssigned(ref) {
   const idx = clients.findIndex(x => x.ref === ref);
-  if (idx < 0) return;
-  if (!clients[idx].academyAdded || clients[idx].academyAssigned === true) return;
-  const now = new Date().toLocaleString('ar-SA');
+  if (idx < 0) { toast('عميل غير موجود', false); return; }
+
+  const c = clients[idx];
+  const addedVal   = c.academyAdded;
+  const assignedVal = c.academyAssigned;
+
+  // تحويل قوي لـ boolean
+  const isAdded    = isTrue(addedVal);
+  const isAssigned = isTrue(assignedVal);
+
+  if (!isAdded)    { toast('يجب إضافة الحساب في المنصة أولاً', false); return; }
+  if (isAssigned)  { toast('تم الإسناد مسبقاً', false); return; }
+
+  const now     = new Date().toLocaleString('ar-SA');
   const session = JSON.parse(sessionStorage.getItem('ops_session') || '{}');
+
+  clients[idx].academyAdded    = true;
   clients[idx].academyAssigned = true;
-  clients[idx].activatedAt = new Date().toISOString();
+  clients[idx].activatedAt     = new Date().toISOString();
   clients[idx].log = clients[idx].log || [];
   clients[idx].log.push({ who: session.username||'التشغيل', action:'تم إسناد المقررات — مكتمل', time:now });
+
   localStorage.setItem('ops_clients', JSON.stringify(clients));
   toast('تم الإسناد — العميل مكتمل ✓');
   updateStats(); render();
   if (selId === ref) renderDetail(ref);
-  persistClient(clients[idx]); // بدون await
+  persistClient(clients[idx]);
 }
 
 async function markComplete(ref) {
   const idx = clients.findIndex(x => x.ref === ref);
   if (idx < 0) return;
-  if (!clients[idx].academyAdded || clients[idx].academyAssigned === true) return;
+  const _isTrue = v => v === true || v === 'true' || v === 'TRUE' || v === 1 || v === '1';
+  if (_isTrue(clients[idx].academyAssigned)) return;
   const now = new Date().toLocaleString('ar-SA');
   const session = JSON.parse(sessionStorage.getItem('ops_session') || '{}');
   clients[idx].academyAssigned = true;
@@ -3797,8 +3813,8 @@ function renderDetail(ref) {
   const isTrial  = isTrialClient(c);
   const isUnint  = c.trialStatus === 'uninterested';
   const isConv   = c.trialStatus === 'converted';
-  const addDone  = c.academyAdded    === true || String(c.academyAdded).toLowerCase()    === 'true';
-  const asnDone  = c.academyAssigned === true || String(c.academyAssigned).toLowerCase() === 'true';
+  const addDone  = isTrue(c.academyAdded);
+  const asnDone  = isTrue(c.academyAssigned);
 
   let stagesHTML = `<div class="stage-row s-done">
     <div class="stage-icon si-sales">م</div>
