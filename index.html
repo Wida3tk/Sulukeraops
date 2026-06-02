@@ -4328,19 +4328,38 @@ function openEmail() {
 // التقارير
 // ════════════════════════════════
 function parseClientDate(c) {
-  if (!c.createdAt) return null;
-  const raw = normalizeDigits(c.createdAt).trim();
+  if (!c) return null;
+  const raw = normalizeDigits(String(c.createdAt || c.createdAtISO || '')).trim();
+  if (!raw) return null;
+
+  // ISO format مباشرة
   const direct = new Date(raw);
-  if (!isNaN(direct)) return direct;
-  const parts = raw.split(/[،,]/).map(x=>x.trim()).filter(Boolean);
-  const m = (parts[0]||'').match(/^(\d{1,4})[\/\-](\d{1,2})[\/\-](\d{1,4})$/);
+  if (!isNaN(direct) && direct.getFullYear() > 2000) return direct;
+
+  // استخرج الجزء الأول (التاريخ) — قبل مسافة أو فاصلة
+  const datePart = raw.split(/[\s،,]/)[0];
+
+  // صيغة D/M/YYYY أو YYYY/M/D أو D-M-YYYY
+  const m = datePart.match(/^(\d{1,4})[\/\-\.](\d{1,2})[\/\-\.](\d{1,4})$/);
   if (!m) return null;
-  let [,a,b,c3] = m.map(Number);
-  let year,month,day;
-  if (a>31){year=a;month=b;day=c3;} else if(c3>31){day=a;month=b;year=c3;} else return null;
-  const t = (parts[1]||'').match(/(\d{1,2}):(\d{1,2})(?::(\d{1,2}))?/);
-  const d = new Date(year,month-1,day,t?+t[1]:0,t?+t[2]:0,t&&t[3]?+t[3]:0);
-  return isNaN(d)?null:d;
+
+  let [,a,b,cc] = m.map(Number);
+  let year, month, day;
+  if (a > 31)       { year=a;  month=b; day=cc; }
+  else if (cc > 31) { year=cc; month=b; day=a;  }
+  else return null;
+
+  if (month < 1 || month > 12) return null;
+
+  // استخرج الوقت
+  const timePart = raw.match(/(\d{1,2}):(\d{2})(?::(\d{2}))?/);
+  const d = new Date(
+    year, month-1, day,
+    timePart ? +timePart[1] : 0,
+    timePart ? +timePart[2] : 0,
+    timePart && timePart[3] ? +timePart[3] : 0
+  );
+  return isNaN(d) ? null : d;
 }
 function setSalesPeriod(period) {
   const now=new Date(), today=now.toISOString().split('T')[0];
