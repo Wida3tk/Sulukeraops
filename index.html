@@ -2355,6 +2355,7 @@ async function syncData() {
   if (cr.clients) {
     const cleanVal = v => {
       if (v === null || v === undefined) return '';
+      if (typeof v === 'boolean') return v; // لا تحوّل boolean لـ string
       const s = String(v).trim();
       if (s.startsWith('#') || s === 'undefined' || s === 'null') return '';
       return s;
@@ -2954,10 +2955,10 @@ function cardHTML(c, showTrialActions=false) {
 // الإحصائيات
 // ════════════════════════════════
 function updateStats() {
-  const pending      = clients.filter(c => !c.academyAdded && !c.academyAssigned && !isTrialClient(c)).length;
+  const pending      = clients.filter(c => !c.academyAdded && !isTrue(c.academyAssigned) && !isTrialClient(c)).length;
   const pendingAsgn  = clients.filter(c => c.academyAdded && !c.academyAssigned && needsAssign(c.source) && !isTrialClient(c)).length;
-  const done         = clients.filter(c => c.academyAssigned).length;
-  const needAsgn     = clients.filter(c => needsAssign(c.source) && !c.academyAssigned && !isTrialClient(c)).length;
+  const done         = clients.filter(c => isTrue(c.academyAssigned)).length;
+  const needAsgn     = clients.filter(c => needsAssign(c.source) && !isTrue(c.academyAssigned) && !isTrialClient(c)).length;
   const total        = clients.length;
 
   // إحصائيات المبيعات
@@ -3019,7 +3020,7 @@ function updateStats() {
   const acaPendTrial = clients.filter(c => isTrialClient(c) && !c.trialStatus).length;
   const el1 = document.getElementById('aca-pend-trial-count');
   if (el1) el1.textContent = acaPendTrial;
-  const pendingOps = clients.filter(c => !c.academyAdded && !c.academyAssigned && !isTrialClient(c)).length;
+  const pendingOps = clients.filter(c => !c.academyAdded && !isTrue(c.academyAssigned) && !isTrialClient(c)).length;
   const el2 = document.getElementById('aca-pend-total');
   if (el2) el2.textContent = pendingOps;
   const el3 = document.getElementById('asgn-pend-total');
@@ -3101,7 +3102,7 @@ function renderAssign() {
 
 function renderSales() {
   const filtered     = getFilteredClients();
-  const regular      = filtered.filter(c => !isTrialClient(c) && !c.academyAssigned);
+  const regular      = filtered.filter(c => !isTrialClient(c) && !isTrue(c.academyAssigned));
   const trial        = filtered.filter(c => isTrialClient(c) && c.trialStatus !== 'uninterested');
   const uninterested = filtered.filter(c => c.trialStatus === 'uninterested');
 
@@ -3121,7 +3122,7 @@ function renderAcademy() {
   const allFiltered = getFilteredClients();
 
   // بانتظار تهيئة العميل — من الفلتر، بدون تجربة
-  const pending = allFiltered.filter(c => !c.academyAssigned && !isTrialClient(c));
+  const pending = allFiltered.filter(c => !isTrue(c.academyAssigned) && !isTrialClient(c));
   const alert = document.getElementById('main-alert');
   if (pending.length) {
     alert.classList.add('show');
@@ -3175,7 +3176,7 @@ function renderAcademy() {
 }
 
 function renderCompleted() {
-  let done = getFilteredClients().filter(c => c.academyAssigned);
+  let done = getFilteredClients().filter(c => isTrue(c.academyAssigned));
 
   // فرز حسب تاريخ الإكمال — الأحدث أولاً
   done.sort((a,b) => (new Date(b.activatedAt||b.createdAt||0)) - (new Date(a.activatedAt||a.createdAt||0)));
@@ -4673,7 +4674,7 @@ function showMorningSummary() {
   });
 
   // الأرقام
-  const pending      = clients.filter(c => !c.academyAdded && !c.academyAssigned && !isTrialClient(c)).length;
+  const pending      = clients.filter(c => !c.academyAdded && !isTrue(c.academyAssigned) && !isTrialClient(c)).length;
   const pendingAsgn  = clients.filter(c => c.academyAdded && !c.academyAssigned && needsAssign(c.source) && !isTrialClient(c)).length;
   const lateInst     = clients.filter(c => (c.installments||[]).some(i => ['late','warning','policy'].includes(i.status))).length;
   const due27        = clients.filter(c => {
