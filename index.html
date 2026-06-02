@@ -2449,7 +2449,7 @@ function renderKPIs() {
     try { return new Date(c.activatedAt).toDateString() === today; } catch { return false; }
   };
   const isLate = c => {
-    if (c.academyAdded || c.academyAssigned) return false;
+    if (isTrue(c.academyAdded) || isTrue(c.academyAssigned)) return false;
     const d = parseClientDate(c);
     if (!d) return false;
     return Math.floor((now - d) / 86400000) > 2;
@@ -2892,7 +2892,7 @@ function cardHTML(c, showTrialActions=false) {
 
     // عداد الأيام + تحذير المتأخرين
     const days = daysSince(c);
-    const isLate = !c.academyAssigned && !isTrial && days >= 3;
+    const isLate = !isTrue(c.academyAssigned) && !isTrial && days >= 3;
     const daysBadge = days > 0
       ? `<span style="font-size:10px;color:${isLate?'var(--red)':'var(--text-3)'};font-weight:${isLate?700:400};margin-right:auto">${isLate?'⚠ ':''}منذ ${days} ${days===1?'يوم':'أيام'}</span>`
       : '';
@@ -2900,7 +2900,7 @@ function cardHTML(c, showTrialActions=false) {
     // شارة موعد البدء (للمباشر فقط)
     let startBadge = '';
     let isUrgent = false;
-    if (c.startDate && !c.academyAssigned) {
+    if (c.startDate && !isTrue(c.academyAssigned)) {
       const sd = new Date(c.startDate + 'T00:00:00');
       const now = new Date();
       now.setHours(0,0,0,0);
@@ -2955,8 +2955,8 @@ function cardHTML(c, showTrialActions=false) {
 // الإحصائيات
 // ════════════════════════════════
 function updateStats() {
-  const pending      = clients.filter(c => !c.academyAdded && !isTrue(c.academyAssigned) && !isTrialClient(c)).length;
-  const pendingAsgn  = clients.filter(c => c.academyAdded && !c.academyAssigned && needsAssign(c.source) && !isTrialClient(c)).length;
+  const pending      = clients.filter(c => !isTrue(c.academyAdded) && !isTrue(c.academyAssigned) && !isTrialClient(c)).length;
+  const pendingAsgn  = clients.filter(c => isTrue(c.academyAdded) && !isTrue(c.academyAssigned) && needsAssign(c.source) && !isTrialClient(c)).length;
   const done         = clients.filter(c => isTrue(c.academyAssigned)).length;
   const needAsgn     = clients.filter(c => needsAssign(c.source) && !isTrue(c.academyAssigned) && !isTrialClient(c)).length;
   const total        = clients.length;
@@ -2983,7 +2983,7 @@ function updateStats() {
     badge.textContent = pending;
     badge.style.display = pending > 0 ? 'flex' : 'none';
     const urgentCount = clients.filter(c => {
-      if (!c.startDate || c.academyAdded) return false;
+      if (!c.startDate || isTrue(c.academyAdded)) return false;
       const diff = Math.ceil((new Date(c.startDate) - new Date()) / 86400000);
       return diff <= 2;
     }).length;
@@ -3000,7 +3000,7 @@ function updateStats() {
   // شريط التقدم اليومي (العمليات)
   const todayStr = new Date().toDateString();
   const todayDone = clients.filter(c => {
-    if (!c.academyAdded || !c.activatedAt) return false;
+    if (!isTrue(c.academyAdded) || !c.activatedAt) return false;
     try { const d = new Date(c.activatedAt); return !isNaN(d) && d.toDateString() === todayStr; } catch { return false; }
   }).length;
   const todayRegistered = clients.filter(c => {
@@ -3020,7 +3020,7 @@ function updateStats() {
   const acaPendTrial = clients.filter(c => isTrialClient(c) && !c.trialStatus).length;
   const el1 = document.getElementById('aca-pend-trial-count');
   if (el1) el1.textContent = acaPendTrial;
-  const pendingOps = clients.filter(c => !c.academyAdded && !isTrue(c.academyAssigned) && !isTrialClient(c)).length;
+  const pendingOps = clients.filter(c => !isTrue(c.academyAdded) && !isTrue(c.academyAssigned) && !isTrialClient(c)).length;
   const el2 = document.getElementById('aca-pend-total');
   if (el2) el2.textContent = pendingOps;
   const el3 = document.getElementById('asgn-pend-total');
@@ -3050,7 +3050,7 @@ function render() {
 function renderAssign() {
   const allFiltered = getFilteredClients();
   // فقط العملاء الذين أُضيفوا في المنصة ولم يُسندوا بعد ويحتاجون إسناداً
-  const pending = allFiltered.filter(c => c.academyAdded && !c.academyAssigned && needsAssign(c.source) && !isTrialClient(c));
+  const pending = allFiltered.filter(c => isTrue(c.academyAdded) && !isTrue(c.academyAssigned) && needsAssign(c.source) && !isTrialClient(c));
 
   const countEl = document.getElementById('asgn-pend-total');
   if (countEl) countEl.textContent = pending.length;
@@ -3087,7 +3087,7 @@ function renderAssign() {
   // شريط التقدم
   const todayStr = new Date().toDateString();
   const todayDone = clients.filter(c => {
-    if (!c.academyAssigned || !c.activatedAt) return false;
+    if (!isTrue(c.academyAssigned) || !c.activatedAt) return false;
     try { return new Date(c.activatedAt).toDateString() === todayStr; } catch { return false; }
   }).length;
   const fill = document.getElementById('dp-fill-assign');
@@ -4367,7 +4367,7 @@ function renderReports() {
   const now=new Date(),fromEl=document.getElementById('sales-date-from'),toEl=document.getElementById('sales-date-to');
   if(fromEl&&!fromEl.value){fromEl.value=new Date(now.getFullYear(),now.getMonth(),1).toISOString().split('T')[0];toEl.value=now.toISOString().split('T')[0];}
   renderProductSales();
-  const total=clients.length,done=clients.filter(c=>c.academyAssigned).length,pending=clients.filter(c=>!c.academyAssigned).length;
+  const total=clients.length,done=clients.filter(c=>isTrue(c.academyAssigned)).length,pending=clients.filter(c=>!isTrue(c.academyAssigned)).length;
   const thisMonth=clients.filter(c=>{const d=parseClientDate(c);return d&&d.getMonth()===now.getMonth()&&d.getFullYear()===now.getFullYear();}).length;
   const soon=clients.filter(c=>{if(!c.expiry)return false;const diff=(new Date(c.expiry)-now)/(1000*60*60*24);return diff>=0&&diff<=30;}).sort((a,b)=>new Date(a.expiry)-new Date(b.expiry));
   document.getElementById('report-stats').innerHTML=`
@@ -4646,7 +4646,7 @@ function exportCSV() {
   const filtered = getFilteredClients();
   if (!filtered.length) { toast('لا توجد بيانات للتصدير', false); return; }
   const headers = ['رقم المرجع','الاسم','البريد','الجوال','الدفعة','البرنامج','المسار','النوع','اللغة','نوع العميل','المصدر','كيف عرف عنا؟','شامل الكفاءة','الحالة','التسجيل','أضافه','ملاحظات'];
-  const rows = filtered.map(c=>[c.ref,c.name,c.email||'',c.phone||'',c.batchNo||'',c.program,c.track||'',c.programType||'',c.lang||'',c.clientType||'',c.source,c.acquisitionChannel||'',c.efficiencyCheck||'',c.academyAssigned?'مكتمل':'قيد التفعيل',c.createdAt||'',c.addedBy||'',(c.notes||'').replace(/,/g,'؛')]);
+  const rows = filtered.map(c=>[c.ref,c.name,c.email||'',c.phone||'',c.batchNo||'',c.program,c.track||'',c.programType||'',c.lang||'',c.clientType||'',c.source,c.acquisitionChannel||'',c.efficiencyCheck||'',isTrue(c.academyAssigned)?'مكتمل':'قيد التفعيل',c.createdAt||'',c.addedBy||'',(c.notes||'').replace(/,/g,'؛')]);
   const csv=[headers,...rows].map(r=>r.map(v=>`"${String(v).replace(/"/g,'""')}"`).join(',')).join('\n');
   const a=document.createElement('a'); a.href=URL.createObjectURL(new Blob(['\uFEFF'+csv],{type:'text/csv;charset=utf-8;'}));
   a.download=`سلوكيرا-${new Date().toLocaleDateString('ar-SA').replace(/\//g,'-')}.csv`; a.click(); toast(`تصدير ${filtered.length} عميل ✓`);
@@ -4674,8 +4674,8 @@ function showMorningSummary() {
   });
 
   // الأرقام
-  const pending      = clients.filter(c => !c.academyAdded && !isTrue(c.academyAssigned) && !isTrialClient(c)).length;
-  const pendingAsgn  = clients.filter(c => c.academyAdded && !c.academyAssigned && needsAssign(c.source) && !isTrialClient(c)).length;
+  const pending      = clients.filter(c => !isTrue(c.academyAdded) && !isTrue(c.academyAssigned) && !isTrialClient(c)).length;
+  const pendingAsgn  = clients.filter(c => isTrue(c.academyAdded) && !isTrue(c.academyAssigned) && needsAssign(c.source) && !isTrialClient(c)).length;
   const lateInst     = clients.filter(c => (c.installments||[]).some(i => ['late','warning','policy'].includes(i.status))).length;
   const due27        = clients.filter(c => {
     const insts = c.installments || [];
