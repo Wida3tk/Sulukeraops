@@ -4332,23 +4332,39 @@ function parseClientDate(c) {
   const raw = String(c.createdAt || c.createdAtISO || '').trim();
   if (!raw) return null;
 
-  // ISO 8601 فقط يُعالَج مباشرة (YYYY-MM-DD)
+  // ISO 8601: YYYY-MM-DD
   if (/^\d{4}-\d{2}-\d{2}/.test(raw)) {
     const d = new Date(raw);
     return isNaN(d) ? null : d;
   }
 
-  // باقي الصيغ: D/M/YYYY أو DD/MM/YYYY (en-GB أو عربي)
   const normalized = normalizeDigits(raw);
-  const datePart = normalized.split(/[\s,،]/)[0];
+  const datePart   = normalized.split(/[\s,،]/)[0];
   const m = datePart.match(/^(\d{1,4})[\/\-\.](\d{1,2})[\/\-\.](\d{1,4})$/);
   if (!m) return null;
 
   let [, a, b, cc] = m.map(Number);
   let year, month, day;
-  if      (a  > 31) { year = a;  month = b; day = cc; }
-  else if (cc > 31) { year = cc; month = b; day = a;  }
-  else return null;
+
+  if (a > 31) {
+    // YYYY/M/D
+    year = a; month = b; day = cc;
+  } else if (cc > 31) {
+    // D/M/YYYY أو M/D/YYYY — نفرق بينهم
+    year = cc;
+    if (a > 12) {
+      // a أكبر من 12 إذن هو اليوم بالتأكيد: D/M/YYYY
+      day = a; month = b;
+    } else if (b > 12) {
+      // b أكبر من 12 إذن هو اليوم: M/D/YYYY
+      month = a; day = b;
+    } else {
+      // الاثنان <= 12 — نفترض D/M/YYYY (en-GB الأكثر شيوعاً في النظام)
+      day = a; month = b;
+    }
+  } else {
+    return null;
+  }
 
   if (month < 1 || month > 12 || day < 1 || day > 31) return null;
 
