@@ -2447,8 +2447,8 @@ function renderKPIs() {
 
   // ── تسليم العميل ──
   const set = (id, n) => { const el = document.getElementById(id); if (el) el.textContent = n; };
-  set('kn-s-month', clients.filter(c => inMonth(c) && !isTrialClient(c)).length);
-  set('kn-s-week',  clients.filter(c => inWeek(c)  && !isTrialClient(c)).length);
+  set('kn-s-month', clients.filter(c => inMonth(c)).length);
+  set('kn-s-week',  clients.filter(c => inWeek(c)).length);
   set('kn-s-total', clients.length);
   set('kn-s-trial', clients.filter(c => isTrialClient(c) && !c.trialStatus).length);
 
@@ -2763,8 +2763,8 @@ function getFilteredClients() {
       const actDate  = c.activatedAt ? new Date(c.activatedAt) : null;
 
       if (view === 'sales') {
-        if (filter === 'month')   matchKpi = cd && cd >= som && !isTrialClient(c);
-        if (filter === 'week')    matchKpi = cd && cd >= sow && !isTrialClient(c);
+        if (filter === 'month')   matchKpi = cd && cd >= som;
+        if (filter === 'week')    matchKpi = cd && cd >= sow;
         if (filter === 'trial')   matchKpi = isTrialClient(c) && !c.trialStatus;
       } else if (view === 'academy') {
         if (filter === 'month')   matchKpi = isTrue(c.academyAdded) && actDate && actDate >= som;
