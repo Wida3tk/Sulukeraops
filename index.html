@@ -938,9 +938,32 @@ nav.nav-menu {
 .modal-sub { font-size: 12px; color: var(--text-3); margin-bottom: 1.25rem; }
 .modal-btns { display: flex; gap: 8px; justify-content: flex-end; margin-top: 1.25rem; }
 
-/* ══════════════════════════════════════════
-   المالية — جدول الأقساط
-══════════════════════════════════════════ */
+/* تبويبات المالية */
+.fin-tab {
+  display: flex; align-items: center; gap: 8px;
+  padding: 8px 16px; border-radius: 8px 8px 0 0;
+  border: none; background: transparent;
+  font-size: 13px; font-weight: 600; color: var(--text-3);
+  cursor: pointer; transition: all .15s; font-family: var(--font);
+  border-bottom: 2px solid transparent; margin-bottom: -2px;
+}
+.fin-tab:hover { color: var(--text); }
+.fin-tab.active { color: var(--blue); border-bottom-color: var(--blue); }
+.fin-tab-badge {
+  min-width: 20px; height: 20px; border-radius: 10px;
+  background: var(--border); color: var(--text-2);
+  font-size: 11px; font-weight: 700;
+  display: flex; align-items: center; justify-content: center; padding: 0 5px;
+}
+.fin-tab.active .fin-tab-badge { background: var(--blue-lt); color: var(--blue); }
+.fin-tab-badge.done { background: var(--green-lt); color: var(--green); }
+
+/* بطاقة المكتمل (دفع مباشر) */
+.fin-card.fc-complete {
+  border-right: 3px solid var(--green);
+  background: #f0faf4;
+}
+
 .fin-card {
   background: var(--surface); border: 1.5px solid var(--border);
   border-radius: var(--radius); padding: 0;
@@ -1776,36 +1799,22 @@ nav.nav-menu {
         <!-- تنبيه يوم 25 -->
         <div class="fin-alert-banner" id="fin-alert-25" style="display:none">
           <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
-          <div>
-            <h4>تذكير — أقساط مستحقة قريباً</h4>
-            <p id="fin-alert-25-text">يوجد أقساط مستحقة في 27 من الشهر الحالي</p>
-          </div>
+          <div><h4>تذكير — أقساط مستحقة قريباً</h4>
+          <p id="fin-alert-25-text">يوجد أقساط مستحقة في 27 من هذا الشهر</p></div>
         </div>
 
-        <!-- قوائم المالية -->
-        <div class="sec-head">
-          <span class="sec-title" style="color:var(--red)">🔴 متأخرون / إنذار</span>
-          <span class="sec-badge" id="fin-count-late" style="background:var(--red-lt);color:var(--red)">0</span>
+        <!-- تبويبات المالية -->
+        <div style="display:flex;gap:4px;margin-bottom:1.25rem;border-bottom:2px solid var(--border)">
+          <button class="fin-tab active" id="ftab-active" onclick="switchFinTab('active')">
+            أقساط نشطة <span class="fin-tab-badge" id="fin-count-active">0</span>
+          </button>
+          <button class="fin-tab" id="ftab-done" onclick="switchFinTab('done')">
+            مكتمل <span class="fin-tab-badge done" id="fin-count-done">0</span>
+          </button>
         </div>
-        <div id="fl-late"></div>
 
-        <div class="sec-head" style="margin-top:1rem">
-          <span class="sec-title" style="color:var(--amber)">🟡 قسط قادم خلال 3 أيام</span>
-          <span class="sec-badge" id="fin-count-soon" style="background:var(--amber-lt);color:var(--amber)">0</span>
-        </div>
-        <div id="fl-soon"></div>
-
-        <div class="sec-head" style="margin-top:1rem">
-          <span class="sec-title">أقساط نشطة</span>
-          <span class="sec-badge" id="fin-count-active">0</span>
-        </div>
         <div id="fl-active"></div>
-
-        <div class="sec-head" style="margin-top:1rem">
-          <span class="sec-title" style="color:var(--green)">✅ مكتملو الدفع / دفع مباشر</span>
-          <span class="sec-badge" id="fin-count-done">0</span>
-        </div>
-        <div id="fl-done"></div>
+        <div id="fl-done" style="display:none"></div>
       </div>
 
       <!-- ══ مودال الرقم المرجعي ══ -->
@@ -2065,19 +2074,90 @@ nav.nav-menu {
 
 <!-- ══ مودال تعديل البيانات ══ -->
 <div id="edit-modal">
-  <div class="modal-box">
+  <div class="modal-box" style="max-width:560px;width:95vw">
     <div class="modal-title">تعديل بيانات العميل</div>
     <div class="modal-sub" id="edit-modal-sub">—</div>
-    <div class="fg2">
-      <div class="fg full"><label>الاسم الكامل *</label><input id="edit-name"></div>
-      <div class="fg"><label>البريد الإلكتروني *</label><input id="edit-email" dir="ltr"></div>
-      <div class="fg"><label>رقم الجوال *</label><input id="edit-phone" dir="ltr"></div>
-      <div class="fg"><label>رقم الدفعة</label><input id="edit-batch"></div>
-      <div class="fg"><label>تاريخ انتهاء الاشتراك</label><input id="edit-expiry" type="date"></div>
-      <div class="fg"><label>موعد بدء البرنامج <span style="color:var(--text-3);font-weight:400">(للمباشر)</span></label><input id="edit-startdate" type="date"></div>
-      <div class="fg full"><label>ملاحظات</label><textarea id="edit-notes" rows="2" style="resize:none"></textarea></div>
+
+    <!-- تبويبات -->
+    <div style="display:flex;gap:4px;margin-bottom:1rem;border-bottom:1px solid var(--border);padding-bottom:0">
+      <button class="btn btn-sm" id="edit-tab-basic"
+        onclick="switchEditTab('basic')"
+        style="border-radius:6px 6px 0 0;border-bottom:none;background:var(--blue);color:#fff">
+        البيانات الأساسية
+      </button>
+      <button class="btn btn-sm" id="edit-tab-finance"
+        onclick="switchEditTab('finance')"
+        style="border-radius:6px 6px 0 0;border-bottom:none">
+        المالية
+      </button>
     </div>
-    <div class="modal-btns">
+
+    <!-- البيانات الأساسية -->
+    <div id="edit-section-basic">
+      <div class="fg2">
+        <div class="fg full"><label>الاسم الكامل *</label><input id="edit-name"></div>
+        <div class="fg"><label>البريد الإلكتروني *</label><input id="edit-email" dir="ltr"></div>
+        <div class="fg"><label>رقم الجوال *</label><input id="edit-phone" dir="ltr"></div>
+        <div class="fg"><label>رقم الدفعة</label><input id="edit-batch"></div>
+        <div class="fg"><label>تاريخ انتهاء الاشتراك</label><input id="edit-expiry" type="date"></div>
+        <div class="fg"><label>موعد بدء البرنامج</label><input id="edit-startdate" type="date"></div>
+        <div class="fg full"><label>ملاحظات</label><textarea id="edit-notes" rows="2" style="resize:none"></textarea></div>
+      </div>
+    </div>
+
+    <!-- المالية -->
+    <div id="edit-section-finance" style="display:none">
+      <div class="fg2">
+        <div class="fg">
+          <label>سعر الاشتراك (SAR)</label>
+          <input id="edit-price" type="text" inputmode="decimal" placeholder="0.00" oninput="calcEditSummary()">
+        </div>
+        <div class="fg">
+          <label>الخصم</label>
+          <select id="edit-discount" onchange="calcEditSummary()">
+            <option value="0">0%</option>
+            <option value="5">5%</option>
+            <option value="25">25%</option>
+            <option value="30">30%</option>
+            <option value="50">50%</option>
+          </select>
+        </div>
+        <div class="fg">
+          <label>طريقة الدفع</label>
+          <select id="edit-paytype">
+            <option value="">—</option>
+            <option value="كامل">دفع كامل</option>
+            <option value="أقساط">أقساط</option>
+          </select>
+        </div>
+        <div class="fg">
+          <label>الدفعة الأولى (SAR)</label>
+          <input id="edit-firstpay" type="text" inputmode="decimal" placeholder="0.00" oninput="calcEditSummary()">
+        </div>
+        <div class="fg">
+          <label>تاريخ دفع مخصص</label>
+          <input id="edit-customdate" type="date">
+        </div>
+        <div class="fg">
+          <label>رابط Paytaps</label>
+          <input id="edit-paytaps" type="url" placeholder="https://..." dir="ltr">
+        </div>
+      </div>
+      <!-- ملخص -->
+      <div id="edit-price-summary" style="display:none;background:var(--blue-lt);border-radius:10px;padding:12px 14px;margin-top:4px;border:1px solid var(--blue-mid)">
+        <div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:4px">
+          <span>السعر بعد الخصم</span><span id="eps-final" style="font-weight:700;color:var(--blue)">—</span>
+        </div>
+        <div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:4px">
+          <span>الدفعة الأولى</span><span id="eps-first" style="color:var(--green)">—</span>
+        </div>
+        <div style="display:flex;justify-content:space-between;font-size:13px;font-weight:700;border-top:1px solid var(--blue-mid);padding-top:6px;margin-top:4px">
+          <span>المتبقي للأقساط</span><span id="eps-remain" style="color:var(--red)">—</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="modal-btns" style="margin-top:1rem">
       <button class="btn" onclick="closeEditModal()">إلغاء</button>
       <button class="btn btn-primary" onclick="saveEdit()">حفظ التعديلات</button>
     </div>
@@ -3358,66 +3438,141 @@ function getFinCardColor(c) {
   return '';
 }
 
+let finActiveTab = 'active';
+
+function switchFinTab(tab) {
+  finActiveTab = tab;
+  document.getElementById('ftab-active').className = 'fin-tab' + (tab==='active'?' active':'');
+  document.getElementById('ftab-done').className   = 'fin-tab' + (tab==='done'?' active':'');
+  document.getElementById('fl-active').style.display = tab==='active' ? 'block' : 'none';
+  document.getElementById('fl-done').style.display   = tab==='done'   ? 'block' : 'none';
+}
+
 function renderFinance() {
   const today = new Date();
   const day   = today.getDate();
 
-  // تنبيه يوم 25
+  // تنبيه يوم 25-27
   const alert25 = document.getElementById('fin-alert-25');
   if (alert25) {
-    const showAlert = day >= 25 && day <= 27;
-    alert25.style.display = showAlert ? 'flex' : 'none';
-    if (showAlert) {
-      const upcoming27 = clients.filter(c => {
-        const insts = c.installments || [];
-        return insts.some(i => i.status !== 'paid' && new Date(i.due).getDate() === 27
-          && new Date(i.due).getMonth() === today.getMonth()
-          && new Date(i.due).getFullYear() === today.getFullYear());
-      }).length;
+    const show27 = day >= 25 && day <= 27;
+    alert25.style.display = show27 ? 'flex' : 'none';
+    if (show27) {
+      const n27 = clients.filter(c => (c.installments||[]).some(i =>
+        i.status !== 'paid' &&
+        new Date(i.due).getDate() === 27 &&
+        new Date(i.due).getMonth() === today.getMonth()
+      )).length;
       const t = document.getElementById('fin-alert-25-text');
-      if (t) t.textContent = `${upcoming27} عميل لديهم أقساط مستحقة يوم 27 من هذا الشهر`;
+      if (t) t.textContent = `${n27} عميل لديهم أقساط مستحقة يوم 27 من هذا الشهر`;
     }
   }
 
-  // تقسيم العملاء
   const withFin = clients.filter(c => c.payType);
-  const late    = withFin.filter(c => (c.installments||[]).some(i => ['late','warning','policy'].includes(i.status)));
-  const soon    = withFin.filter(c => !late.includes(c) && (c.installments||[]).some(i => {
-    if (i.status==='paid') return false;
-    const d = Math.ceil((new Date(i.due)-new Date())/86400000);
-    return d>=0 && d<=3;
-  }));
-  const allPaidList = withFin.filter(c => c.payType==='أقساط' && (c.installments||[]).length>0 && (c.installments||[]).every(i=>i.status==='paid'));
-  const direct  = withFin.filter(c => c.payType==='كامل');
-  const active  = withFin.filter(c => !late.includes(c) && !soon.includes(c) && !allPaidList.includes(c) && !direct.includes(c) && c.payType==='أقساط');
+
+  // أقساط نشطة — من عنده أقساط ولم يكتمل
+  const active = withFin.filter(c => {
+    if (c.payType !== 'أقساط') return false;
+    const insts = c.installments || [];
+    if (!insts.length) return true; // لم يُضف جدول بعد
+    return !insts.every(i => i.status === 'paid');
+  });
+
+  // مكتمل — دفع كامل أو اكتمل الأقساط
+  const done = withFin.filter(c => {
+    if (c.payType === 'كامل') return true;
+    if (c.payType === 'أقساط') {
+      const insts = c.installments || [];
+      return insts.length > 0 && insts.every(i => i.status === 'paid');
+    }
+    return false;
+  });
 
   const setEl = (id, n) => { const el=document.getElementById(id); if(el) el.textContent=n; };
-  setEl('fin-count-late',   late.length);
-  setEl('fin-count-soon',   soon.length);
   setEl('fin-count-active', active.length);
-  setEl('fin-count-done',   allPaidList.length + direct.length);
+  setEl('fin-count-done',   done.length);
 
   const renderList = (id, list) => {
     const el = document.getElementById(id);
     if (!el) return;
-    el.innerHTML = list.length ? list.map(c => finCardHTML(c)).join('') : '<div class="empty-state">—</div>';
+    el.innerHTML = list.length
+      ? list.map(c => finCardHTML(c)).join('')
+      : '<div class="empty-state">لا يوجد</div>';
   };
-  renderList('fl-late',   late);
-  renderList('fl-soon',   soon);
   renderList('fl-active', active);
-  renderList('fl-done',   [...allPaidList, ...direct]);
+  renderList('fl-done',   done);
+}
+
+function getFinCardColor(c) {
+  if (c.payType === 'كامل') return 'fc-green';
+  const insts = c.installments || [];
+  if (!insts.length) return 'fc-amber';
+  const hasLate = insts.some(i => ['late','warning','policy'].includes(i.status));
+  const hasSoon = insts.some(i => {
+    if (i.status === 'paid') return false;
+    return Math.ceil((new Date(i.due) - new Date()) / 86400000) <= 3;
+  });
+  const allPaid = insts.every(i => i.status === 'paid');
+  if (allPaid)  return 'fc-green';
+  if (hasLate)  return 'fc-red';
+  if (hasSoon)  return 'fc-amber';
+  return '';
 }
 
 function finCardHTML(c) {
   const col      = getFinCardColor(c);
+  const isDirect = c.payType === 'كامل';
   const insts    = c.installments || [];
   const paidInsts= insts.filter(i=>i.status==='paid').reduce((s,i)=>s+i.amount,0);
-  const totalPaid= paidInsts + (c.firstPayment||0);
-  const remaining= Math.max(0, (c.finalPrice||0) - totalPaid);
+  const totalPaid= isDirect ? (c.finalPrice||0) : paidInsts + (c.firstPayment||0);
+  const remaining= isDirect ? 0 : Math.max(0, (c.finalPrice||0) - totalPaid);
 
+  const headerMeta = `
+    <div class="fin-card-meta">
+      <span class="pill ${isDirect?'p-green':'p-blue'}" style="font-size:10px">${c.payType||'—'}</span>
+      ${c.discount?`<span class="pill p-amber" style="font-size:10px">خصم ${c.discount}%</span>`:''}
+      ${c.source?`<span class="pill p-gray" style="font-size:10px">${c.source}</span>`:''}
+      ${isDirect?'<span class="pill p-green" style="font-size:10px">✓ مكتمل</span>':''}
+    </div>`;
+
+  // بطاقة دفع مباشر — مبسطة
+  if (isDirect) {
+    return `<div class="fin-card ${col}" style="margin-bottom:8px">
+      <div class="fin-card-header" onclick="toggleFinCard('${c.ref}')">
+        <div style="width:8px;height:8px;border-radius:50%;background:${getProgColor(c.program)};flex-shrink:0"></div>
+        <div class="fin-card-name">
+          ${c.name}
+          <div style="font-size:10px;color:var(--text-3);font-weight:400;margin-top:1px">
+            ${(c.program||'').split('—')[0].trim()}${c.track?' — '+c.track:''}
+          </div>
+        </div>
+        ${headerMeta}
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" id="fchev-${c.ref}"><polyline points="6 9 12 15 18 9"/></svg>
+      </div>
+      <div id="fcb-${c.ref}" style="display:none;padding:12px 14px 14px">
+        <div style="display:flex;align-items:center;gap:12px;background:var(--green-lt);border-radius:10px;padding:12px 14px">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="var(--green)" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+          <div>
+            <div style="font-size:15px;font-weight:700;color:var(--green)">${fmtSAR(c.finalPrice||0)}</div>
+            <div style="font-size:11px;color:var(--text-3)">مدفوع بالكامل</div>
+          </div>
+          ${c.customDate?`<div style="margin-right:auto;font-size:11px;color:var(--text-3)">تاريخ: ${c.customDate}</div>`:''}
+        </div>
+        ${c.paytapsLink?`<div style="margin-top:8px"><a href="${c.paytapsLink}" target="_blank" style="font-size:11px;color:var(--blue)">🔗 رابط Paytaps</a></div>`:''}
+        <div class="finance-notes-wrap">
+          <div style="font-size:10px;font-weight:700;color:var(--text-3);margin-bottom:6px">ملاحظات المالية</div>
+          <div style="display:flex;gap:6px">
+            <textarea rows="2" style="flex:1;padding:6px 8px;border:1.5px solid var(--border);border-radius:7px;font-family:var(--font);font-size:12px;background:var(--bg)"
+              id="fnnote-${c.ref}" placeholder="ملاحظة...">${c.finNotes||''}</textarea>
+            <button class="btn btn-sm" onclick="saveFinNotesCard('${c.ref}')" style="flex-shrink:0">حفظ</button>
+          </div>
+        </div>
+      </div>
+    </div>`;
+  }
+
+  // بطاقة أقساط
   const instRows = insts.map((inst,idx) => {
-    const sCls   = instStatusCls(inst.status);
-    const sLabel = instStatusLabel(inst.status);
     const statusOpts = INST_STATUSES.map(s =>
       `<option value="${s.val}" ${inst.status===s.val?'selected':''}>${s.label}</option>`
     ).join('');
@@ -3425,17 +3580,12 @@ function finCardHTML(c) {
       <td style="color:var(--text-3);font-weight:600">${inst.n}</td>
       <td dir="ltr">${inst.due||'—'}</td>
       <td style="font-weight:600">${fmtSAR(inst.amount)}</td>
-      <td>
-        <select class="inst-status-sel" onchange="updateInstStatus('${c.ref}',${idx},this.value)">
-          ${statusOpts}
-        </select>
-      </td>
+      <td><select class="inst-status-sel" onchange="updateInstStatus('${c.ref}',${idx},this.value)">${statusOpts}</select></td>
       <td>
         <div class="inst-actions">
           ${inst.status==='paid'
             ? `<span style="font-size:10px;color:var(--text-3)">${inst.paidRef||''}</span>`
-            : `<button class="btn btn-sm btn-success" style="padding:3px 8px;font-size:10px" onclick="openPayRef('${c.ref}',${idx})">سُدد</button>`
-          }
+            : `<button class="btn btn-sm btn-success" style="padding:3px 8px;font-size:10px" onclick="openPayRef('${c.ref}',${idx})">سُدد</button>`}
           <button class="btn btn-sm" style="padding:3px 7px;font-size:10px" onclick="openWhatsAppFinance('${c.ref}',${idx})">📱</button>
           <button class="btn btn-sm" style="padding:3px 7px;font-size:10px;color:var(--red)" onclick="removeInstallment('${c.ref}',${idx})">✕</button>
         </div>
@@ -3452,30 +3602,24 @@ function finCardHTML(c) {
           ${(c.program||'').split('—')[0].trim()}${c.track?' — '+c.track:''}${c.programType?' · '+c.programType:''}
         </div>
       </div>
-      <div class="fin-card-meta">
-        <span class="pill ${c.payType==='أقساط'?'p-blue':'p-green'}" style="font-size:10px">${c.payType||'—'}</span>
-        ${c.discount?`<span class="pill p-amber" style="font-size:10px">خصم ${c.discount}%</span>`:''}
-        ${c.source?`<span class="pill p-gray" style="font-size:10px">${c.source}</span>`:''}
-      </div>
+      ${headerMeta}
       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" id="fchev-${c.ref}"><polyline points="6 9 12 15 18 9"/></svg>
     </div>
     <div class="fin-card-body" id="fcb-${c.ref}" style="display:none">
-      <!-- ملخص مالي -->
       <div class="fin-summary">
         <div class="fin-sum-item"><div class="val">${fmtSAR(c.finalPrice||0)}</div><div class="lbl">الإجمالي</div></div>
         <div class="fin-sum-item paid"><div class="val">${fmtSAR(totalPaid)}</div><div class="lbl">المدفوع</div></div>
         <div class="fin-sum-item remain"><div class="val">${fmtSAR(remaining)}</div><div class="lbl">المتبقي</div></div>
       </div>
-      ${c.firstPayment ? `<div style="font-size:11px;color:var(--text-2);margin-bottom:8px">الدفعة الأولى: <strong>${fmtSAR(c.firstPayment)}</strong>${c.customDate?` · تاريخ مخصص: ${c.customDate}`:''}</div>` : ''}
-      ${c.paytapsLink ? `<div style="margin-bottom:8px"><a href="${c.paytapsLink}" target="_blank" style="font-size:11px;color:var(--blue)">🔗 رابط Paytaps</a></div>` : ''}
+      ${c.firstPayment?`<div style="font-size:11px;color:var(--text-2);margin-bottom:8px">الدفعة الأولى: <strong>${fmtSAR(c.firstPayment)}</strong>${c.customDate?' · تاريخ: '+c.customDate:''}</div>`:''}
+      ${c.paytapsLink?`<div style="margin-bottom:8px"><a href="${c.paytapsLink}" target="_blank" style="font-size:11px;color:var(--blue)">🔗 رابط Paytaps</a></div>`:''}
 
-      ${insts.length ? `
+      ${insts.length?`
       <table class="inst-table">
         <thead><tr><th>#</th><th>الاستحقاق</th><th>المبلغ</th><th>الحالة</th><th></th></tr></thead>
         <tbody>${instRows}</tbody>
-      </table>` : `<div style="font-size:12px;color:var(--text-3);text-align:center;padding:8px 0">لا توجد أقساط — أضف يدوياً أو ولّد تلقائياً</div>`}
+      </table>`:`<div style="font-size:12px;color:var(--text-3);text-align:center;padding:8px 0">أضف أقساطاً يدوياً أو ولّدها تلقائياً</div>`}
 
-      <!-- إضافة قسط يدوي -->
       <div class="inst-editor" style="margin-top:10px">
         <div class="inst-editor-title">➕ إضافة / توليد أقساط</div>
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px">
@@ -3485,16 +3629,15 @@ function finCardHTML(c) {
             <input type="text" inputmode="decimal" id="inst-new-amt-${c.ref}" placeholder="0.00" style="width:100%;padding:6px 8px;border:1.5px solid var(--border);border-radius:7px;font-size:12px;font-family:var(--font)"></div>
         </div>
         <button class="btn btn-sm btn-success" onclick="addManualInstallment('${c.ref}')" style="margin-bottom:10px">+ إضافة قسط</button>
-
-        <div style="border-top:1px solid var(--border);padding-top:10px;margin-top:2px">
+        <div style="border-top:1px solid var(--border);padding-top:10px">
           <div class="inst-editor-title">⚙️ توليد تلقائي</div>
           <div class="inst-editor-grid">
             <div><label style="font-size:10px">عدد الأقساط</label>
-              <input id="ie-num-${c.ref}" type="number" min="1" max="36" value="${insts.length||4}" placeholder="4"></div>
+              <input id="ie-num-${c.ref}" type="number" min="1" max="36" value="${insts.length||4}"></div>
             <div><label style="font-size:10px">تاريخ البدء</label>
               <input id="ie-start-${c.ref}" type="date" value="${insts[0]?.due||''}"></div>
-            <div><label style="font-size:10px">المبلغ الكلي للأقساط</label>
-              <input id="ie-total-${c.ref}" type="text" value="${remaining||''}" placeholder="${fmtSAR(remaining)}"></div>
+            <div><label style="font-size:10px">المبلغ الكلي</label>
+              <input id="ie-total-${c.ref}" type="text" value="${remaining||c.finalPrice||''}"></div>
           </div>
           <div style="display:flex;gap:8px;margin-top:8px;align-items:center">
             <label style="font-size:11px;display:flex;gap:4px;align-items:center">
@@ -3508,9 +3651,8 @@ function finCardHTML(c) {
         </div>
       </div>
 
-      <!-- ملاحظات المالية -->
       <div class="finance-notes-wrap">
-        <div style="font-size:10px;font-weight:700;color:var(--text-3);letter-spacing:.04em;margin-bottom:6px">ملاحظات المالية</div>
+        <div style="font-size:10px;font-weight:700;color:var(--text-3);margin-bottom:6px">ملاحظات المالية</div>
         <div style="display:flex;gap:6px">
           <textarea rows="2" style="flex:1;padding:6px 8px;border:1.5px solid var(--border);border-radius:7px;font-family:var(--font);font-size:12px;background:var(--bg)"
             id="fnnote-${c.ref}" placeholder="ملاحظة...">${c.finNotes||''}</textarea>
@@ -4462,43 +4604,112 @@ async function toggleLabel(ref, lid) {
 // ════════════════════════════════
 // تعديل بيانات العميل
 // ════════════════════════════════
+function switchEditTab(tab) {
+  const isBasic = tab === 'basic';
+  document.getElementById('edit-section-basic').style.display   = isBasic ? 'block' : 'none';
+  document.getElementById('edit-section-finance').style.display = isBasic ? 'none'  : 'block';
+  document.getElementById('edit-tab-basic').style.background    = isBasic ? 'var(--blue)' : '';
+  document.getElementById('edit-tab-basic').style.color         = isBasic ? '#fff' : '';
+  document.getElementById('edit-tab-finance').style.background  = isBasic ? '' : 'var(--blue)';
+  document.getElementById('edit-tab-finance').style.color       = isBasic ? '' : '#fff';
+}
+
+function calcEditSummary() {
+  const price   = parseFloat(document.getElementById('edit-price')?.value?.replace(/,/g,'')) || 0;
+  const disc    = parseFloat(document.getElementById('edit-discount')?.value) || 0;
+  const first   = parseFloat(document.getElementById('edit-firstpay')?.value?.replace(/,/g,'')) || 0;
+  const sumEl   = document.getElementById('edit-price-summary');
+  if (!sumEl) return;
+  if (!price) { sumEl.style.display = 'none'; return; }
+  sumEl.style.display = 'block';
+  const final   = Math.round(price * (1 - disc/100) * 100) / 100;
+  const remain  = Math.max(0, Math.round((final - first) * 100) / 100);
+  document.getElementById('eps-final').textContent  = fmtSAR(final);
+  document.getElementById('eps-first').textContent  = first ? fmtSAR(first) : '—';
+  document.getElementById('eps-remain').textContent = fmtSAR(remain);
+}
+
 function openEditModal() {
   const c = clients.find(x => x.ref === selId);
   if (!c) return;
   document.getElementById('edit-modal-sub').textContent = c.name + ' · ' + (c.ref||'');
-  document.getElementById('edit-name').value   = c.name   || '';
-  document.getElementById('edit-email').value  = c.email  || '';
-  document.getElementById('edit-phone').value  = c.phone  || '';
-  document.getElementById('edit-batch').value  = c.batchNo|| '';
-  document.getElementById('edit-expiry').value = c.expiry || '';
+
+  // البيانات الأساسية
+  document.getElementById('edit-name').value      = c.name      || '';
+  document.getElementById('edit-email').value     = c.email     || '';
+  document.getElementById('edit-phone').value     = c.phone     || '';
+  document.getElementById('edit-batch').value     = c.batchNo   || '';
+  document.getElementById('edit-expiry').value    = c.expiry    || '';
   document.getElementById('edit-startdate').value = c.startDate || '';
-  document.getElementById('edit-notes').value  = c.notes  || '';
+  document.getElementById('edit-notes').value     = c.notes     || '';
+
+  // البيانات المالية
+  document.getElementById('edit-price').value      = c.price        || '';
+  document.getElementById('edit-discount').value   = c.discount     || '0';
+  document.getElementById('edit-paytype').value    = c.payType      || '';
+  document.getElementById('edit-firstpay').value   = c.firstPayment || '';
+  document.getElementById('edit-customdate').value = c.customDate   || '';
+  document.getElementById('edit-paytaps').value    = c.paytapsLink  || '';
+  calcEditSummary();
+
+  // ابدأ بالتبويب الأساسي
+  switchEditTab('basic');
   document.getElementById('edit-modal').classList.add('show');
 }
-function closeEditModal() { document.getElementById('edit-modal').classList.remove('show'); }
+
+function closeEditModal() {
+  document.getElementById('edit-modal').classList.remove('show');
+}
+
 async function saveEdit() {
   const c = clients.find(x => x.ref === selId);
   if (!c) return;
-  const name   = document.getElementById('edit-name').value.trim();
-  const email  = document.getElementById('edit-email').value.trim();
-  const phone  = document.getElementById('edit-phone').value.trim();
-  const batchNo= document.getElementById('edit-batch').value.trim();
-  const expiry = document.getElementById('edit-expiry').value;
+
+  // البيانات الأساسية
+  const name      = document.getElementById('edit-name').value.trim();
+  const email     = document.getElementById('edit-email').value.trim();
+  const phone     = document.getElementById('edit-phone').value.trim();
+  const batchNo   = document.getElementById('edit-batch').value.trim();
+  const expiry    = document.getElementById('edit-expiry').value;
   const startDate = document.getElementById('edit-startdate').value;
-  const notes  = document.getElementById('edit-notes').value.trim();
+  const notes     = document.getElementById('edit-notes').value.trim();
+
+  // البيانات المالية
+  const price       = parseFloat(document.getElementById('edit-price')?.value?.replace(/,/g,'')) || 0;
+  const discount    = parseFloat(document.getElementById('edit-discount')?.value) || 0;
+  const payType     = document.getElementById('edit-paytype')?.value || '';
+  const firstPayment= parseFloat(document.getElementById('edit-firstpay')?.value?.replace(/,/g,'')) || 0;
+  const customDate  = document.getElementById('edit-customdate')?.value || '';
+  const paytapsLink = document.getElementById('edit-paytaps')?.value.trim() || '';
+  const finalPrice  = price ? Math.round(price * (1-discount/100) * 100) / 100 : (c.finalPrice||0);
+  const remaining   = Math.max(0, Math.round((finalPrice - firstPayment) * 100) / 100);
+
   if (!name||!email||!phone) { toast('يرجى تعبئة الحقول الإلزامية', false); return; }
-  if (!/^[\d\s\+\-\(\)]{7,15}$/.test(phone)) { toast('رقم الجوال غير صحيح', false); return; }
+
   const session = JSON.parse(sessionStorage.getItem('ops_session') || '{}');
   const changes = [];
-  if (c.name!==name) changes.push(`الاسم: ${c.name}→${name}`);
-  if (c.email!==email) changes.push(`الإيميل: ${c.email}→${email}`);
-  if (c.startDate!==startDate && startDate) changes.push(`موعد البدء: ${startDate}`);
-  c.name=name; c.email=email; c.phone=phone; c.batchNo=batchNo; c.expiry=expiry; c.startDate=startDate; c.notes=notes;
-  if (!c.log) c.log=[];
+  if (c.name !== name)     changes.push(`الاسم: ${c.name}→${name}`);
+  if (c.email !== email)   changes.push(`الإيميل: ${c.email}→${email}`);
+  if (startDate && c.startDate !== startDate) changes.push(`موعد البدء: ${startDate}`);
+  if (price && c.price !== price) changes.push(`السعر: ${fmtSAR(price)}`);
+  if (payType && c.payType !== payType) changes.push(`الدفع: ${payType}`);
+
+  // تحديث الكائن
+  Object.assign(c, {
+    name, email, phone, batchNo, expiry, startDate, notes,
+    price, discount, finalPrice, payType, firstPayment,
+    remaining, customDate, paytapsLink,
+    totalPaid: firstPayment > 0 && !c.totalPaid ? firstPayment : c.totalPaid,
+  });
+
+  if (!c.log) c.log = [];
   if (changes.length) c.log.push({ who:session.username||'مجهول', action:'تعديل: '+changes.join(' | '), time:new Date().toLocaleString('en-GB') });
-  persistClient(c); // fire & forget
+
+  persistClient(c);
   toast('تم حفظ التعديلات ✓');
-  closeEditModal(); renderDetail(selId); render();
+  closeEditModal();
+  renderDetail(selId);
+  render();
 }
 
 // ════════════════════════════════
