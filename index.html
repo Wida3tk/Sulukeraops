@@ -2736,6 +2736,22 @@ function getFilteredClients() {
     else if (status === 'trial')        matchStatus = isTrialClient(c) && c.trialStatus !== 'uninterested';
     else if (status === 'uninterested') matchStatus = c.trialStatus === 'uninterested';
 
+    // فلتر الليبل
+    const matchLabel = !labelId || (Array.isArray(c.labels) && c.labels.includes(labelId));
+
+    // فلتر كيف عرف عنا
+    const matchAcquisition = !acquisition || (c.acquisitionChannel||'').includes(acquisition);
+
+    // فلتر التاريخ
+    let matchDate = true;
+    if (dateF) {
+      const cd2 = parseClientDate(c);
+      if (!cd2) { matchDate = false; }
+      else if (dateF === 'today') matchDate = cd2.toDateString() === now.toDateString();
+      else if (dateF === 'week')  matchDate = (now - cd2) <= 7 * 86400000;
+      else if (dateF === 'month') matchDate = cd2.getMonth() === now.getMonth() && cd2.getFullYear() === now.getFullYear();
+    }
+
     // فلتر KPI
     let matchKpi = true;
     if (activeKpi) {
