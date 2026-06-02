@@ -2347,73 +2347,61 @@ async function persistClient(c) {
 // ════════════════════════════════
 async function syncData() {
   const btn = document.getElementById('sync-btn');
-  btn.classList.add('loading');
-  btn.textContent = '...';
+  if (btn) { btn.classList.add('loading'); btn.textContent = '...'; }
 
-  const [cr, pr] = await Promise.all([api({action:'getClients'}), api({action:'getPrograms'})]);
+  const [cr, pr] = await Promise.all([
+    api({ action:'getClients' }),
+    api({ action:'getPrograms' })
+  ]);
 
-  if (cr.clients) {
-    const cleanVal = v => {
-      if (v === null || v === undefined) return '';
-      if (typeof v === 'boolean') return v; // لا تحوّل boolean لـ string
-      const s = String(v).trim();
-      if (s.startsWith('#') || s === 'undefined' || s === 'null') return '';
-      return s;
-    };
-    const localClients = JSON.parse(localStorage.getItem('ops_clients') || '[]');
-    clients = cr.clients
-      .filter(sc => sc && cleanVal(sc.ref) && cleanVal(sc.name))
-      .map(sc => {
-        const clean = {};
-        Object.keys(sc).forEach(k => { clean[k] = cleanVal(sc[k]); });
-        clean.academyAdded    = sc.academyAdded    === true || String(sc.academyAdded).toLowerCase()    === 'true';
-        clean.academyAssigned = sc.academyAssigned === true || String(sc.academyAssigned).toLowerCase() === 'true';
-        const local = localClients.find(l => l.ref === clean.ref);
-        if (local) {
-          return normalizeClient({
-            ...clean,
-            addedBy:      local.addedBy      || clean.addedBy      || '',
-            labels:       local.labels       || [],
-            notes:        local.notes        || clean.notes        || '',
-            opsNotes:     local.opsNotes     || clean.opsNotes     || '',
-            finNotes:     local.finNotes     || clean.finNotes     || '',
-            track:        local.track        || clean.track        || '',
-            programType:  local.programType  || clean.programType  || '',
-            clientType:   local.clientType   || clean.clientType   || '',
-            batchNo:      local.batchNo      || clean.batchNo      || '',
-            trialStatus:  local.trialStatus  || clean.trialStatus  || '',
-            startDate:    local.startDate    || clean.startDate    || '',
-            activatedAt:  local.activatedAt  || clean.activatedAt  || '',
-            efficiencyCheck:    local.efficiencyCheck    || clean.efficiencyCheck    || '',
-            acquisitionChannel: local.acquisitionChannel || clean.acquisitionChannel || '',
-            academyAdded:    local.academyAdded    !== undefined ? local.academyAdded    : clean.academyAdded,
-            academyAssigned: local.academyAssigned !== undefined ? local.academyAssigned : clean.academyAssigned,
-            installments: local.installments || (clean.installments ? (() => { try { return JSON.parse(clean.installments); } catch { return []; } })() : []),
-            price:        local.price        || clean.price        || '',
-            discount:     local.discount     || clean.discount     || 0,
-            finalPrice:   local.finalPrice   || clean.finalPrice   || '',
-            payType:      local.payType      || clean.payType      || '',
-            totalPaid:    local.totalPaid    || clean.totalPaid    || 0,
-            log: local.log || [],
-          });
-        }
-        return normalizeClient({ ...clean, labels: Array.isArray(clean.labels) ? clean.labels : [], log:[], trialStatus:'', installments:[] });
-      });
-  }
-  if (pr.programs) programs = pr.programs;
-
-  if (cr.error === 'offline') {
-    clients  = JSON.parse(localStorage.getItem('ops_clients')  || '[]').map(normalizeClient);
-    programs = JSON.parse(localStorage.getItem('ops_programs') || '[]');
+  if (cr.error === 'offline' || cr.error) {
+    // offline — نقرأ من localStorage
+    const saved = localStorage.getItem('ops_clients');
+    if (saved) clients = JSON.parse(saved).map(normalizeClient);
+    const savedP = localStorage.getItem('ops_programs');
+    if (savedP) programs = JSON.parse(savedP);
     if (!programs.length) programs = ['تحليل السلوك التطبيقي','إدارة السلوك التنظيمي','الاقتصاد السلوكي','برامج التعليم المستمر','حجز مقعد'];
-    toast('وضع غير متصل', false);
-  } else {
-    localStorage.setItem('ops_clients',  JSON.stringify(clients));
+    toast('وضع غير متصل — يعمل من الذاكرة المحلية', false);
+  } else if (cr.clients && Array.isArray(cr.clients)) {
+    // نظّف كل عميل من الشيت
+    clients = cr.clients
+      .filter(sc => sc && sc.ref && sc.name && String(sc.ref).trim() && String(sc.name).trim())
+      .map(sc => {
+        // تنظيف أساسي
+        const c = {};
+        Object.keys(sc).forEach(k => {
+          const v = sc[k];
+          if (v === null || v === undefined) { c[k] = ''; return; }
+          if (typeof v === 'boolean') { c[k] = v; return; }
+          const s = String(v).trim();
+          c[k] = (s === '#ERROR!' || s === 'undefined' || s === 'null') ? '' : s;
+        });
+        // boolean fields
+        c.academyAdded    = isTrue(sc.academyAdded);
+        c.academyAssigned = isTrue(sc.academyAssigned);
+        // arrays
+        if (!Array.isArray(c.labels)) {
+          c.labels = c.labels ? String(c.labels).split(' | ').filter(Boolean) : [];
+        }
+        if (!Array.isArray(c.installments)) {
+          try { c.installments = c.installments ? JSON.parse(c.installments) : []; }
+          catch { c.installments = []; }
+        }
+        if (!Array.isArray(c.log)) c.log = [];
+        if (!c.trialStatus) c.trialStatus = '';
+        return c;
+      });
+
+    localStorage.setItem('ops_clients', JSON.stringify(clients));
+  }
+
+  if (pr.programs && Array.isArray(pr.programs)) {
+    programs = pr.programs;
     localStorage.setItem('ops_programs', JSON.stringify(programs));
   }
 
   const savedSrc = localStorage.getItem('ops_sources');
-  if (savedSrc) sources = JSON.parse(savedSrc);
+  if (savedSrc) try { sources = JSON.parse(savedSrc); } catch {}
 
   fillProgramSelect();
   fillSourceSelect();
@@ -2421,9 +2409,11 @@ async function syncData() {
   updateStats();
   render();
 
-  btn.classList.remove('loading');
-  btn.innerHTML = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg><span>مزامنة</span>';
-  setTimeout(() => { updateStats(); render(); checkMorningSummary(); }, 200);
+  if (btn) {
+    btn.classList.remove('loading');
+    btn.innerHTML = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg><span>مزامنة</span>';
+  }
+  setTimeout(checkMorningSummary, 400);
 }
 
 // ════════════════════════════════
