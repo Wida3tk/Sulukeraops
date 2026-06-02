@@ -3426,7 +3426,7 @@ async function updateInstStatus(ref, idx, val) {
   const session = JSON.parse(sessionStorage.getItem('ops_session')||'{}');
   c.installments[idx].status = val;
   c.log = c.log||[];
-  c.log.push({ who:session.username||'المالية', action:`القسط ${idx+1}: ${instStatusLabel(val)}`, time:new Date().toLocaleString('ar-SA') });
+  c.log.push({ who:session.username||'المالية', action:`القسط ${idx+1}: ${instStatusLabel(val)}`, time:new Date().toLocaleString('en-GB') });
   persistClient(c); // fire & forget
   renderFinance();
   toast('تم تحديث حالة القسط ✓');
@@ -3464,7 +3464,7 @@ async function confirmPayment() {
   // تحديث المدفوع
   c.totalPaid = c.installments.filter(i=>i.status==='paid').reduce((s,i)=>s+i.amount,0);
   c.log = c.log||[];
-  c.log.push({ who:session.username||'المالية', action:`سداد القسط ${idx+1} — ${fmtSAR(c.installments[idx].amount)} — مرجع: ${refNum}`, time:new Date().toLocaleString('ar-SA') });
+  c.log.push({ who:session.username||'المالية', action:`سداد القسط ${idx+1} — ${fmtSAR(c.installments[idx].amount)} — مرجع: ${refNum}`, time:new Date().toLocaleString('en-GB') });
 
   persistClient(c); // fire & forget
   closePayRefModal();
@@ -3486,7 +3486,7 @@ async function regenInstallments(ref) {
   c.finalPrice   = total;
   c.totalPaid    = 0;
   c.log = c.log||[];
-  c.log.push({ who:session.username||'المالية', action:`تعديل جدول الأقساط: ${num} أقساط — إجمالي ${fmtSAR(total)}`, time:new Date().toLocaleString('ar-SA') });
+  c.log.push({ who:session.username||'المالية', action:`تعديل جدول الأقساط: ${num} أقساط — إجمالي ${fmtSAR(total)}`, time:new Date().toLocaleString('en-GB') });
 
   persistClient(c); // fire & forget
   toast('تم إعادة توليد جدول الأقساط ✓');
@@ -3510,7 +3510,7 @@ async function saveFinNotesCard(ref) {
   c.finNotes = txt;
   const session = JSON.parse(sessionStorage.getItem('ops_session')||'{}');
   c.log = c.log||[];
-  c.log.push({ who:session.username||'المالية', action:'تحديث ملاحظات المالية', time:new Date().toLocaleString('ar-SA') });
+  c.log.push({ who:session.username||'المالية', action:'تحديث ملاحظات المالية', time:new Date().toLocaleString('en-GB') });
   persistClient(c); // fire & forget
   toast('تم حفظ ملاحظات المالية ✓');
 }
@@ -3523,7 +3523,7 @@ async function saveFinNotes(ref) {
   c.finNotes = txt;
   const session = JSON.parse(sessionStorage.getItem('ops_session')||'{}');
   c.log = c.log||[];
-  c.log.push({ who:session.username||'المالية', action:'تحديث ملاحظات المالية', time:new Date().toLocaleString('ar-SA') });
+  c.log.push({ who:session.username||'المالية', action:'تحديث ملاحظات المالية', time:new Date().toLocaleString('en-GB') });
   persistClient(c); // fire & forget
   toast('تم حفظ ملاحظات المالية ✓');
 }
@@ -3837,8 +3837,8 @@ async function addClient() {
     payType: payType,
     installments: installments,
     totalPaid: 0,
-    createdAt: new Date().toLocaleString('ar-SA', {timeZone:'Asia/Riyadh'}),
-    log: [{ who: session.username||'تسليم العميل', action:`تسجيل العميل — ${source}${payType?' — '+payType:''}`, time: new Date().toLocaleString('ar-SA') }]
+    createdAt: new Date().toLocaleString('en-GB', {timeZone:'Asia/Riyadh', day:'2-digit', month:'2-digit', year:'numeric', hour:'2-digit', minute:'2-digit'}),
+    log: [{ who: session.username||'تسليم العميل', action:`تسجيل العميل — ${source}${payType?' — '+payType:''}`, time: new Date().toLocaleString('en-GB') }]
   };
 
   const res = await api(null, { action:'addClient', ...client });
@@ -3885,7 +3885,7 @@ async function confirmConvertTrial() {
   const expiry   = document.getElementById('convert-expiry').value;
   if (!source) { toast('يرجى اختيار المصدر', false); return; }
 
-  const now = new Date().toLocaleString('ar-SA');
+  const now = new Date().toLocaleString('en-GB');
   const session = JSON.parse(sessionStorage.getItem('ops_session') || '{}');
   c.clientType  = 'مسجل';
   c.trialStatus = 'converted';
@@ -3906,7 +3906,7 @@ async function confirmConvertTrial() {
 async function markUninterested(ref) {
   const c = clients.find(x => x.ref === ref);
   if (!c) return;
-  const now = new Date().toLocaleString('ar-SA');
+  const now = new Date().toLocaleString('en-GB');
   const session = JSON.parse(sessionStorage.getItem('ops_session') || '{}');
   c.trialStatus = 'uninterested';
   c.log = c.log || [];
@@ -3925,7 +3925,7 @@ async function markAdded(ref) {
   if (idx < 0) return;
   const _isAdded = v => v === true || v === 'true' || v === 'TRUE' || v === 1 || v === '1';
   if (_isAdded(clients[idx].academyAdded)) return;
-  const now = new Date().toLocaleString('ar-SA');
+  const now = new Date().toLocaleString('en-GB');
   const session = JSON.parse(sessionStorage.getItem('ops_session') || '{}');
   clients[idx].academyAdded = true;
   clients[idx].log = clients[idx].log || [];
@@ -3952,7 +3952,7 @@ async function markAssigned(ref) {
   if (!isAdded)    { toast('يجب إضافة الحساب في المنصة أولاً', false); return; }
   if (isAssigned)  { toast('تم الإسناد مسبقاً', false); return; }
 
-  const now     = new Date().toLocaleString('ar-SA');
+  const now     = new Date().toLocaleString('en-GB');
   const session = JSON.parse(sessionStorage.getItem('ops_session') || '{}');
 
   clients[idx].academyAdded    = true;
@@ -3973,7 +3973,7 @@ async function markComplete(ref) {
   if (idx < 0) return;
   const _isTrue = v => v === true || v === 'true' || v === 'TRUE' || v === 1 || v === '1';
   if (_isTrue(clients[idx].academyAssigned)) return;
-  const now = new Date().toLocaleString('ar-SA');
+  const now = new Date().toLocaleString('en-GB');
   const session = JSON.parse(sessionStorage.getItem('ops_session') || '{}');
   clients[idx].academyAssigned = true;
   clients[idx].activatedAt = new Date().toISOString();
@@ -4212,7 +4212,7 @@ async function saveOpsNotes(ref) {
   c.opsNotes = txt;
   const session = JSON.parse(sessionStorage.getItem('ops_session') || '{}');
   c.log = c.log || [];
-  c.log.push({ who: session.username||'تهيئة العميل', action: 'تحديث ملاحظات تهيئة العميل', time: new Date().toLocaleString('ar-SA') });
+  c.log.push({ who: session.username||'تهيئة العميل', action: 'تحديث ملاحظات تهيئة العميل', time: new Date().toLocaleString('en-GB') });
   persistClient(c); // fire & forget
   toast('تم حفظ ملاحظات تهيئة العميل ✓');
 }
@@ -4278,7 +4278,7 @@ async function saveEdit() {
   if (c.startDate!==startDate && startDate) changes.push(`موعد البدء: ${startDate}`);
   c.name=name; c.email=email; c.phone=phone; c.batchNo=batchNo; c.expiry=expiry; c.startDate=startDate; c.notes=notes;
   if (!c.log) c.log=[];
-  if (changes.length) c.log.push({ who:session.username||'مجهول', action:'تعديل: '+changes.join(' | '), time:new Date().toLocaleString('ar-SA') });
+  if (changes.length) c.log.push({ who:session.username||'مجهول', action:'تعديل: '+changes.join(' | '), time:new Date().toLocaleString('en-GB') });
   persistClient(c); // fire & forget
   toast('تم حفظ التعديلات ✓');
   closeEditModal(); renderDetail(selId); render();
@@ -4329,37 +4329,31 @@ function openEmail() {
 // ════════════════════════════════
 function parseClientDate(c) {
   if (!c) return null;
-  const raw = normalizeDigits(String(c.createdAt || c.createdAtISO || '')).trim();
+  const raw = String(c.createdAt || c.createdAtISO || '').trim();
   if (!raw) return null;
 
-  // ISO format مباشرة
-  const direct = new Date(raw);
-  if (!isNaN(direct) && direct.getFullYear() > 2000) return direct;
+  // ISO 8601 فقط يُعالَج مباشرة (YYYY-MM-DD)
+  if (/^\d{4}-\d{2}-\d{2}/.test(raw)) {
+    const d = new Date(raw);
+    return isNaN(d) ? null : d;
+  }
 
-  // استخرج الجزء الأول (التاريخ) — قبل مسافة أو فاصلة
-  const datePart = raw.split(/[\s،,]/)[0];
-
-  // صيغة D/M/YYYY أو YYYY/M/D أو D-M-YYYY
+  // باقي الصيغ: D/M/YYYY أو DD/MM/YYYY (en-GB أو عربي)
+  const normalized = normalizeDigits(raw);
+  const datePart = normalized.split(/[\s,،]/)[0];
   const m = datePart.match(/^(\d{1,4})[\/\-\.](\d{1,2})[\/\-\.](\d{1,4})$/);
   if (!m) return null;
 
-  let [,a,b,cc] = m.map(Number);
+  let [, a, b, cc] = m.map(Number);
   let year, month, day;
-  if (a > 31)       { year=a;  month=b; day=cc; }
-  else if (cc > 31) { year=cc; month=b; day=a;  }
+  if      (a  > 31) { year = a;  month = b; day = cc; }
+  else if (cc > 31) { year = cc; month = b; day = a;  }
   else return null;
 
-  if (month < 1 || month > 12) return null;
+  if (month < 1 || month > 12 || day < 1 || day > 31) return null;
 
-  // استخرج الوقت
-  const timePart = raw.match(/(\d{1,2}):(\d{2})(?::(\d{2}))?/);
-  const d = new Date(
-    year, month-1, day,
-    timePart ? +timePart[1] : 0,
-    timePart ? +timePart[2] : 0,
-    timePart && timePart[3] ? +timePart[3] : 0
-  );
-  return isNaN(d) ? null : d;
+  const t = normalized.match(/(\d{1,2}):(\d{2})/);
+  return new Date(year, month - 1, day, t ? +t[1] : 0, t ? +t[2] : 0, 0);
 }
 function setSalesPeriod(period) {
   const now=new Date(), today=now.toISOString().split('T')[0];
@@ -4621,7 +4615,7 @@ async function saveEditPerms() {
 // الإشعارات
 // ════════════════════════════════
 async function addNotification(msg, type='info', clientRef=null) {
-  const notif = { id:Date.now(), msg, type, clientRef, time:new Date().toLocaleString('ar-SA'), read:false };
+  const notif = { id:Date.now(), msg, type, clientRef, time:new Date().toLocaleString('en-GB'), read:false };
   _notifCache.unshift(notif); renderNotifDot();
   if (window.FB) await window.FB.addNotification(notif);
 }
