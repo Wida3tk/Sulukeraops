@@ -2236,7 +2236,7 @@ const PROG_COLORS = {
   'إدارة السلوك التنظيمي':  '#6C3DBF',
   'الاقتصاد السلوكي':        '#C47A00',
   'برامج التعليم المستمر':   '#0C7A43',
-  'حجز مقعد':                '#8A91A3',
+  // حجز مقعد صار مسار فرعي
 };
 const getProgColor = (prog) => {
   for (const [key, color] of Object.entries(PROG_COLORS)) {
@@ -2247,10 +2247,14 @@ const getProgColor = (prog) => {
 
 // مسارات البرامج
 const PROGRAM_TRACKS = {
-  'تحليل السلوك التطبيقي': ['QBA','QASP-S','ABAT','CA'],
-  'إدارة السلوك التنظيمي': ['P','E','C'],
-  'حجز مقعد': ['تحليل السلوك التطبيقي','إدارة السلوك التنظيمي'],
+  'تحليل السلوك التطبيقي': ['ABAT','QBA','QASP-S','تقييم الكفاءة','حجز مقعد'],
+  'إدارة السلوك التنظيمي': ['P','C','E','حجز مقعد'],
+  'الاقتصاد السلوكي':      [],
+  'برامج التعليم المستمر': [],
 };
+
+// المسارات التي لا تحتاج نوع برنامج (مباشر/مسجل)
+const TRACKS_NO_TYPE = ['تقييم الكفاءة','حجز مقعد'];
 
 // الصلاحيات
 const ROLE_PERMS = {
@@ -2397,7 +2401,7 @@ async function syncData() {
     if (saved) clients = JSON.parse(saved).map(normalizeClient);
     const savedP = localStorage.getItem('ops_programs');
     if (savedP) programs = JSON.parse(savedP);
-    if (!programs.length) programs = ['تحليل السلوك التطبيقي','إدارة السلوك التنظيمي','الاقتصاد السلوكي','برامج التعليم المستمر','حجز مقعد'];
+    if (!programs.length) programs = ['تحليل السلوك التطبيقي','إدارة السلوك التنظيمي','الاقتصاد السلوكي','برامج التعليم المستمر'];
     toast('وضع غير متصل — يعمل من الذاكرة المحلية', false);
   } else if (cr.clients && Array.isArray(cr.clients)) {
     // نظّف كل عميل من الشيت
@@ -2633,7 +2637,7 @@ function updateFilterDot() {
 
 function buildFilterSidebar() {
   // برامج فريدة مع عدادات
-  const fixedProgs = ['تحليل السلوك التطبيقي','إدارة السلوك التنظيمي','الاقتصاد السلوكي','برامج التعليم المستمر','حجز مقعد'];
+  const fixedProgs = ['تحليل السلوك التطبيقي','إدارة السلوك التنظيمي','الاقتصاد السلوكي','برامج التعليم المستمر'];
   const extraProgs = (programs||[]).filter(p => !fixedProgs.some(fp => p.includes(fp)));
   const allProgs   = [...fixedProgs, ...extraProgs];
 
@@ -2874,9 +2878,9 @@ function toolLabelsHTML(c) {
   const track = c.track   || '';
   const ptype = c.programType || '';
 
-  // قاعدة Basecamp
+  // قاعدة Basecamp — تحليل السلوك: QBA, QASP-S, ABAT (ليس تقييم الكفاءة أو حجز مقعد)
   const hasBasecamp =
-    (prog.includes('تحليل السلوك') && ['QBA','QASP-S','CA'].includes(track)) ||
+    (prog.includes('تحليل السلوك') && ['QBA','QASP-S','ABAT'].includes(track)) ||
     (prog.includes('إدارة السلوك') && ptype === 'مباشر');
 
   // قاعدة واتساب
@@ -3676,21 +3680,29 @@ async function saveFinNotes(ref) {
 
 
 function renderSettings() {
-  const fixed = ['تحليل السلوك التطبيقي','إدارة السلوك التنظيمي','الاقتصاد السلوكي','برامج التعليم المستمر','حجز مقعد'];
+  const fixed = ['تحليل السلوك التطبيقي','إدارة السلوك التنظيمي','الاقتصاد السلوكي','برامج التعليم المستمر'];
   const allProgs = programs.map((p,i)=>({name:p,i}));
 
   const pl = document.getElementById('prog-list');
   if (pl) pl.innerHTML = allProgs.map(({name,i}) => {
-    const isFixed = fixed.some(f => name.includes(f));
+    const isFixed = fixed.some(f => name === f);
+    // برامج قابلة للدمج — البرامج التي ليست من الثابتة
+    const isMergeable = !isFixed;
     return `<div class="client-card" style="cursor:default">
       <div class="card-prog-bar" style="background:${getProgColor(name)}"></div>
       <div class="card-body">
         <div class="card-top">
           <span class="card-name" style="font-size:13px">${name}</span>
-          ${isFixed
-            ? `<span style="font-size:11px;color:var(--text-3);padding:3px 8px">ثابت</span>`
-            : `<button class="btn btn-sm" style="color:var(--red);border-color:#fca5a5" onclick="removeProgram('${name.replace(/'/g,"\\'")}')">حذف</button>`}
+          <div style="display:flex;gap:6px">
+            ${isFixed
+              ? `<span style="font-size:11px;color:var(--text-3);padding:3px 8px">ثابت</span>`
+              : `<button class="btn btn-sm btn-primary" onclick="mergeProgram('${name.replace(/'/g,"\\'")}')">دمج</button>
+                 <button class="btn btn-sm" style="color:var(--red);border-color:#fca5a5" onclick="removeProgram('${name.replace(/'/g,"\\'")}')">حذف</button>`}
+          </div>
         </div>
+        ${isMergeable ? `<div style="font-size:10px;color:var(--text-3);margin-top:2px">
+          عدد العملاء: ${clients.filter(c=>c.program===name).length}
+        </div>` : ''}
       </div>
     </div>`;
   }).join('') || '<div class="empty-state">لا توجد برامج</div>';
@@ -3891,30 +3903,45 @@ function onProgramChange() {
   const efficiencyWrap = document.getElementById('fefficiency-wrap');
 
   const tracks = PROGRAM_TRACKS[p] || [];
-  trackSel.innerHTML = '<option value="">اختر المسار...</option>' +
-    tracks.map(t => `<option value="${t}">${t}</option>`).join('');
-  trackWrap.style.display     = tracks.length ? 'block' : 'none';
-  ptypeWrap.style.display     = ['تحليل السلوك التطبيقي','إدارة السلوك التنظيمي'].includes(p) ? 'block' : 'none';
-  contWrap.style.display      = p === 'برامج التعليم المستمر' ? 'block' : 'none';
-  langWrap.style.display      = ['تحليل السلوك التطبيقي','إدارة السلوك التنظيمي'].includes(p) ? 'block' : 'none';
-  // حقل تقييم الكفاءة — فقط لما يختار مسار ABAT فعلاً
-  efficiencyWrap.style.display = 'none';
-  if (!p.includes('أخصائي تحليل السلوك')) { const ef = document.getElementById('fefficiency'); if(ef) ef.value=''; }
-  if (!['تحليل السلوك التطبيقي','إدارة السلوك التنظيمي'].includes(p)) document.getElementById('fptype').value = '';
-}
-function onProgramTypeChange() {
-  const ptype = document.getElementById('fptype').value;
-  const wrap  = document.getElementById('fstartdate-wrap');
-  if (wrap) wrap.style.display = ptype === 'مباشر' ? 'block' : 'none';
-  if (ptype !== 'مباشر') { const el = document.getElementById('fstartdate'); if(el) el.value = ''; }
+  if (trackSel) {
+    trackSel.innerHTML = '<option value="">اختر المسار...</option>' +
+      tracks.map(t => `<option value="${t}">${t}</option>`).join('');
+  }
+  if (trackWrap)      trackWrap.style.display     = tracks.length ? 'block' : 'none';
+  if (ptypeWrap)      ptypeWrap.style.display     = 'none'; // يظهر حسب المسار
+  if (contWrap)       contWrap.style.display      = p === 'برامج التعليم المستمر' ? 'block' : 'none';
+  if (langWrap)       langWrap.style.display      = 'none'; // يظهر حسب المسار
+  if (efficiencyWrap) efficiencyWrap.style.display = 'none';
+
+  // إعادة ضبط المسار والنوع
+  if (trackSel) trackSel.value = '';
+  const ptypeEl = document.getElementById('fptype'); if(ptypeEl) ptypeEl.value='';
+  const sdWrap  = document.getElementById('fstartdate-wrap'); if(sdWrap) sdWrap.style.display='none';
 }
 
 function onTrackChange() {
+  const p     = document.getElementById('fp')?.value || '';
   const track = document.getElementById('ftrack')?.value || '';
+
+  const ptypeWrap      = document.getElementById('fptype-wrap');
+  const langWrap       = document.getElementById('flang-wrap');
   const efficiencyWrap = document.getElementById('fefficiency-wrap');
-  if (!efficiencyWrap) return;
-  efficiencyWrap.style.display = track === 'ABAT' ? 'block' : 'none';
-  if (track !== 'ABAT') { const ef = document.getElementById('fefficiency'); if(ef) ef.value=''; }
+  const sdWrap         = document.getElementById('fstartdate-wrap');
+
+  const noType   = TRACKS_NO_TYPE.includes(track);
+  const needsType = ['تحليل السلوك التطبيقي','إدارة السلوك التنظيمي'].includes(p) && !noType;
+
+  if (ptypeWrap)      ptypeWrap.style.display      = needsType ? 'block' : 'none';
+  if (langWrap)       langWrap.style.display        = needsType ? 'block' : 'none';
+  if (efficiencyWrap) efficiencyWrap.style.display  = (track === 'ABAT') ? 'block' : 'none';
+
+  if (!needsType) {
+    const pt = document.getElementById('fptype'); if(pt) pt.value='';
+    if (sdWrap) sdWrap.style.display = 'none';
+  }
+  if (track !== 'ABAT') {
+    const ef = document.getElementById('fefficiency'); if(ef) ef.value='';
+  }
 }
 
 function onAcquisitionChange() {
@@ -4603,7 +4630,7 @@ function renderReports() {
 function fillProgramSelect() {
   const sel = document.getElementById('fp');
   if (!sel) return;
-  const fixed = ['تحليل السلوك التطبيقي','إدارة السلوك التنظيمي','الاقتصاد السلوكي','برامج التعليم المستمر','حجز مقعد'];
+  const fixed = ['تحليل السلوك التطبيقي','إدارة السلوك التنظيمي','الاقتصاد السلوكي','برامج التعليم المستمر'];
   const extra = (programs||[]).filter(p=>!fixed.some(f=>p.includes(f)));
   sel.innerHTML = '<option value="">اختر البرنامج...</option>' + [...fixed,...extra].map(p=>`<option value="${p}">${p}</option>`).join('');
 }
@@ -4626,6 +4653,45 @@ async function addProgram() {
   programs.push(name); localStorage.setItem('ops_programs', JSON.stringify(programs));
   inp.value = ''; fillProgramSelect(); toast('تم إضافة البرنامج ✓'); render();
 }
+async function mergeProgram(oldProg) {
+  // تحديد الهدف تلقائياً
+  let newProg = 'تحليل السلوك التطبيقي';
+  let newTrack = 'ABAT';
+  let newType = 'مباشر';
+
+  if (oldProg.includes('أخصائي تحليل السلوك') || oldProg.toLowerCase().includes('abat')) {
+    newProg  = 'تحليل السلوك التطبيقي';
+    newTrack = 'ABAT';
+    newType  = oldProg.includes('مسجل') ? 'مسجل' : 'مباشر';
+  } else if (oldProg.includes('إدارة السلوك')) {
+    newProg  = 'إدارة السلوك التنظيمي';
+    newTrack = '';
+    newType  = oldProg.includes('مسجل') ? 'مسجل' : 'مباشر';
+  }
+
+  const affected = clients.filter(c => c.program === oldProg);
+
+  if (!confirm(`دمج "${oldProg}" (${affected.length} عميل) إلى:\n${newProg}${newTrack?' — '+newTrack:''}${newType?' · '+newType:''}؟`)) return;
+
+  const session = JSON.parse(sessionStorage.getItem('ops_session') || '{}');
+  for (const c of affected) {
+    c.program     = newProg;
+    c.track       = newTrack;
+    c.programType = newType;
+    c.log = c.log || [];
+    c.log.push({ who: session.username||'الإعدادات', action:`دمج: ${oldProg} → ${newProg} — ${newTrack}`, time: new Date().toLocaleString('en-GB') });
+    persistClient(c);
+  }
+
+  programs = programs.filter(p => p !== oldProg);
+  localStorage.setItem('ops_programs', JSON.stringify(programs));
+  toast(`✅ تم دمج ${affected.length} عميل وحذف "${oldProg}"`);
+  fillProgramSelect();
+  buildFilterSidebar();
+  renderSettings();
+  render();
+}
+
 function removeProgram(name) {
   if (!confirm(`حذف "${name}"؟`)) return;
   programs = programs.filter(p => p !== name);
