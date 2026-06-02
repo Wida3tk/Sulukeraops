@@ -465,8 +465,93 @@ nav.nav-menu {
 }
 
 /* ══════════════════════════════════════════
-   الإحصائيات
+   KPI Cards
 ══════════════════════════════════════════ */
+.kpi-row {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 10px;
+  margin-bottom: 1.25rem;
+}
+.kpi-card {
+  background: var(--surface);
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius);
+  padding: 14px 16px;
+  cursor: pointer;
+  transition: all .15s;
+  position: relative;
+  overflow: hidden;
+}
+.kpi-card::before {
+  content: '';
+  position: absolute;
+  top: 0; right: 0; left: 0;
+  height: 3px;
+  background: var(--blue);
+  border-radius: 2px 2px 0 0;
+}
+.kpi-card:hover { border-color: var(--blue-mid); box-shadow: var(--shadow-md); transform: translateY(-1px); }
+.kpi-card.active { border-color: var(--blue); background: var(--blue-lt); }
+.kpi-card.kc-green::before { background: var(--green); }
+.kpi-card.kc-amber::before { background: var(--amber); }
+.kpi-card.kc-red::before   { background: var(--red); }
+.kpi-card.kc-purple::before { background: #7C3AED; }
+.kpi-card.active.kc-green { background: var(--green-lt); border-color: var(--green-mid); }
+.kpi-card.active.kc-amber { background: var(--amber-lt); border-color: var(--amber-mid); }
+.kpi-card.active.kc-red   { background: var(--red-lt);   border-color: #FCA5A5; }
+.kpi-num {
+  font-size: 28px; font-weight: 800;
+  color: var(--text); line-height: 1;
+  margin-bottom: 4px;
+}
+.kpi-card.kc-green .kpi-num { color: var(--green); }
+.kpi-card.kc-amber .kpi-num { color: var(--amber); }
+.kpi-card.kc-red   .kpi-num { color: var(--red);   }
+.kpi-card.kc-purple .kpi-num { color: #7C3AED; }
+.kpi-label { font-size: 11px; color: var(--text-3); font-weight: 500; }
+.kpi-sub   { font-size: 10px; color: var(--text-3); margin-top: 6px; }
+
+/* برامج نشطة في تفعيل المقررات */
+.prog-kpi-row {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 10px;
+  margin-bottom: 1.25rem;
+}
+.prog-kpi-card {
+  background: var(--surface);
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius);
+  padding: 12px 14px;
+}
+.prog-kpi-title {
+  font-size: 11px; font-weight: 700; color: var(--text-2);
+  margin-bottom: 10px;
+  display: flex; align-items: center; gap: 6px;
+}
+.prog-kpi-dot {
+  width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0;
+}
+.prog-kpi-tracks {
+  display: flex; gap: 8px; flex-wrap: wrap;
+}
+.prog-kpi-track {
+  display: flex; flex-direction: column; align-items: center;
+  background: var(--bg); border-radius: 8px;
+  padding: 8px 12px; min-width: 50px;
+  border: 1px solid var(--border); cursor: pointer;
+  transition: all .12s;
+}
+.prog-kpi-track:hover { border-color: var(--blue-mid); background: var(--blue-lt); }
+.prog-kpi-track .n { font-size: 18px; font-weight: 800; color: var(--text); }
+.prog-kpi-track .l { font-size: 9px; color: var(--text-3); margin-top: 2px; }
+@media (max-width: 768px) {
+  .kpi-row { grid-template-columns: repeat(2,1fr); }
+  .prog-kpi-row { grid-template-columns: 1fr; }
+}
+
+
 .stat-card {
   background: var(--surface); border: 1px solid var(--border);
   border-radius: var(--radius); padding: 14px 16px;
@@ -741,7 +826,7 @@ nav.nav-menu {
 .label-chip.active { opacity: 1; }
 
 /* ══════════════════════════════════════════
-   واجهة المبيعات — فورم الإضافة
+   واجهة تسليم العميل — فورم الإضافة
 ══════════════════════════════════════════ */
 .add-form-card {
   background: var(--surface); border: 1.5px solid var(--border);
@@ -787,7 +872,7 @@ nav.nav-menu {
 .form-btns { display: flex; gap: 8px; justify-content: flex-end; margin-top: 1rem; }
 
 /* ══════════════════════════════════════════
-   مجموعات التشغيل (Grouped)
+   مجموعات تهيئة العميل (Grouped)
 ══════════════════════════════════════════ */
 .ops-group {
   background: var(--surface); border: 1.5px solid var(--border);
@@ -1104,11 +1189,11 @@ nav.nav-menu {
     <div class="nav-daily" id="nav-daily-wrap">
       <div class="nav-daily-title">لوحة اليوم</div>
       <div class="nav-daily-item" id="nd-activation">
-        <span>بانتظار التفعيل</span>
+        <span>بانتظار تهيئة العميل</span>
         <strong id="nd-act-count">0</strong>
       </div>
       <div class="nav-daily-item" id="nd-assignment">
-        <span>بانتظار الإسناد</span>
+        <span>بانتظار تفعيل المقررات</span>
         <strong id="nd-asgn-count">0</strong>
       </div>
     </div>
@@ -1118,18 +1203,18 @@ nav.nav-menu {
       <div class="nav-section-title">القوائم الرئيسية</div>
 
       <button class="nav-item active ns" id="btn-sales" onclick="setView('sales',this)">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><polyline points="16 11 18 13 22 9"/></svg>
         <span>تسليم العميل</span>
       </button>
 
       <button class="nav-item na" id="btn-academy" onclick="setView('academy',this)" style="display:none">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c3 3 9 3 12 0v-5"/></svg>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
         <span>تهيئة العميل</span>
         <span class="nav-badge" id="ops-badge" style="display:none">0</span>
       </button>
 
       <button class="nav-item na" id="btn-assign" onclick="setView('assign',this)" style="display:none">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><polyline points="9 12 11 14 15 10"/></svg>
         <span>تفعيل المقررات</span>
         <span class="nav-badge" id="assign-badge" style="display:none">0</span>
       </button>
@@ -1223,7 +1308,7 @@ nav.nav-menu {
       <div class="fs-title">الحالة</div>
       <select class="filter-select" id="filter-status" onchange="renderFiltered();updateFilterDot()">
         <option value="">الكل</option>
-        <option value="pending">بانتظار التفعيل</option>
+        <option value="pending">بانتظار تهيئة العميل</option>
         <option value="done">مكتملون</option>
         <option value="trial">تجربة</option>
         <option value="uninterested">غير مهتمين</option>
@@ -1259,7 +1344,7 @@ nav.nav-menu {
     <!-- المحتوى -->
     <main class="content-area">
 
-      <!-- ───── تسليم العميل ───── -->
+      <!-- ───── المبيعات ───── -->
       <div id="v-sales" style="display:none">
         <!-- رأس الصفحة -->
         <div class="page-header">
@@ -1277,6 +1362,30 @@ nav.nav-menu {
             فلترة
             <span class="filter-active-dot" id="filter-dot"></span>
           </button>
+        </div>
+
+        <!-- KPIs تسليم العميل -->
+        <div class="kpi-row" id="kpi-sales">
+          <div class="kpi-card" id="kpi-s-month" onclick="applyKpi('sales','month')">
+            <div class="kpi-num" id="kn-s-month">0</div>
+            <div class="kpi-label">هذا الشهر</div>
+            <div class="kpi-sub">عميل جديد</div>
+          </div>
+          <div class="kpi-card" id="kpi-s-week" onclick="applyKpi('sales','week')">
+            <div class="kpi-num" id="kn-s-week">0</div>
+            <div class="kpi-label">هذا الأسبوع</div>
+            <div class="kpi-sub">عميل جديد</div>
+          </div>
+          <div class="kpi-card kc-green" id="kpi-s-total" onclick="applyKpi('sales','all')">
+            <div class="kpi-num" id="kn-s-total">0</div>
+            <div class="kpi-label">إجمالي العملاء</div>
+            <div class="kpi-sub">كل الأوقات</div>
+          </div>
+          <div class="kpi-card kc-amber" id="kpi-s-trial" onclick="applyKpi('sales','trial')">
+            <div class="kpi-num" id="kn-s-trial">0</div>
+            <div class="kpi-label">تجارب نشطة</div>
+            <div class="kpi-sub">بانتظار القرار</div>
+          </div>
         </div>
 
         <!-- فورم إضافة عميل -->
@@ -1475,16 +1584,40 @@ nav.nav-menu {
       <div id="v-academy" style="display:none">
         <!-- رأس الصفحة -->
         <div class="page-header">
-          <div class="page-title">تهيئة العميل</div>
+          <div class="page-title">العمليات</div>
           <button class="filter-toggle-btn" onclick="toggleFilters()">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="4" y1="6" x2="20" y2="6"/><line x1="8" y1="12" x2="16" y2="12"/><line x1="11" y1="18" x2="13" y2="18"/></svg>
             فلترة
           </button>
         </div>
+        <!-- KPIs تهيئة العميل -->
+        <div class="kpi-row">
+          <div class="kpi-card kc-green" id="kpi-a-month" onclick="applyKpi('academy','month')">
+            <div class="kpi-num" id="kn-a-month">0</div>
+            <div class="kpi-label">تمت التهيئة</div>
+            <div class="kpi-sub">هذا الشهر</div>
+          </div>
+          <div class="kpi-card" id="kpi-a-today" onclick="applyKpi('academy','today')">
+            <div class="kpi-num" id="kn-a-today">0</div>
+            <div class="kpi-label">تمت التهيئة</div>
+            <div class="kpi-sub">اليوم</div>
+          </div>
+          <div class="kpi-card kc-amber" id="kpi-a-pending" onclick="applyKpi('academy','pending')">
+            <div class="kpi-num" id="kn-a-pending">0</div>
+            <div class="kpi-label">بانتظار التهيئة</div>
+            <div class="kpi-sub">لم تتم بعد</div>
+          </div>
+          <div class="kpi-card kc-red" id="kpi-a-late" onclick="applyKpi('academy','late')">
+            <div class="kpi-num" id="kn-a-late">0</div>
+            <div class="kpi-label">متأخرون</div>
+            <div class="kpi-sub">أكثر من يومين</div>
+          </div>
+        </div>
+
         <!-- شريط التقدم اليومي -->
         <div class="daily-progress" id="daily-progress-bar">
           <div class="dp-texts">
-            <h3>إنجاز اليوم</h3>
+            <h3>تهيئة اليوم</h3>
             <p id="dp-fraction">0 / 0</p>
           </div>
           <div class="dp-bar-wrap">
@@ -1498,9 +1631,9 @@ nav.nav-menu {
           <span id="alert-txt"></span>
         </div>
 
-        <!-- بانتظار التفعيل — مجموعات -->
+        <!-- بانتظار تهيئة العميل — مجموعات -->
         <div class="sec-head">
-          <span class="sec-title">بانتظار التفعيل</span>
+          <span class="sec-title">بانتظار تهيئة العميل</span>
           <span class="sec-badge active" id="aca-pend-total">0</span>
         </div>
         <div id="al-pending-groups"></div>
@@ -1513,7 +1646,7 @@ nav.nav-menu {
         <div id="al-pending-trial" class="clients-list"></div>
       </div>
 
-      <!-- ───── تفعيل المقررات ───── -->
+      <!-- ───── الإسناد ───── -->
       <div id="v-assign" style="display:none">
         <!-- رأس الصفحة -->
         <div class="page-header">
@@ -1523,9 +1656,36 @@ nav.nav-menu {
             فلترة
           </button>
         </div>
+        <!-- KPIs تفعيل المقررات -->
+        <div class="kpi-row">
+          <div class="kpi-card kc-green" id="kpi-x-active" onclick="applyKpi('assign','active')">
+            <div class="kpi-num" id="kn-x-active">0</div>
+            <div class="kpi-label">عميل نشط</div>
+            <div class="kpi-sub">تم تفعيلهم</div>
+          </div>
+          <div class="kpi-card" id="kpi-x-month" onclick="applyKpi('assign','month')">
+            <div class="kpi-num" id="kn-x-month">0</div>
+            <div class="kpi-label">تم التفعيل</div>
+            <div class="kpi-sub">هذا الشهر</div>
+          </div>
+          <div class="kpi-card kc-amber" id="kpi-x-pending" onclick="applyKpi('assign','pending')">
+            <div class="kpi-num" id="kn-x-pending">0</div>
+            <div class="kpi-label">بانتظار التفعيل</div>
+            <div class="kpi-sub">تمت التهيئة</div>
+          </div>
+          <div class="kpi-card kc-purple" id="kpi-x-today" onclick="applyKpi('assign','today')">
+            <div class="kpi-num" id="kn-x-today">0</div>
+            <div class="kpi-label">تم اليوم</div>
+            <div class="kpi-sub">تفعيل جديد</div>
+          </div>
+        </div>
+
+        <!-- العملاء النشطون حسب البرنامج -->
+        <div class="prog-kpi-row" id="prog-kpi-row"></div>
+
         <div class="daily-progress">
           <div class="dp-texts">
-            <h3>إسناد اليوم</h3>
+            <h3>تفعيل اليوم</h3>
             <p id="dp-fraction-assign">0 / 0</p>
           </div>
           <div class="dp-bar-wrap">
@@ -1534,7 +1694,7 @@ nav.nav-menu {
           </div>
         </div>
         <div class="sec-head">
-          <span class="sec-title">بانتظار الإسناد</span>
+          <span class="sec-title">بانتظار تفعيل المقررات</span>
           <span class="sec-badge active" id="asgn-pend-total">0</span>
         </div>
         <div id="al-assign-groups"></div>
@@ -1605,7 +1765,7 @@ nav.nav-menu {
         <div id="fl-active"></div>
 
         <div class="sec-head" style="margin-top:1rem">
-          <span class="sec-title" style="color:var(--green)">✅ مكتمل</span>
+          <span class="sec-title" style="color:var(--green)">✅ مكتملو الدفع / دفع مباشر</span>
           <span class="sec-badge" id="fin-count-done">0</span>
         </div>
         <div id="fl-done"></div>
@@ -1724,7 +1884,7 @@ nav.nav-menu {
               <label style="display:flex;align-items:center;gap:8px;padding:8px 10px;border:1.5px solid var(--border);border-radius:8px;cursor:pointer;font-size:12px"><input type="checkbox" id="perm-addClient" style="width:15px;height:15px"><div><div style="font-weight:600">إضافة عميل</div><div style="color:var(--text-3);font-size:10px">تسجيل عملاء جدد</div></div></label>
               <label style="display:flex;align-items:center;gap:8px;padding:8px 10px;border:1.5px solid var(--border);border-radius:8px;cursor:pointer;font-size:12px"><input type="checkbox" id="perm-editClient" style="width:15px;height:15px"><div><div style="font-weight:600">تعديل بيانات</div><div style="color:var(--text-3);font-size:10px">تعديل بيانات العملاء</div></div></label>
               <label style="display:flex;align-items:center;gap:8px;padding:8px 10px;border:1.5px solid var(--border);border-radius:8px;cursor:pointer;font-size:12px"><input type="checkbox" id="perm-editAny" style="width:15px;height:15px"><div><div style="font-weight:600">تعديل الكل</div><div style="color:var(--text-3);font-size:10px">تعديل بيانات أي عميل</div></div></label>
-              <label style="display:flex;align-items:center;gap:8px;padding:8px 10px;border:1.5px solid var(--border);border-radius:8px;cursor:pointer;font-size:12px"><input type="checkbox" id="perm-academy" style="width:15px;height:15px"><div><div style="font-weight:600">التشغيل</div><div style="color:var(--text-3);font-size:10px">تغيير حالات التفعيل</div></div></label>
+              <label style="display:flex;align-items:center;gap:8px;padding:8px 10px;border:1.5px solid var(--border);border-radius:8px;cursor:pointer;font-size:12px"><input type="checkbox" id="perm-academy" style="width:15px;height:15px"><div><div style="font-weight:600">تهيئة العميل</div><div style="color:var(--text-3);font-size:10px">تغيير حالات التفعيل</div></div></label>
               <label style="display:flex;align-items:center;gap:8px;padding:8px 10px;border:1.5px solid var(--border);border-radius:8px;cursor:pointer;font-size:12px"><input type="checkbox" id="perm-finance" style="width:15px;height:15px"><div><div style="font-weight:600">المالية</div><div style="color:var(--text-3);font-size:10px">الوصول لتبويب المالية</div></div></label>
               <label style="display:flex;align-items:center;gap:8px;padding:8px 10px;border:1.5px solid var(--border);border-radius:8px;cursor:pointer;font-size:12px"><input type="checkbox" id="perm-reports" style="width:15px;height:15px"><div><div style="font-weight:600">التقارير</div><div style="color:var(--text-3);font-size:10px">عرض التقارير</div></div></label>
               <label style="display:flex;align-items:center;gap:8px;padding:8px 10px;border:1.5px solid var(--border);border-radius:8px;cursor:pointer;font-size:12px"><input type="checkbox" id="perm-settings" style="width:15px;height:15px"><div><div style="font-weight:600">الإعدادات</div><div style="color:var(--text-3);font-size:10px">إدارة المستخدمين</div></div></label>
@@ -1813,7 +1973,7 @@ nav.nav-menu {
         <div class="dp-section">
           <div class="dp-section-title">
             <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
-            ليبلات التشغيل
+            ليبلات العميل
           </div>
           <div class="labels-picker" id="d-labels-picker"></div>
         </div>
@@ -1829,11 +1989,11 @@ nav.nav-menu {
           <div id="d-stages"></div>
         </div>
 
-        <!-- ملاحظات التشغيل (العمليات + الإسناد) -->
+        <!-- ملاحظات تهيئة العميل (العمليات + الإسناد) -->
         <div class="dp-section">
           <div class="dp-section-title">
             <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
-            ملاحظات التشغيل
+            ملاحظات تهيئة العميل
           </div>
           <div style="display:flex;gap:6px;align-items:flex-start">
             <textarea id="ops-notes-input" rows="3" style="flex:1;padding:7px 10px;border:1.5px solid var(--border);border-radius:8px;font-family:var(--font);font-size:12px;resize:vertical;background:var(--bg)" placeholder="ملاحظات العمليات والإسناد..."></textarea>
@@ -2039,7 +2199,7 @@ const PROG_COLORS = {
   'إدارة السلوك التنظيمي':  '#6C3DBF',
   'الاقتصاد السلوكي':        '#C47A00',
   'برامج التعليم المستمر':   '#0C7A43',
-  'تقييم كفاءة':                '#8A91A3',
+  'حجز مقعد':                '#8A91A3',
 };
 const getProgColor = (prog) => {
   for (const [key, color] of Object.entries(PROG_COLORS)) {
@@ -2052,7 +2212,7 @@ const getProgColor = (prog) => {
 const PROGRAM_TRACKS = {
   'تحليل السلوك التطبيقي': ['QBA','QASP-S','ABAT','CA'],
   'إدارة السلوك التنظيمي': ['P','E','C'],
-  'تقييم كفاءة': ['تحليل السلوك التطبيقي','إدارة السلوك التنظيمي'],
+  'حجز مقعد': ['تحليل السلوك التطبيقي','إدارة السلوك التنظيمي'],
 };
 
 // الصلاحيات
@@ -2063,12 +2223,12 @@ const ROLE_PERMS = {
   finance: { addClient:false, editClient:false, editAny:false, academy:false, finance:true,  reports:false, settings:false },
   reports: { addClient:false, editClient:false, editAny:false, academy:false, finance:false, reports:true,  settings:false },
 };
-const ROLE_LABELS = { admin:'مدير النظام', sales:'المبيعات', academy:'التشغيل', finance:'المالية', reports:'التقارير' };
+const ROLE_LABELS = { admin:'مدير النظام', sales:'تسليم العميل', academy:'تهيئة العميل', finance:'المالية', reports:'التقارير' };
 const PERM_LABELS = {
   addClient:  { label:'إضافة عميل',   desc:'تسجيل عملاء جدد' },
   editClient: { label:'تعديل بيانات', desc:'تعديل بيانات العملاء' },
   editAny:    { label:'تعديل الكل',   desc:'تعديل بيانات أي عميل' },
-  academy:    { label:'التشغيل',      desc:'تغيير حالات التفعيل' },
+  academy:    { label:'تهيئة العميل',      desc:'تغيير حالات التفعيل' },
   finance:    { label:'المالية',      desc:'الوصول لتبويب المالية' },
   reports:    { label:'التقارير',     desc:'عرض التقارير' },
   settings:   { label:'الإعدادات',   desc:'إدارة المستخدمين' },
@@ -2244,7 +2404,7 @@ async function syncData() {
   if (cr.error === 'offline') {
     clients  = JSON.parse(localStorage.getItem('ops_clients')  || '[]').map(normalizeClient);
     programs = JSON.parse(localStorage.getItem('ops_programs') || '[]');
-    if (!programs.length) programs = ['تقتحليل السلوك التطبيقي','إدارة السلوك التنظيمي','الاقتصاد السلوكي','برامج التعليم المستمر','تقييم كفاءة'];
+    if (!programs.length) programs = ['تحليل السلوك التطبيقي','إدارة السلوك التنظيمي','الاقتصاد السلوكي','برامج التعليم المستمر','حجز مقعد'];
     toast('وضع غير متصل', false);
   } else {
     localStorage.setItem('ops_clients',  JSON.stringify(clients));
@@ -2266,8 +2426,131 @@ async function syncData() {
 }
 
 // ════════════════════════════════
-// الفلاتر — فتح/إغلاق
+// KPI Cards
 // ════════════════════════════════
+let activeKpi = null;
+
+function renderKPIs() {
+  const now   = new Date();
+  const som   = new Date(now.getFullYear(), now.getMonth(), 1);
+  const sow   = new Date(now); sow.setDate(now.getDate() - now.getDay());
+  const today = now.toDateString();
+
+  const inMonth = c => { const d = parseClientDate(c); return d && d >= som; };
+  const inWeek  = c => { const d = parseClientDate(c); return d && d >= sow; };
+  const inToday = c => { const d = parseClientDate(c); return d && d.toDateString() === today; };
+  const activatedInMonth = c => {
+    if (!c.activatedAt) return false;
+    try { const d = new Date(c.activatedAt); return d >= som; } catch { return false; }
+  };
+  const activatedToday = c => {
+    if (!c.activatedAt) return false;
+    try { return new Date(c.activatedAt).toDateString() === today; } catch { return false; }
+  };
+  const isLate = c => {
+    if (c.academyAdded || c.academyAssigned) return false;
+    const d = parseClientDate(c);
+    if (!d) return false;
+    return Math.floor((now - d) / 86400000) > 2;
+  };
+
+  // ── تسليم العميل ──
+  const set = (id, n) => { const el = document.getElementById(id); if (el) el.textContent = n; };
+  set('kn-s-month', clients.filter(c => inMonth(c) && !isTrialClient(c)).length);
+  set('kn-s-week',  clients.filter(c => inWeek(c)  && !isTrialClient(c)).length);
+  set('kn-s-total', clients.length);
+  set('kn-s-trial', clients.filter(c => isTrialClient(c) && !c.trialStatus).length);
+
+  // ── تهيئة العميل ──
+  set('kn-a-month',   clients.filter(c => isTrue(c.academyAdded) && activatedInMonth(c)).length);
+  set('kn-a-today',   clients.filter(c => isTrue(c.academyAdded) && activatedToday(c)).length);
+  set('kn-a-pending', clients.filter(c => !isTrue(c.academyAdded) && !isTrialClient(c)).length);
+  set('kn-a-late',    clients.filter(c => isLate(c)).length);
+
+  // ── تفعيل المقررات ──
+  const active  = clients.filter(c => isTrue(c.academyAssigned));
+  const pending = clients.filter(c => isTrue(c.academyAdded) && !isTrue(c.academyAssigned) && needsAssign(c.source));
+  set('kn-x-active',  active.length);
+  set('kn-x-month',   active.filter(c => activatedInMonth(c)).length);
+  set('kn-x-pending', pending.length);
+  set('kn-x-today',   active.filter(c => activatedToday(c)).length);
+
+  // ── برامج نشطة ──
+  renderProgKPIs(active);
+}
+
+function renderProgKPIs(activeClients) {
+  const el = document.getElementById('prog-kpi-row');
+  if (!el) return;
+
+  const programs = {};
+  activeClients.forEach(c => {
+    const prog  = (c.program || 'غير محدد').split('—')[0].trim();
+    const track = c.track || c.programType || 'عام';
+    if (!programs[prog]) programs[prog] = {};
+    programs[prog][track] = (programs[prog][track] || 0) + 1;
+  });
+
+  el.innerHTML = Object.entries(programs).map(([prog, tracks]) => {
+    const color = getProgColor(prog);
+    const total = Object.values(tracks).reduce((s,n) => s+n, 0);
+    const trackBtns = Object.entries(tracks).map(([t, n]) =>
+      `<div class="prog-kpi-track" onclick="applyKpiProg('${prog}','${t}')">
+        <div class="n">${n}</div>
+        <div class="l">${t}</div>
+      </div>`
+    ).join('');
+    return `<div class="prog-kpi-card">
+      <div class="prog-kpi-title">
+        <div class="prog-kpi-dot" style="background:${color}"></div>
+        ${prog} <span style="margin-right:auto;font-size:10px;color:var(--text-3)">${total} نشط</span>
+      </div>
+      <div class="prog-kpi-tracks">${trackBtns}</div>
+    </div>`;
+  }).join('') || '<div style="color:var(--text-3);font-size:12px">لا يوجد عملاء نشطون</div>';
+}
+
+function applyKpi(view, filter) {
+  // إزالة active من كل KPIs
+  document.querySelectorAll('.kpi-card').forEach(k => k.classList.remove('active'));
+
+  const now = new Date();
+  const som = new Date(now.getFullYear(), now.getMonth(), 1);
+  const sow = new Date(now); sow.setDate(now.getDate() - now.getDay());
+  const today = now.toDateString();
+
+  if (filter === 'all') {
+    clearFilters(); return;
+  }
+
+  // تفعيل الـ KPI المضغوط
+  const kpiId = {
+    'sales-month':'kpi-s-month','sales-week':'kpi-s-week',
+    'sales-all':'kpi-s-total','sales-trial':'kpi-s-trial',
+    'academy-month':'kpi-a-month','academy-today':'kpi-a-today',
+    'academy-pending':'kpi-a-pending','academy-late':'kpi-a-late',
+    'assign-active':'kpi-x-active','assign-month':'kpi-x-month',
+    'assign-pending':'kpi-x-pending','assign-today':'kpi-x-today',
+  }[view+'-'+filter];
+  if (kpiId) document.getElementById(kpiId)?.classList.add('active');
+
+  // فلترة العملاء
+  activeKpi = { view, filter };
+  render();
+}
+
+function applyKpiProg(prog, track) {
+  // فلتر برنامج محدد في تفعيل المقررات
+  filterProg  = prog;
+  filterTrack = track === 'عام' ? '' : track;
+  buildFilterSidebar();
+  renderAssign();
+}
+
+// نضيف KPI filter لـ getFilteredClients
+const _origGetFiltered = null; // سنعدّل getFilteredClients مباشرة
+
+
 let filtersOpen = false;
 function toggleFilters() {
   filtersOpen = !filtersOpen;
@@ -2300,7 +2583,7 @@ function updateFilterDot() {
 
 function buildFilterSidebar() {
   // برامج فريدة مع عدادات
-  const fixedProgs = ['تحليل السلوك التطبيقي','إدارة السلوك التنظيمي','الاقتصاد السلوكي','برامج التعليم المستمر','تقييم كفاءة'];
+  const fixedProgs = ['تحليل السلوك التطبيقي','إدارة السلوك التنظيمي','الاقتصاد السلوكي','برامج التعليم المستمر','حجز مقعد'];
   const extraProgs = (programs||[]).filter(p => !fixedProgs.some(fp => p.includes(fp)));
   const allProgs   = [...fixedProgs, ...extraProgs];
 
@@ -2407,6 +2690,8 @@ function updateLabelFilter() {
 
 function clearFilters() {
   filterProg = ''; filterTrack = ''; filterType = '';
+  activeKpi = null;
+  document.querySelectorAll('.kpi-card').forEach(k => k.classList.remove('active'));
   ['search-input','search-input-quick','filter-source','filter-status','filter-label','filter-date','filter-acquisition']
     .forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; });
   buildFilterSidebar();
@@ -2455,28 +2740,39 @@ function getFilteredClients() {
 
     // فلتر الحالة
     let matchStatus = true;
-    if (status === 'pending')           matchStatus = !c.academyAssigned && !isTrialClient(c);
-    else if (status === 'done')         matchStatus = !!c.academyAssigned;
+    if (status === 'pending')           matchStatus = !isTrue(c.academyAssigned) && !isTrialClient(c);
+    else if (status === 'done')         matchStatus = isTrue(c.academyAssigned);
     else if (status === 'trial')        matchStatus = isTrialClient(c) && c.trialStatus !== 'uninterested';
     else if (status === 'uninterested') matchStatus = c.trialStatus === 'uninterested';
 
-    // فلتر الليبل
-    const matchLabel = !labelId || (c.labels && c.labels.includes(labelId));
-
-    // فلتر كيف عرف عنا
-    const matchAcquisition = !acquisition || (c.acquisitionChannel || '').includes(acquisition);
-
-    // فلتر التاريخ
-    let matchDate = true;
-    if (dateF) {
+    // فلتر KPI
+    let matchKpi = true;
+    if (activeKpi) {
+      const { view, filter } = activeKpi;
       const cd = parseClientDate(c);
-      if (!cd) matchDate = false;
-      else if (dateF === 'today') matchDate = cd.toDateString() === now.toDateString();
-      else if (dateF === 'week')  matchDate = (now - cd) <= 7 * 86400000;
-      else if (dateF === 'month') matchDate = cd.getMonth()===now.getMonth() && cd.getFullYear()===now.getFullYear();
+      const som = new Date(now.getFullYear(), now.getMonth(), 1);
+      const sow = new Date(now); sow.setDate(now.getDate() - now.getDay());
+      const todayStr = now.toDateString();
+      const actDate  = c.activatedAt ? new Date(c.activatedAt) : null;
+
+      if (view === 'sales') {
+        if (filter === 'month')   matchKpi = cd && cd >= som && !isTrialClient(c);
+        if (filter === 'week')    matchKpi = cd && cd >= sow && !isTrialClient(c);
+        if (filter === 'trial')   matchKpi = isTrialClient(c) && !c.trialStatus;
+      } else if (view === 'academy') {
+        if (filter === 'month')   matchKpi = isTrue(c.academyAdded) && actDate && actDate >= som;
+        if (filter === 'today')   matchKpi = isTrue(c.academyAdded) && actDate && actDate.toDateString() === todayStr;
+        if (filter === 'pending') matchKpi = !isTrue(c.academyAdded) && !isTrialClient(c);
+        if (filter === 'late')    matchKpi = !isTrue(c.academyAdded) && cd && Math.floor((now-cd)/86400000) > 2;
+      } else if (view === 'assign') {
+        if (filter === 'active')  matchKpi = isTrue(c.academyAssigned);
+        if (filter === 'month')   matchKpi = isTrue(c.academyAssigned) && actDate && actDate >= som;
+        if (filter === 'pending') matchKpi = isTrue(c.academyAdded) && !isTrue(c.academyAssigned) && needsAssign(c.source);
+        if (filter === 'today')   matchKpi = isTrue(c.academyAssigned) && actDate && actDate.toDateString() === todayStr;
+      }
     }
 
-    return matchQ && matchProg && matchTrack && matchType && matchSrc && matchStatus && matchLabel && matchAcquisition && matchDate;
+    return matchQ && matchProg && matchTrack && matchType && matchSrc && matchStatus && matchLabel && matchAcquisition && matchDate && matchKpi;
   });
 }
 
@@ -2561,7 +2857,7 @@ function cardHTML(c, showTrialActions=false) {
     else if (isTrial) statusPill = '<span class="pill p-trial">تجربة</span>';
     else if (asnDone) statusPill = '<span class="pill p-green">مكتمل ✓</span>';
     else if (addDone) statusPill = '<span class="pill p-amber">تمت الإضافة</span>';
-    else statusPill = '<span class="pill p-amber">بانتظار التفعيل</span>';
+    else statusPill = '<span class="pill p-amber">بانتظار تهيئة العميل</span>';
 
     const needsAsgn  = needsAssign(c.source) && !asnDone;
     const assignBadge = needsAsgn && !isTrial ? '<span class="pill p-red" style="font-size:10px">يحتاج إسناد</span>' : '';
@@ -2680,7 +2976,7 @@ function updateStats() {
   if (ndActEl)  ndActEl.className  = 'nav-daily-item' + (pending > 0 ? ' urgent' : '');
   if (ndAsgnEl) ndAsgnEl.className = 'nav-daily-item' + (pendingAsgn > 0 ? ' warn' : '');
 
-  // badge العمليات — فقط بانتظار التفعيل (لم يُضافوا بعد)
+  // badge العمليات — فقط بانتظار تهيئة العميل (لم يُضافوا بعد)
   const badge = document.getElementById('ops-badge');
   if (badge) {
     badge.textContent = pending;
@@ -2693,7 +2989,7 @@ function updateStats() {
     badge.className = 'nav-badge' + (urgentCount > 0 ? ' warn' : '');
   }
 
-  // badge الإسناد — فقط بانتظار الإسناد
+  // badge الإسناد — فقط بانتظار تفعيل المقررات
   const asgnBadge = document.getElementById('assign-badge');
   if (asgnBadge) {
     asgnBadge.textContent = pendingAsgn;
@@ -2741,6 +3037,7 @@ function updateStats() {
 // الرسم الرئيسي
 // ════════════════════════════════
 function render() {
+  renderKPIs();
   if (currentView === 'sales') renderSales();
   else if (currentView === 'academy') renderAcademy();
   else if (currentView === 'assign') renderAssign();
@@ -2768,7 +3065,7 @@ function renderAssign() {
   const groupsEl = document.getElementById('al-assign-groups');
   if (!groupsEl) return;
   if (!Object.keys(groups).length) {
-    groupsEl.innerHTML = '<div class="empty-state">✅ لا يوجد عملاء بانتظار الإسناد</div>';
+    groupsEl.innerHTML = '<div class="empty-state">✅ لا يوجد عملاء بانتظار تفعيل المقررات</div>';
     return;
   }
   groupsEl.innerHTML = Object.entries(groups).map(([key, g]) => {
@@ -2823,12 +3120,12 @@ function renderSales() {
 function renderAcademy() {
   const allFiltered = getFilteredClients();
 
-  // بانتظار التفعيل — من الفلتر، بدون تجربة
+  // بانتظار تهيئة العميل — من الفلتر، بدون تجربة
   const pending = allFiltered.filter(c => !c.academyAssigned && !isTrialClient(c));
   const alert = document.getElementById('main-alert');
   if (pending.length) {
     alert.classList.add('show');
-    document.getElementById('alert-txt').textContent = `${pending.length} عميل بانتظار التفعيل`;
+    document.getElementById('alert-txt').textContent = `${pending.length} عميل بانتظار تهيئة العميل`;
   } else { alert.classList.remove('show'); }
 
   // تجميع المعلقين حسب البرنامج + المسار
@@ -3226,7 +3523,7 @@ async function saveFinNotes(ref) {
 
 
 function renderSettings() {
-  const fixed = ['تحليل السلوك التطبيقي','إدارة السلوك التنظيمي','الاقتصاد السلوكي','برامج التعليم المستمر','تقييم كفاءة'];
+  const fixed = ['تحليل السلوك التطبيقي','إدارة السلوك التنظيمي','الاقتصاد السلوكي','برامج التعليم المستمر','حجز مقعد'];
   const allProgs = programs.map((p,i)=>({name:p,i}));
 
   const pl = document.getElementById('prog-list');
@@ -3534,7 +3831,7 @@ async function addClient() {
     installments: installments,
     totalPaid: 0,
     createdAt: new Date().toLocaleString('ar-SA', {timeZone:'Asia/Riyadh'}),
-    log: [{ who: session.username||'المبيعات', action:`تسجيل العميل — ${source}${payType?' — '+payType:''}`, time: new Date().toLocaleString('ar-SA') }]
+    log: [{ who: session.username||'تسليم العميل', action:`تسجيل العميل — ${source}${payType?' — '+payType:''}`, time: new Date().toLocaleString('ar-SA') }]
   };
 
   const res = await api(null, { action:'addClient', ...client });
@@ -3590,7 +3887,7 @@ async function confirmConvertTrial() {
   if (batchNo)  c.batchNo = batchNo;
   if (expiry)   c.expiry  = expiry;
   c.log = c.log || [];
-  c.log.push({ who: session.username||'المبيعات', action: `تحويل من تجربة إلى اشتراك — ${source}`, time: now });
+  c.log.push({ who: session.username||'تسليم العميل', action: `تحويل من تجربة إلى اشتراك — ${source}`, time: now });
 
   persistClient(c); // fire & forget
   closeConvertModal();
@@ -3606,7 +3903,7 @@ async function markUninterested(ref) {
   const session = JSON.parse(sessionStorage.getItem('ops_session') || '{}');
   c.trialStatus = 'uninterested';
   c.log = c.log || [];
-  c.log.push({ who: session.username||'المبيعات', action: 'انتهت التجربة — غير مهتم', time: now });
+  c.log.push({ who: session.username||'تسليم العميل', action: 'انتهت التجربة — غير مهتم', time: now });
   persistClient(c); // fire & forget
   toast('تم تسجيل عدم الاهتمام');
   updateStats(); render();
@@ -3625,7 +3922,7 @@ async function markAdded(ref) {
   const session = JSON.parse(sessionStorage.getItem('ops_session') || '{}');
   clients[idx].academyAdded = true;
   clients[idx].log = clients[idx].log || [];
-  clients[idx].log.push({ who: session.username||'التشغيل', action:'تمت إضافة الحساب في المنصة', time:now });
+  clients[idx].log.push({ who: session.username||'تهيئة العميل', action:'تمت إضافة الحساب في المنصة', time:now });
   localStorage.setItem('ops_clients', JSON.stringify(clients));
   toast('تم تسجيل إضافة الحساب ✓');
   updateStats(); render();
@@ -3655,7 +3952,7 @@ async function markAssigned(ref) {
   clients[idx].academyAssigned = true;
   clients[idx].activatedAt     = new Date().toISOString();
   clients[idx].log = clients[idx].log || [];
-  clients[idx].log.push({ who: session.username||'التشغيل', action:'تم إسناد المقررات — مكتمل', time:now });
+  clients[idx].log.push({ who: session.username||'تهيئة العميل', action:'تم إسناد المقررات — مكتمل', time:now });
 
   localStorage.setItem('ops_clients', JSON.stringify(clients));
   toast('تم الإسناد — العميل مكتمل ✓');
@@ -3674,7 +3971,7 @@ async function markComplete(ref) {
   clients[idx].academyAssigned = true;
   clients[idx].activatedAt = new Date().toISOString();
   clients[idx].log = clients[idx].log || [];
-  clients[idx].log.push({ who: session.username||'التشغيل', action:'اكتمل التفعيل (عصارة)', time:now });
+  clients[idx].log.push({ who: session.username||'تهيئة العميل', action:'اكتمل التفعيل (عصارة)', time:now });
   localStorage.setItem('ops_clients', JSON.stringify(clients));
   toast('اكتمل التفعيل ✓');
   updateStats(); render();
@@ -3797,7 +4094,7 @@ function renderDetail(ref) {
     }
   }
 
-  // ملاحظات التشغيل والمالية
+  // ملاحظات تهيئة العميل والمالية
   const opsNi = document.getElementById('ops-notes-input');
   if (opsNi) opsNi.value = c.opsNotes || '';
   const finNi = document.getElementById('fin-notes-input');
@@ -3818,7 +4115,7 @@ function renderDetail(ref) {
 
   let stagesHTML = `<div class="stage-row s-done">
     <div class="stage-icon si-sales">م</div>
-    <div class="stage-body"><div class="stage-title">المبيعات — تسجيل البيانات</div><div class="stage-sub">تم · ${c.createdAt||''}</div></div>
+    <div class="stage-body"><div class="stage-title">تسليم العميل — تسجيل البيانات</div><div class="stage-sub">تم · ${c.createdAt||''}</div></div>
     <div class="stage-ck ck-yes">✓</div>
   </div>`;
 
@@ -3852,7 +4149,7 @@ function renderDetail(ref) {
     : `<div class="stage-ck ${addDone?'ck-yes':'ck-no'}">${addDone?'✓':'–'}</div>`;
   stagesHTML += `<div class="stage-row ${addCls}">
     <div class="stage-icon si-ops">أ</div>
-    <div class="stage-body"><div class="stage-title">التشغيل — إضافة في المنصة</div><div class="stage-sub">${addDone?'تم':'إضافة حساب العميل في المنصة'}</div></div>
+    <div class="stage-body"><div class="stage-title">تهيئة العميل — إضافة في المنصة</div><div class="stage-sub">${addDone?'تم':'إضافة حساب العميل في المنصة'}</div></div>
     ${addBtn}
   </div>`;
 
@@ -3899,7 +4196,7 @@ function renderDetail(ref) {
 }
 
 // ════════════════════════════════
-// ملاحظات التشغيل
+// ملاحظات تهيئة العميل
 // ════════════════════════════════
 async function saveOpsNotes(ref) {
   const c = clients.find(x => x.ref === ref);
@@ -3908,9 +4205,9 @@ async function saveOpsNotes(ref) {
   c.opsNotes = txt;
   const session = JSON.parse(sessionStorage.getItem('ops_session') || '{}');
   c.log = c.log || [];
-  c.log.push({ who: session.username||'التشغيل', action: 'تحديث ملاحظات التشغيل', time: new Date().toLocaleString('ar-SA') });
+  c.log.push({ who: session.username||'تهيئة العميل', action: 'تحديث ملاحظات تهيئة العميل', time: new Date().toLocaleString('ar-SA') });
   persistClient(c); // fire & forget
-  toast('تم حفظ ملاحظات التشغيل ✓');
+  toast('تم حفظ ملاحظات تهيئة العميل ✓');
 }
 
 // ════════════════════════════════
@@ -4097,7 +4394,7 @@ function renderReports() {
 function fillProgramSelect() {
   const sel = document.getElementById('fp');
   if (!sel) return;
-  const fixed = ['تحليل السلوك التطبيقي','إدارة السلوك التنظيمي','الاقتصاد السلوكي','برامج التعليم المستمر','تقييم كفاءة'];
+  const fixed = ['تحليل السلوك التطبيقي','إدارة السلوك التنظيمي','الاقتصاد السلوكي','برامج التعليم المستمر','حجز مقعد'];
   const extra = (programs||[]).filter(p=>!fixed.some(f=>p.includes(f)));
   sel.innerHTML = '<option value="">اختر البرنامج...</option>' + [...fixed,...extra].map(p=>`<option value="${p}">${p}</option>`).join('');
 }
@@ -4392,16 +4689,16 @@ function showMorningSummary() {
 
   // بناء الإحصائيات
   const stats = [
-    { n: pending,     l: 'بانتظار التفعيل', cls: pending > 0 ? 'amber' : '' },
-    { n: pendingAsgn, l: 'بانتظار الإسناد',  cls: pendingAsgn > 0 ? 'blue' : '' },
+    { n: pending,     l: 'بانتظار تهيئة العميل', cls: pending > 0 ? 'amber' : '' },
+    { n: pendingAsgn, l: 'بانتظار تفعيل المقررات',  cls: pendingAsgn > 0 ? 'blue' : '' },
     { n: lateInst,    l: 'أقساط متأخرة',    cls: lateInst > 0 ? 'red' : '' },
     { n: due27,       l: 'أقساط يوم 27',    cls: due27 > 0 ? 'amber' : 'green' },
   ];
 
   // رسالة ذكية
   const msgs = [];
-  if (pending > 0)     msgs.push(`${pending} عميل بانتظار التفعيل`);
-  if (pendingAsgn > 0) msgs.push(`${pendingAsgn} بانتظار الإسناد`);
+  if (pending > 0)     msgs.push(`${pending} عميل بانتظار تهيئة العميل`);
+  if (pendingAsgn > 0) msgs.push(`${pendingAsgn} بانتظار تفعيل المقررات`);
   if (lateInst > 0)    msgs.push(`⚠️ ${lateInst} قسط متأخر يحتاج متابعة`);
   if (due27 > 0)       msgs.push(`📅 ${due27} قسط مستحق يوم 27 من الشهر`);
   const msgTxt = msgs.length
