@@ -3247,32 +3247,49 @@ function renderAcademy() {
 }
 
 function renderCompleted() {
-  let done = getFilteredClients().filter(c => isTrue(c.academyAssigned));
+  // نقرأ من clients مباشرة — المكتملون كلهم بغض النظر عن الفلاتر
+  const q = (document.getElementById('search-input')?.value ||
+             document.getElementById('search-input-quick')?.value || '').toLowerCase();
+
+  let done = clients.filter(c => isTrue(c.academyAssigned));
+
+  // فلتر البحث فقط
+  if (q) {
+    done = done.filter(c =>
+      (c.name||'').toLowerCase().includes(q) ||
+      (c.ref||'').toLowerCase().includes(q)  ||
+      (c.program||'').toLowerCase().includes(q) ||
+      (c.phone||'').includes(q)
+    );
+  }
 
   // فرز حسب تاريخ الإكمال — الأحدث أولاً
-  done.sort((a,b) => (new Date(b.activatedAt||b.createdAt||0)) - (new Date(a.activatedAt||a.createdAt||0)));
+  done.sort((a,b) => {
+    const da = new Date(a.activatedAt||a.createdAt||0);
+    const db = new Date(b.activatedAt||b.createdAt||0);
+    return db - da;
+  });
 
   // إحصائيات
   const todayStr = new Date().toDateString();
   const monthNow = new Date();
-  const todayCount = done.filter(c => {
+  const allDone  = clients.filter(c => isTrue(c.academyAssigned));
+
+  const todayCount = allDone.filter(c => {
     try { return new Date(c.activatedAt||c.createdAt).toDateString() === todayStr; } catch { return false; }
   }).length;
-  const monthCount = done.filter(c => {
+  const monthCount = allDone.filter(c => {
     try {
       const d = new Date(c.activatedAt||c.createdAt);
       return d.getMonth() === monthNow.getMonth() && d.getFullYear() === monthNow.getFullYear();
     } catch { return false; }
   }).length;
 
-  const compTotal = document.getElementById('comp-total');
-  const compToday = document.getElementById('comp-today');
-  const compMonth = document.getElementById('comp-month');
-  const compBadge = document.getElementById('comp-count-badge');
-  if (compTotal) compTotal.textContent = done.length;
-  if (compToday) compToday.textContent = todayCount;
-  if (compMonth) compMonth.textContent = monthCount;
-  if (compBadge) compBadge.textContent = done.length;
+  const set = (id, v) => { const el = document.getElementById(id); if(el) el.textContent = v; };
+  set('comp-total', allDone.length);
+  set('comp-today', todayCount);
+  set('comp-month', monthCount);
+  set('comp-count-badge', done.length);
 
   // مجموعات حسب البرنامج
   const groups = {};
