@@ -370,6 +370,14 @@ nav.nav-menu {
   margin-top: 4px;
 }
 .clear-filters-btn:hover { background: var(--red-lt); color: var(--red); border-color: #fca5a5; }
+.apply-filters-btn {
+  width: 100%; padding: 9px; border-radius: 8px;
+  border: 1px solid var(--blue);
+  background: var(--blue); color: #fff;
+  font-size: 12px; font-weight: 700; transition: all .12s;
+  margin-top: 10px;
+}
+.apply-filters-btn:hover { background: var(--blue-dk); border-color: var(--blue-dk); }
 
 /* ── شريط رأس الصفحة ── */
 .page-header {
@@ -1325,12 +1333,12 @@ nav.nav-menu {
       </div>
 
       <div class="fs-title">المصدر</div>
-      <select class="filter-select" id="filter-source" onchange="renderFiltered();updateFilterDot()">
+      <select class="filter-select" id="filter-source" onchange="applyFilters(false)">
         <option value="">كل المصادر</option>
       </select>
 
       <div class="fs-title">الحالة</div>
-      <select class="filter-select" id="filter-status" onchange="renderFiltered();updateFilterDot()">
+      <select class="filter-select" id="filter-status" onchange="applyFilters(false)">
         <option value="">الكل</option>
         <option value="pending">بانتظار تهيئة العميل</option>
         <option value="done">مكتملون</option>
@@ -1338,22 +1346,31 @@ nav.nav-menu {
         <option value="uninterested">غير مهتمين</option>
       </select>
 
+      <div class="fs-title">الدفعة</div>
+      <select class="filter-select" id="filter-batch" onchange="applyFilters(false)">
+        <option value="">كل الدفعات</option>
+      </select>
+
       <!-- فلتر مالية — يظهر فقط في صفحة المالية -->
       <div id="finance-status-filter-wrap" style="display:none">
         <div class="fs-title">حالة السداد</div>
-        <select class="filter-select" id="filter-pay-status" onchange="renderFinanceFiltered();updateFilterDot()">
+        <select class="filter-select" id="filter-pay-status" onchange="applyFilters(false)">
           <option value="">الكل</option>
-          <option value="ملتزم">ملتزم ✓</option>
-          <option value="متأخر">متأخر ⚠️</option>
-          <option value="متعثر">متعثر 🔴</option>
-          <option value="كامل">دفع كامل</option>
-          <option value="أقساط">أقساط</option>
+          <option value="paid">تم السداد</option>
+          <option value="remind1">تذكير أولي</option>
+          <option value="remind2">تذكير ثاني</option>
+          <option value="remind3">تذكير ثالث</option>
+          <option value="remindf">تذكير نهائي</option>
+          <option value="unpaid">لم يتم السداد</option>
+          <option value="extend">تمديد</option>
+          <option value="policy">تطبيق السياسة</option>
+          <option value="upcoming">قادمة</option>
           <option value="no-data">لم تُضف بيانات مالية</option>
         </select>
       </div>
 
       <div class="fs-title">الفترة</div>
-      <select class="filter-select" id="filter-date" onchange="renderFiltered();updateFilterDot()">
+      <select class="filter-select" id="filter-date" onchange="applyFilters(false)">
         <option value="">كل الأوقات</option>
         <option value="today">اليوم</option>
         <option value="week">هذا الأسبوع</option>
@@ -1361,12 +1378,12 @@ nav.nav-menu {
       </select>
 
       <div class="fs-title">الليبل</div>
-      <select class="filter-select" id="filter-label" onchange="renderFiltered();updateFilterDot()">
+      <select class="filter-select" id="filter-label" onchange="applyFilters(false)">
         <option value="">كل الليبلات</option>
       </select>
 
       <div class="fs-title">كيف عرف عنا؟</div>
-      <select class="filter-select" id="filter-acquisition" onchange="renderFiltered();updateFilterDot()">
+      <select class="filter-select" id="filter-acquisition" onchange="applyFilters(false)">
         <option value="">الكل</option>
         <option value="لينكدإن">لينكدإن</option>
         <option value="انستقرام">انستقرام</option>
@@ -1376,6 +1393,7 @@ nav.nav-menu {
         <option value="غير ذلك">غير ذلك</option>
       </select>
 
+      <button class="apply-filters-btn" onclick="applyFilters(true)">عرض النتائج</button>
       <button class="clear-filters-btn" onclick="clearFilters()">مسح الفلاتر ✕</button>
     </aside>
 
@@ -2358,9 +2376,17 @@ nav.nav-menu {
       async getNotifications() {
         const snap = await db.ref('notifications').get();
         if (!snap.exists()) return [];
-        return Object.values(snap.val()).sort((a,b) => b.id - a.id).slice(0,50);
+        return Object.entries(snap.val())
+          .map(([key, value]) => ({ ...value, _key:key }))
+          .sort((a,b) => b.id - a.id)
+          .slice(0,50);
       },
       async addNotification(n) { await db.ref('notifications').push(n); },
+      async markNotificationsRead(list) {
+        const updates = {};
+        (list || []).forEach(n => { if (n._key) updates[`notifications/${n._key}/read`] = true; });
+        if (Object.keys(updates).length) await db.ref().update(updates);
+      },
       async clearNotifications() { await db.ref('notifications').remove(); },
       watchNotifications(cb) { db.ref('notifications').on('value', cb); }
     };
@@ -2457,6 +2483,36 @@ let filterType  = '';
 // ════════════════════════════════
 // مساعد عالمي — تحويل أي قيمة لـ boolean
 const isTrue = v => v === true || v === 'true' || v === 'TRUE' || v === 1 || v === '1';
+const escapeHTML = value => String(value ?? '').replace(/[&<>"']/g, ch => ({
+  '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+}[ch]));
+const textOrDash = value => {
+  const text = String(value ?? '').trim();
+  return text ? escapeHTML(text) : '&mdash;';
+};
+
+function migrateLegacyABATDirectClient(c) {
+  if (!c) return false;
+  const program = String(c.program || '').replace(/\s+/g, ' ').trim();
+  const isLegacyDirect =
+    program.includes('أخصائي تحليل سلوك') ||
+    program.includes('أخصائي تحليل السلوك');
+  if (!isLegacyDirect || !program.includes('مباشر')) return false;
+
+  let changed = false;
+  const setIfNeeded = (key, value) => {
+    if (c[key] !== value) {
+      c[key] = value;
+      changed = true;
+    }
+  };
+
+  setIfNeeded('program', 'تحليل السلوك التطبيقي');
+  setIfNeeded('track', 'ABAT');
+  setIfNeeded('programType', 'مباشر');
+  setIfNeeded('lang', 'عربي');
+  return changed;
+}
 
 // مساعد: تنظيف بيانات العميل
 function normalizeClient(c) {
@@ -2467,6 +2523,7 @@ function normalizeClient(c) {
     try { c.installments = c.installments ? JSON.parse(c.installments) : []; }
     catch { c.installments = []; }
   }
+  migrateLegacyABATDirectClient(c);
   return c;
 }
 
@@ -2476,8 +2533,9 @@ const ini = n => {
   return p.length >= 2 ? p[0][0] + p[p.length-1][0] : n.slice(0,2);
 };
 const needsAssign = src => {
-  if (src === 'عصارة') return false;
-  const s = sources.find(x => x.name === src);
+  const cleanSrc = String(src || '').trim();
+  if (cleanSrc === 'عصارة') return false;
+  const s = sources.find(x => x.name === cleanSrc);
   return s ? s.assign : true;
 };
 const isTrialClient = c => c?.clientType === 'تجربة' && c?.trialStatus !== 'converted';
@@ -2563,13 +2621,17 @@ async function syncData() {
   if (cr.error === 'offline' || cr.error) {
     // offline — نقرأ من localStorage
     const saved = localStorage.getItem('ops_clients');
-    if (saved) clients = JSON.parse(saved).map(normalizeClient);
+    if (saved) {
+      clients = JSON.parse(saved).map(normalizeClient);
+      localStorage.setItem('ops_clients', JSON.stringify(clients));
+    }
     const savedP = localStorage.getItem('ops_programs');
     if (savedP) programs = JSON.parse(savedP);
     if (!programs.length) programs = ['تحليل السلوك التطبيقي','إدارة السلوك التنظيمي','الاقتصاد السلوكي','برامج التعليم المستمر'];
     toast('وضع غير متصل — يعمل من الذاكرة المحلية', false);
   } else if (cr.clients && Array.isArray(cr.clients)) {
     // نظّف كل عميل من الشيت
+    const migratedLegacyClients = [];
     clients = cr.clients
       .filter(sc => sc && sc.ref && sc.name && String(sc.ref).trim() && String(sc.name).trim())
       .map(sc => {
@@ -2595,10 +2657,17 @@ async function syncData() {
         }
         if (!Array.isArray(c.log)) c.log = [];
         if (!c.trialStatus) c.trialStatus = '';
+        if (migrateLegacyABATDirectClient(c)) migratedLegacyClients.push(c);
         return c;
       });
 
     localStorage.setItem('ops_clients', JSON.stringify(clients));
+    if (migratedLegacyClients.length) {
+      setTimeout(() => {
+        migratedLegacyClients.forEach(c => persistClient(c));
+        toast(`تم تصحيح ${migratedLegacyClients.length} عميل من برنامج أخصائي تحليل السلوك`);
+      }, 300);
+    }
   }
 
   if (pr.programs && Array.isArray(pr.programs)) {
@@ -2762,6 +2831,25 @@ function renderFinanceFiltered() {
   renderFinance();
 }
 
+function applyFilters(closeAfter=false) {
+  renderFiltered();
+  updateFilterDot();
+  if (closeAfter) toast(`تم عرض ${getFilteredResultCount()} نتيجة`);
+  if (closeAfter && filtersOpen) toggleFilters();
+}
+
+function getFilteredResultCount() {
+  if (currentView === 'finance') {
+    const active = document.getElementById('fin-count-active')?.textContent || '0';
+    const done = document.getElementById('fin-count-done')?.textContent || '0';
+    return (parseInt(active, 10) || 0) + (parseInt(done, 10) || 0);
+  }
+  if (currentView === 'completed') return getFilteredClients().filter(c => isTrue(c.academyAssigned)).length;
+  if (currentView === 'assign') return getFilteredClients().filter(c => isTrue(c.academyAdded) && !isTrue(c.academyAssigned) && needsAssign(c.source) && !isTrialClient(c)).length;
+  if (currentView === 'academy') return getFilteredClients().filter(c => !isTrue(c.academyAdded) && !isTrialClient(c)).length;
+  return getFilteredClients().length;
+}
+
 
 function applyKpiProg(prog, track) {
   filterProg  = prog;
@@ -2800,8 +2888,10 @@ function updateFilterDot() {
   const active = filterProg || filterTrack || filterType ||
     document.getElementById('filter-source')?.value ||
     document.getElementById('filter-status')?.value ||
+    document.getElementById('filter-batch')?.value ||
     document.getElementById('filter-label')?.value ||
     document.getElementById('filter-date')?.value ||
+    document.getElementById('filter-pay-status')?.value ||
     document.getElementById('filter-acquisition')?.value;
   dot.classList.toggle('show', !!active);
 }
@@ -2920,7 +3010,7 @@ function clearFilters() {
   activeKpi = null;
   document.querySelectorAll('.kpi-card').forEach(k => k.classList.remove('active'));
   ['search-input','search-input-quick','search-input-quick-assign','search-input-quick-fin',
-   'filter-source','filter-status','filter-pay-status','filter-label','filter-date','filter-acquisition']
+   'filter-source','filter-status','filter-batch','filter-pay-status','filter-label','filter-date','filter-acquisition']
     .forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; });
   buildFilterSidebar();
   renderFiltered();
@@ -2945,6 +3035,7 @@ function getFilteredClients() {
   const q = qMain || qQuick.toLowerCase();
   const src         = document.getElementById('filter-source')?.value      || '';
   const status      = document.getElementById('filter-status')?.value      || '';
+  const batchF      = document.getElementById('filter-batch')?.value       || '';
   const labelId     = document.getElementById('filter-label')?.value       || '';
   const dateF       = document.getElementById('filter-date')?.value        || '';
   const acquisition = document.getElementById('filter-acquisition')?.value || '';
@@ -2967,6 +3058,10 @@ function getFilteredClients() {
 
     // فلتر المصدر
     const matchSrc = !src || c.source === src;
+
+    // فلتر الدفعة
+    const batchNo = String(c.batchNo || '').trim();
+    const matchBatch = !batchF || (batchF === '__none' ? !batchNo : batchNo === batchF);
 
     // فلتر الحالة
     let matchStatus = true;
@@ -3018,7 +3113,7 @@ function getFilteredClients() {
       }
     }
 
-    return matchQ && matchProg && matchTrack && matchType && matchSrc && matchStatus && matchLabel && matchAcquisition && matchDate && matchKpi;
+    return matchQ && matchProg && matchTrack && matchType && matchSrc && matchBatch && matchStatus && matchLabel && matchAcquisition && matchDate && matchKpi;
   });
 }
 
@@ -3310,13 +3405,13 @@ function renderAssign() {
   const countEl = document.getElementById('asgn-pend-total');
   if (countEl) countEl.textContent = pending.length;
 
-  // تجميع حسب رقم الدفعة أولاً ثم البرنامج
+  // تجميع حسب البرنامج، ومع الدفعة فقط عندما تكون موجودة
   const groups = {};
   sortByBatch(pending).forEach(c => {
-    const batch = c.batchNo ? `دفعة ${c.batchNo}` : 'بدون دفعة';
+    const batch = String(c.batchNo || '').trim();
     const prog  = (c.program||'عام').split('—')[0].trim();
-    const key   = `${batch} — ${prog}${c.track?' — '+c.track:''}`;
-    if (!groups[key]) groups[key] = { prog: c.program||'', track: c.track||'', batch: c.batchNo||'', clients: [] };
+    const key   = `${batch ? `دفعة ${batch} — ` : ''}${prog}${c.track?' — '+c.track:''}`;
+    if (!groups[key]) groups[key] = { prog: c.program||'', track: c.track||'', batch, clients: [] };
     groups[key].clients.push(c);
   });
 
@@ -3379,7 +3474,7 @@ function renderAcademy() {
   const allFiltered = getFilteredClients();
 
   // بانتظار تهيئة العميل — من الفلتر، بدون تجربة
-  const pending = allFiltered.filter(c => !isTrue(c.academyAssigned) && !isTrialClient(c));
+  const pending = allFiltered.filter(c => !isTrue(c.academyAdded) && !isTrialClient(c));
   const alert = document.getElementById('main-alert');
   if (pending.length) {
     alert.classList.add('show');
@@ -3432,11 +3527,11 @@ function renderAcademy() {
 }
 
 function renderCompleted() {
-  // نقرأ من clients مباشرة — المكتملون كلهم بغض النظر عن الفلاتر
+  // نقرأ من القائمة المفلترة حتى تطبق فلاتر البرنامج والدفعة والمصدر والحالة
   const q = (document.getElementById('search-input')?.value ||
              document.getElementById('search-input-quick')?.value || '').toLowerCase();
 
-  let done = clients.filter(c => isTrue(c.academyAssigned));
+  let done = getFilteredClients().filter(c => isTrue(c.academyAssigned));
 
   // فلتر البحث فقط
   if (q) {
@@ -3458,7 +3553,7 @@ function renderCompleted() {
   // إحصائيات
   const todayStr = new Date().toDateString();
   const monthNow = new Date();
-  const allDone  = clients.filter(c => isTrue(c.academyAssigned));
+  const allDone  = getFilteredClients().filter(c => isTrue(c.academyAssigned));
 
   const todayCount = allDone.filter(c => {
     try { return new Date(c.activatedAt||c.createdAt).toDateString() === todayStr; } catch { return false; }
@@ -3476,12 +3571,12 @@ function renderCompleted() {
   set('comp-month', monthCount);
   set('comp-count-badge', done.length);
 
-  // مجموعات حسب رقم الدفعة ثم البرنامج
+  // مجموعات حسب البرنامج، ومع الدفعة فقط عندما تكون موجودة
   const groups = {};
   sortByBatch(done).forEach(c => {
-    const batch = c.batchNo ? `دفعة ${c.batchNo}` : 'بدون دفعة';
+    const batch = String(c.batchNo || '').trim();
     const prog  = (c.program||'عام').split('—')[0].trim();
-    const key   = `${batch} — ${prog}`;
+    const key   = `${batch ? `دفعة ${batch} — ` : ''}${prog}`;
     if (!groups[key]) groups[key] = { prog: c.program||'', clients: [] };
     groups[key].clients.push(c);
   });
@@ -3513,7 +3608,7 @@ function renderCompleted() {
 // ════════════════════════════════
 const INST_STATUSES = [
   { val:'upcoming',   label:'قادم',             cls:'is-upcoming' },
-  { val:'remind1',    label:'تذكير أول',         cls:'is-remind1'  },
+  { val:'remind1',    label:'تذكير أولي',        cls:'is-remind1'  },
   { val:'remind2',    label:'تذكير ثاني',        cls:'is-remind2'  },
   { val:'remind3',    label:'تذكير ثالث',        cls:'is-remind3'  },
   { val:'remindf',    label:'تذكير نهائي',       cls:'is-warning'  },
@@ -3556,6 +3651,31 @@ function switchFinTab(tab) {
   document.getElementById('fl-done').style.display   = tab==='done'   ? 'block' : 'none';
 }
 
+function getFinanceFilteredClients() {
+  const q = (document.getElementById('search-input')?.value ||
+             document.getElementById('search-input-quick-fin')?.value || '').toLowerCase();
+  const payStatusFilter = document.getElementById('filter-pay-status')?.value || '';
+  const installmentStatusFilters = ['remind1','remind2','remind3','remindf','policy','unpaid','extend','upcoming'];
+
+  return getFilteredClients().filter(c => {
+    if (q) {
+      const hay = [c.name,c.ref,c.phone,c.program,c.track].join(' ').toLowerCase();
+      if (!hay.includes(q)) return false;
+    }
+    if (!payStatusFilter) return true;
+    if (payStatusFilter === 'no-data') return !c.payType;
+    if (payStatusFilter === 'paid') {
+      if (c.payType === 'كامل') return true;
+      const insts = c.installments || [];
+      return insts.length > 0 && insts.every(i => i.status === 'paid');
+    }
+    if (installmentStatusFilters.includes(payStatusFilter)) {
+      return (c.installments || []).some(i => i.status === payStatusFilter);
+    }
+    return true;
+  });
+}
+
 function renderFinance() {
   const today = new Date();
   const day   = today.getDate();
@@ -3576,30 +3696,7 @@ function renderFinance() {
     }
   }
 
-  const q = (document.getElementById('search-input')?.value ||
-             document.getElementById('search-input-quick-fin')?.value || '').toLowerCase();
-
-  const payStatusFilter = document.getElementById('filter-pay-status')?.value || '';
-
-  const withFin = clients.filter(c => {
-    // فلتر البرنامج
-    if (filterProg && !(c.program||'').includes(filterProg.split(' ')[0])) return false;
-    if (filterTrack && c.track !== filterTrack) return false;
-    // فلتر البحث
-    if (q) {
-      const hay = [c.name,c.ref,c.phone,c.program,c.track].join(' ').toLowerCase();
-      if (!hay.includes(q)) return false;
-    }
-    // فلتر حالة السداد
-    if (payStatusFilter) {
-      if (payStatusFilter === 'no-data') return !c.payType;
-      if (payStatusFilter === 'ملتزم' || payStatusFilter === 'متأخر' || payStatusFilter === 'متعثر')
-        return (c.paymentStatus || 'ملتزم') === payStatusFilter;
-      if (payStatusFilter === 'كامل' || payStatusFilter === 'أقساط')
-        return c.payType === payStatusFilter;
-    }
-    return true;
-  });
+  const withFin = getFinanceFilteredClients();
 
   // أقساط نشطة — من عنده payType أقساط ولم يكتمل، أو لم تُضف بيانات بعد
   const active = withFin.filter(c => {
@@ -4632,6 +4729,14 @@ function onTrackChange() {
   }
 }
 
+function onProgramTypeChange() {
+  const type = document.getElementById('fptype')?.value || '';
+  const wrap = document.getElementById('fstartdate-wrap');
+  const input = document.getElementById('fstartdate');
+  if (wrap) wrap.style.display = type ? 'block' : 'none';
+  if (!type && input) input.value = '';
+}
+
 function onAcquisitionChange() {
   const val  = document.getElementById('facquisition').value;
   const wrap = document.getElementById('facquisition-other-wrap');
@@ -4928,20 +5033,20 @@ function renderDetail(ref) {
   })() : 'غير محدد';
 
   document.getElementById('d-fields').innerHTML = `
-    <div class="dp-field"><label>البرنامج</label><span>${c.program||'—'}</span></div>
-    <div class="dp-field"><label>المسار</label><span>${c.track||'—'}</span></div>
-    <div class="dp-field"><label>نوع البرنامج</label><span>${c.programType||'—'}</span></div>
-    <div class="dp-field"><label>اللغة</label><span>${c.lang||'—'}</span></div>
+    <div class="dp-field"><label>البرنامج</label><span>${textOrDash(c.program)}</span></div>
+    <div class="dp-field"><label>المسار</label><span>${textOrDash(c.track)}</span></div>
+    <div class="dp-field"><label>نوع البرنامج</label><span>${textOrDash(c.programType)}</span></div>
+    <div class="dp-field"><label>اللغة</label><span>${textOrDash(c.lang)}</span></div>
     <div class="dp-field"><label>نوع العميل</label><span>${c.clientType==='مسجل'?'مشترك':c.clientType||'—'}</span></div>
-    <div class="dp-field"><label>رقم الجوال</label><span dir="ltr">${c.phone||'—'}</span></div>
-    <div class="dp-field"><label>رقم الدفعة</label><span>${c.batchNo||'—'}</span></div>
+    <div class="dp-field"><label>رقم الجوال</label><span dir="ltr">${textOrDash(c.phone)}</span></div>
+    <div class="dp-field"><label>رقم الدفعة</label><span>${textOrDash(c.batchNo)}</span></div>
     <div class="dp-field"><label>المصدر</label><span>${srcPill(c.source||'')}</span></div>
-    <div class="dp-field"><label>تاريخ التسجيل</label><span>${c.createdAt||'—'}</span></div>
-    <div class="dp-field"><label>أضافه</label><span style="color:var(--blue);font-weight:600">${c.addedBy||'—'}</span></div>
+    <div class="dp-field"><label>تاريخ التسجيل</label><span>${textOrDash(c.createdAt)}</span></div>
+    <div class="dp-field"><label>أضافه</label><span style="color:var(--blue);font-weight:600">${textOrDash(c.addedBy)}</span></div>
     <div class="dp-field"><label>انتهاء الاشتراك</label><span>${expiryText}</span></div>
     <div class="dp-field"><label>إسناد يدوي</label><span>${needsAssign(c.source)?'<span style="color:var(--red)">نعم</span>':'<span style="color:var(--green)">لا — تلقائي</span>'}</span></div>
-    ${c.efficiencyCheck ? `<div class="dp-field"><label>شامل تقييم الكفاءة</label><span style="color:${c.efficiencyCheck==='نعم'?'var(--green)':'var(--red)'};font-weight:600">${c.efficiencyCheck}</span></div>` : ''}
-    ${c.acquisitionChannel ? `<div class="dp-field"><label>كيف عرف عنا؟</label><span>${c.acquisitionChannel}</span></div>` : ''}
+    ${c.efficiencyCheck ? `<div class="dp-field"><label>شامل تقييم الكفاءة</label><span style="color:${c.efficiencyCheck==='نعم'?'var(--green)':'var(--red)'};font-weight:600">${escapeHTML(c.efficiencyCheck)}</span></div>` : ''}
+    ${c.acquisitionChannel ? `<div class="dp-field"><label>كيف عرف عنا؟</label><span>${escapeHTML(c.acquisitionChannel)}</span></div>` : ''}
     ${c.startDate ? (() => {
       const sd = new Date(c.startDate + 'T00:00:00');
       const now = new Date(); now.setHours(0,0,0,0);
@@ -4950,7 +5055,7 @@ function renderDetail(ref) {
       const label = diff < 0 ? `فات الموعد منذ ${Math.abs(diff)} يوم` : diff === 0 ? 'اليوم!' : `خلال ${diff} يوم`;
       return `<div class="dp-field"><label>موعد بدء البرنامج</label><span style="color:${color};font-weight:700">${c.startDate} <span style="font-size:11px">(${label})</span></span></div>`;
     })() : ''}
-    ${c.notes ? `<div class="dp-field" style="grid-column:1/-1"><label>ملاحظات المبيعات</label><span>${c.notes}</span></div>` : ''}
+    ${c.notes ? `<div class="dp-field" style="grid-column:1/-1"><label>ملاحظات المبيعات</label><span>${escapeHTML(c.notes)}</span></div>` : ''}
   `;
 
   // قسم المالية داخل البانل
@@ -5012,7 +5117,7 @@ function renderDetail(ref) {
 
   let stagesHTML = `<div class="stage-row s-done">
     <div class="stage-icon si-sales">م</div>
-    <div class="stage-body"><div class="stage-title">تسليم العميل — تسجيل البيانات</div><div class="stage-sub">تم · ${c.createdAt||''}</div></div>
+    <div class="stage-body"><div class="stage-title">تسليم العميل — تسجيل البيانات</div><div class="stage-sub">تم · ${textOrDash(c.createdAt)}</div></div>
     <div class="stage-ck ck-yes">✓</div>
   </div>`;
 
@@ -5400,10 +5505,23 @@ function fillSourceSelect() {
 }
 function fillFilterSelects() {
   const sel = document.getElementById('filter-source');
-  if (!sel) return;
-  const cur = sel.value;
-  sel.innerHTML = '<option value="">كل المصادر</option>' + sources.map(s=>`<option value="${s.name}">${s.name}</option>`).join('');
-  if (cur) sel.value = cur;
+  if (sel) {
+    const cur = sel.value;
+    sel.innerHTML = '<option value="">كل المصادر</option>' + sources.map(s=>`<option value="${s.name}">${s.name}</option>`).join('');
+    if (cur) sel.value = cur;
+  }
+
+  const batchSel = document.getElementById('filter-batch');
+  if (batchSel) {
+    const curBatch = batchSel.value;
+    const batches = [...new Set(clients.map(c => String(c.batchNo || '').trim()).filter(Boolean))]
+      .sort((a,b) => a.localeCompare(b, 'en', { numeric:true }));
+    const noBatchCount = clients.filter(c => !String(c.batchNo || '').trim()).length;
+    batchSel.innerHTML = '<option value="">كل الدفعات</option>' +
+      (noBatchCount ? `<option value="__none">بدون دفعة (${noBatchCount})</option>` : '') +
+      batches.map(b => `<option value="${escapeHTML(b)}">${escapeHTML(b)}</option>`).join('');
+    if (curBatch) batchSel.value = curBatch;
+  }
 }
 async function addProgram() {
   const inp = document.getElementById('new-prog');
@@ -5648,8 +5766,10 @@ async function toggleNotifications() {
   panel.style.display = open?'none':'block';
   if (!open) {
     if (window.FB) _notifCache = await window.FB.getNotifications();
+    const unread = _notifCache.filter(n=>!n.read);
     _notifCache = _notifCache.map(n=>({...n,read:true}));
     renderNotifList(); renderNotifDot();
+    if (window.FB && unread.length) await window.FB.markNotificationsRead(unread);
   }
 }
 function renderNotifList() {
@@ -5658,8 +5778,8 @@ function renderNotifList() {
   if (!_notifCache.length) { el.innerHTML='<div style="padding:20px;text-align:center;color:var(--text-3);font-size:13px">لا توجد إشعارات</div>'; return; }
   const icons = { new_client:'🆕', academy:'🎓', info:'ℹ️', warning:'⚠️' };
   el.innerHTML = _notifCache.map(n=>`<div onclick="${n.clientRef?`closeNotifPanel();openDetail('${n.clientRef}')`:''}" style="padding:10px 14px;border-bottom:1px solid var(--border);cursor:${n.clientRef?'pointer':'default'};background:${n.read?'transparent':'var(--blue-lt)'}">
-    <div style="font-size:12px;font-weight:600">${icons[n.type]||'🔔'} ${n.msg}</div>
-    <div style="font-size:10px;color:var(--text-3);margin-top:2px">${n.time}</div>
+    <div style="font-size:12px;font-weight:600">${icons[n.type]||'🔔'} ${escapeHTML(n.msg)}</div>
+    <div style="font-size:10px;color:var(--text-3);margin-top:2px">${escapeHTML(n.time)}</div>
   </div>`).join('');
 }
 function closeNotifPanel() { const p=document.getElementById('notif-panel'); if(p)p.style.display='none'; }
@@ -5676,13 +5796,30 @@ document.addEventListener('click', e => {
 // تصدير CSV
 // ════════════════════════════════
 function exportCSV() {
-  const filtered = getFilteredClients();
+  const filtered = getExportClients();
   if (!filtered.length) { toast('لا توجد بيانات للتصدير', false); return; }
   const headers = ['رقم المرجع','الاسم','البريد','الجوال','الدفعة','البرنامج','المسار','النوع','اللغة','نوع العميل','المصدر','كيف عرف عنا؟','شامل الكفاءة','الحالة','التسجيل','أضافه','ملاحظات'];
   const rows = filtered.map(c=>[c.ref,c.name,c.email||'',c.phone||'',c.batchNo||'',c.program,c.track||'',c.programType||'',c.lang||'',c.clientType||'',c.source,c.acquisitionChannel||'',c.efficiencyCheck||'',isTrue(c.academyAssigned)?'مكتمل':'قيد التفعيل',c.createdAt||'',c.addedBy||'',(c.notes||'').replace(/,/g,'؛')]);
   const csv=[headers,...rows].map(r=>r.map(v=>`"${String(v).replace(/"/g,'""')}"`).join(',')).join('\n');
   const a=document.createElement('a'); a.href=URL.createObjectURL(new Blob(['\uFEFF'+csv],{type:'text/csv;charset=utf-8;'}));
   a.download=`سلوكيرا-${new Date().toLocaleDateString('ar-SA').replace(/\//g,'-')}.csv`; a.click(); toast(`تصدير ${filtered.length} عميل ✓`);
+}
+
+function getExportClients() {
+  const filtered = getFilteredClients();
+  if (currentView === 'academy') {
+    return filtered.filter(c => !isTrue(c.academyAdded) && !isTrialClient(c));
+  }
+  if (currentView === 'assign') {
+    return filtered.filter(c => isTrue(c.academyAdded) && !isTrue(c.academyAssigned) && needsAssign(c.source) && !isTrialClient(c));
+  }
+  if (currentView === 'completed') {
+    return filtered.filter(c => isTrue(c.academyAssigned));
+  }
+  if (currentView === 'finance') {
+    return getFinanceFilteredClients();
+  }
+  return filtered;
 }
 
 // ════════════════════════════════
