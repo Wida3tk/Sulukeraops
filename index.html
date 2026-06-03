@@ -3552,7 +3552,21 @@ function renderFinance() {
     }
   }
 
-  const withFin = clients.filter(c => c.payType);
+  const q = (document.getElementById('search-input')?.value ||
+             document.getElementById('search-input-quick-fin')?.value || '').toLowerCase();
+
+  const withFin = clients.filter(c => {
+    if (!c.payType) return false;
+    // فلتر البرنامج
+    if (filterProg && !(c.program||'').includes(filterProg.split(' ')[0])) return false;
+    if (filterTrack && c.track !== filterTrack) return false;
+    // فلتر البحث
+    if (q) {
+      const hay = [c.name,c.ref,c.phone,c.program,c.track].join(' ').toLowerCase();
+      if (!hay.includes(q)) return false;
+    }
+    return true;
+  });
 
   // أقساط نشطة — من عنده أقساط ولم يكتمل
   const active = withFin.filter(c => {
@@ -3726,7 +3740,8 @@ function finCardHTML(c) {
         <div class="inst-actions">
           ${inst.status==='paid'
             ? `<span style="font-size:10px;color:var(--text-3);white-space:nowrap">${inst.paidRef||''}</span>`
-            : `<button class="btn btn-sm btn-success" style="padding:3px 8px;font-size:10px;white-space:nowrap" onclick="openPayRef('${c.ref}',${idx})">سُدد</button>`}
+            : `<button class="btn btn-sm btn-success" style="padding:3px 8px;font-size:10px;white-space:nowrap" onclick="openPayRef('${c.ref}',${idx})">تم ✓</button>
+               <button class="btn btn-sm" style="padding:3px 7px;font-size:10px;background:var(--red-lt);color:var(--red);border-color:#fca5a5;white-space:nowrap" onclick="markUnpaid('${c.ref}',${idx})">لم يتم</button>`}
           <button class="btn btn-sm" style="padding:3px 7px;font-size:10px" onclick="openWhatsAppFinance('${c.ref}',${idx})">📱</button>
           <button class="btn btn-sm" style="padding:3px 7px;font-size:10px;color:var(--red)" onclick="removeInstallment('${c.ref}',${idx})">✕</button>
         </div>
@@ -3848,6 +3863,18 @@ async function removeInstallment(ref, idx) {
   renderFinance();
 }
 
+
+async function markUnpaid(ref, idx) {
+  const c = clients.find(x => x.ref === ref);
+  if (!c || !c.installments?.[idx]) return;
+  const session = JSON.parse(sessionStorage.getItem('ops_session') || '{}');
+  c.installments[idx].status = 'unpaid';
+  c.log = c.log || [];
+  c.log.push({ who: session.username||'المالية', action:`القسط ${idx+1}: لم يتم السداد`, time: new Date().toLocaleString('en-GB') });
+  persistClient(c);
+  toast('تم تسجيل: لم يتم السداد');
+  renderFinance();
+}
 
 async function updatePaymentStatus(ref, val) {
   const c = clients.find(x => x.ref === ref);
