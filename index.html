@@ -3558,7 +3558,9 @@ function renderFinance() {
              document.getElementById('search-input-quick-fin')?.value || '').toLowerCase();
 
   const withFin = clients.filter(c => {
-    if (!c.payType) return false;
+    // عميل مالي = عنده payType أو سعر أو أقساط
+    const hasFin = c.payType || c.price || (c.installments||[]).length > 0;
+    if (!hasFin) return false;
     // فلتر البرنامج
     if (filterProg && !(c.program||'').includes(filterProg.split(' ')[0])) return false;
     if (filterTrack && c.track !== filterTrack) return false;
@@ -3629,9 +3631,21 @@ function renderFinance() {
   const renderList = (id, list) => {
     const el = document.getElementById(id);
     if (!el) return;
+    // احفظ البطاقات المفتوحة
+    const openRefs = new Set(
+      [...el.querySelectorAll('.fin-card-body')].filter(b => b.style.display !== 'none')
+        .map(b => b.id.replace('fcb-',''))
+    );
     el.innerHTML = list.length
       ? list.map(c => finCardHTML(c)).join('')
       : '<div class="empty-state">لا يوجد</div>';
+    // أعد فتح البطاقات المفتوحة
+    openRefs.forEach(ref => {
+      const body = document.getElementById(`fcb-${ref}`);
+      const chev = document.getElementById(`fchev-${ref}`);
+      if (body) { body.style.display = 'block'; }
+      if (chev) { chev.style.transform = 'rotate(180deg)'; }
+    });
   };
   renderList('fl-active', active);
   renderList('fl-done',   done);
