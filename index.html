@@ -3718,7 +3718,7 @@ function finCardHTML(c) {
       : `<span class="pill ${payStatusColor[curPayStatus]||'p-green'}" style="font-size:10px">${curPayStatus} ${payStatusEmoji[curPayStatus]||''}</span>`}
   </div>`;
 
-  // بطاقة بدون بيانات مالية — زر "مكتمل السداد"
+  // بطاقة بدون بيانات مالية — اختيار نوع الدفع
   if (!c.payType) {
     return `<div class="fin-card" id="fc-${c.ref}" style="margin-bottom:8px;border-right:3px solid var(--border)">
       <div class="fin-card-header" onclick="toggleFinCard('${c.ref}')">
@@ -3732,19 +3732,86 @@ function finCardHTML(c) {
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" id="fchev-${c.ref}"><polyline points="6 9 12 15 18 9"/></svg>
       </div>
       <div id="fcb-${c.ref}" style="display:none;padding:12px 14px 14px">
-        <div style="background:var(--green-lt);border-radius:10px;padding:14px;border:1px solid var(--green-mid)">
-          <div style="font-size:12px;font-weight:600;color:var(--text-2);margin-bottom:10px">✅ تسجيل مكتمل السداد</div>
-          <div style="display:flex;gap:8px;align-items:flex-end">
-            <div style="flex:1">
-              <label style="font-size:10px;color:var(--text-3)">المبلغ المدفوع (SAR)</label>
+
+        <!-- اختيار نوع الدفع -->
+        <div style="display:flex;gap:8px;margin-bottom:12px" id="fptype-choice-${c.ref}">
+          <button class="btn btn-sm" onclick="showPayChoice('${c.ref}','كامل')"
+            style="flex:1;justify-content:center;background:var(--green-lt);color:var(--green);border-color:var(--green-mid);font-weight:600">
+            ✅ دفع كامل
+          </button>
+          <button class="btn btn-sm" onclick="showPayChoice('${c.ref}','أقساط')"
+            style="flex:1;justify-content:center;background:var(--blue-lt);color:var(--blue);border-color:var(--blue-mid);font-weight:600">
+            📅 أقساط
+          </button>
+        </div>
+
+        <!-- دفع كامل -->
+        <div id="fpc-full-${c.ref}" style="display:none;background:var(--green-lt);border-radius:10px;padding:14px;border:1px solid var(--green-mid)">
+          <div style="font-size:12px;font-weight:600;color:var(--text-2);margin-bottom:10px">✅ دفع كامل</div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px">
+            <div>
+              <label style="font-size:10px;color:var(--text-3)">المبلغ (SAR)</label>
               <input type="text" inputmode="decimal" id="fcp-amt-${c.ref}" placeholder="0.00"
                 style="width:100%;padding:7px 10px;border:1.5px solid var(--border);border-radius:8px;font-size:13px;font-family:var(--font);margin-top:3px">
             </div>
-            <button class="btn btn-success" onclick="markFullyPaid('${c.ref}')" style="white-space:nowrap;padding:8px 16px">
-              تأكيد ✓
-            </button>
+            <div>
+              <label style="font-size:10px;color:var(--text-3)">الرقم المرجعي</label>
+              <input type="text" id="fcp-ref-${c.ref}" placeholder="REF-..." dir="ltr"
+                style="width:100%;padding:7px 10px;border:1.5px solid var(--border);border-radius:8px;font-size:12px;font-family:monospace;margin-top:3px">
+            </div>
+          </div>
+          <div style="display:flex;gap:8px;justify-content:flex-end">
+            <button class="btn btn-sm" onclick="showPayChoice('${c.ref}',null)">← رجوع</button>
+            <button class="btn btn-success" onclick="markFullyPaid('${c.ref}')">تأكيد ✓</button>
           </div>
         </div>
+
+        <!-- أقساط -->
+        <div id="fpc-inst-${c.ref}" style="display:none">
+          <div style="background:var(--blue-lt);border-radius:10px;padding:12px;border:1px solid var(--blue-mid);margin-bottom:10px">
+            <div style="font-size:12px;font-weight:600;color:var(--blue);margin-bottom:8px">📅 إعداد جدول الأقساط</div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px">
+              <div>
+                <label style="font-size:10px;color:var(--text-3)">المبلغ الإجمالي (SAR)</label>
+                <input type="text" inputmode="decimal" id="fcp-total-${c.ref}" placeholder="0.00"
+                  style="width:100%;padding:6px 8px;border:1.5px solid var(--border);border-radius:7px;font-size:12px;font-family:var(--font);margin-top:2px">
+              </div>
+              <div>
+                <label style="font-size:10px;color:var(--text-3)">الدفعة الأولى (SAR)</label>
+                <input type="text" inputmode="decimal" id="fcp-first-${c.ref}" placeholder="0.00"
+                  style="width:100%;padding:6px 8px;border:1.5px solid var(--border);border-radius:7px;font-size:12px;font-family:var(--font);margin-top:2px">
+              </div>
+            </div>
+            <div style="display:flex;gap:8px;justify-content:flex-end">
+              <button class="btn btn-sm" onclick="showPayChoice('${c.ref}',null)">← رجوع</button>
+              <button class="btn btn-sm btn-primary" onclick="initInstallments('${c.ref}')">إنشاء الملف ←</button>
+            </div>
+          </div>
+          <div id="fpc-inst-builder-${c.ref}" style="display:none">
+            <!-- بناء الأقساط يدوياً أو تلقائياً -->
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px">
+              <div><label style="font-size:10px;color:var(--text-3)">تاريخ القسط</label>
+                <input type="date" id="fcp-nd-${c.ref}" style="width:100%;padding:6px 8px;border:1.5px solid var(--border);border-radius:7px;font-size:12px;font-family:var(--font)"></div>
+              <div><label style="font-size:10px;color:var(--text-3)">المبلغ (SAR)</label>
+                <input type="text" inputmode="decimal" id="fcp-na-${c.ref}" placeholder="0.00" style="width:100%;padding:6px 8px;border:1.5px solid var(--border);border-radius:7px;font-size:12px;font-family:var(--font)"></div>
+            </div>
+            <button class="btn btn-sm btn-success" onclick="addInstFromChoice('${c.ref}')" style="margin-bottom:8px">+ إضافة قسط</button>
+            <div id="fcp-inst-list-${c.ref}"></div>
+            <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;margin-top:8px;padding-top:8px;border-top:1px solid var(--border)">
+              <div><label style="font-size:10px;color:var(--text-3)">عدد الأقساط</label>
+                <input type="number" id="fcp-gnum-${c.ref}" value="4" min="1" style="width:100%;padding:6px 8px;border:1.5px solid var(--border);border-radius:7px;font-size:12px;font-family:var(--font)"></div>
+              <div><label style="font-size:10px;color:var(--text-3)">تاريخ البدء</label>
+                <input type="date" id="fcp-gstart-${c.ref}" style="width:100%;padding:6px 8px;border:1.5px solid var(--border);border-radius:7px;font-size:12px;font-family:var(--font)"></div>
+              <div style="display:flex;align-items:flex-end">
+                <button class="btn btn-sm btn-primary" onclick="genInstFromChoice('${c.ref}')" style="width:100%">توليد تلقائي</button>
+              </div>
+            </div>
+            <div style="display:flex;justify-content:flex-end;margin-top:10px">
+              <button class="btn btn-success" onclick="saveInstFromChoice('${c.ref}')">حفظ الجدول ✓</button>
+            </div>
+          </div>
+        </div>
+
       </div>
     </div>`;
   }
@@ -3918,21 +3985,130 @@ async function removeInstallment(ref, idx) {
 }
 
 
+function showPayChoice(ref, type) {
+  const fullEl    = document.getElementById(`fpc-full-${ref}`);
+  const instEl    = document.getElementById(`fpc-inst-${ref}`);
+  const choiceEl  = document.getElementById(`fptype-choice-${ref}`);
+  if (!fullEl || !instEl || !choiceEl) return;
+  choiceEl.style.display = type ? 'none' : 'flex';
+  fullEl.style.display   = type === 'كامل'  ? 'block' : 'none';
+  instEl.style.display   = type === 'أقساط' ? 'block' : 'none';
+}
+
+function initInstallments(ref) {
+  const c = clients.find(x => x.ref === ref);
+  if (!c) return;
+  const total = parseFloat(document.getElementById(`fcp-total-${ref}`)?.value?.replace(/,/g,''));
+  const first = parseFloat(document.getElementById(`fcp-first-${ref}`)?.value?.replace(/,/g,'')) || 0;
+  if (!total) { toast('يرجى إدخال المبلغ الإجمالي', false); return; }
+  // احفظ المبلغ مؤقتاً
+  c._tmpTotal = total; c._tmpFirst = first; c._tmpInsts = [];
+  const builder = document.getElementById(`fpc-inst-builder-${ref}`);
+  if (builder) builder.style.display = 'block';
+  renderInstChoiceList(ref);
+}
+
+function renderInstChoiceList(ref) {
+  const c = clients.find(x => x.ref === ref);
+  if (!c) return;
+  const el = document.getElementById(`fcp-inst-list-${ref}`);
+  if (!el) return;
+  const insts = c._tmpInsts || [];
+  if (!insts.length) { el.innerHTML = ''; return; }
+  el.innerHTML = `<table style="width:100%;border-collapse:collapse;font-size:12px;margin-bottom:4px">
+    <thead><tr>
+      <th style="padding:4px 8px;text-align:right;color:var(--text-3);font-size:10px">#</th>
+      <th style="padding:4px 8px;text-align:right;color:var(--text-3);font-size:10px">التاريخ</th>
+      <th style="padding:4px 8px;text-align:right;color:var(--text-3);font-size:10px">المبلغ</th>
+      <th></th>
+    </tr></thead>
+    <tbody>${insts.map((i,n)=>`<tr style="border-top:1px solid var(--border-lt)">
+      <td style="padding:4px 8px;color:var(--text-3)">${i.n}</td>
+      <td style="padding:4px 8px" dir="ltr">${i.due}</td>
+      <td style="padding:4px 8px;font-weight:600">${fmtSAR(i.amount)}</td>
+      <td style="padding:4px 8px"><button onclick="removeInstChoice('${ref}',${n})" style="border:none;background:none;color:var(--red);cursor:pointer">✕</button></td>
+    </tr>`).join('')}</tbody>
+  </table>`;
+}
+
+function addInstFromChoice(ref) {
+  const c = clients.find(x => x.ref === ref);
+  if (!c) return;
+  const date = document.getElementById(`fcp-nd-${ref}`)?.value;
+  const amt  = parseFloat(document.getElementById(`fcp-na-${ref}`)?.value?.replace(/,/g,''));
+  if (!date || !amt) { toast('يرجى تحديد التاريخ والمبلغ', false); return; }
+  c._tmpInsts = c._tmpInsts || [];
+  c._tmpInsts.push({ n: c._tmpInsts.length+1, due: date, amount: amt, status:'upcoming', paidRef:'', paidDate:'' });
+  document.getElementById(`fcp-nd-${ref}`).value = '';
+  document.getElementById(`fcp-na-${ref}`).value = '';
+  renderInstChoiceList(ref);
+}
+
+function removeInstChoice(ref, idx) {
+  const c = clients.find(x => x.ref === ref);
+  if (!c || !c._tmpInsts) return;
+  c._tmpInsts.splice(idx, 1);
+  c._tmpInsts.forEach((i,n) => i.n = n+1);
+  renderInstChoiceList(ref);
+}
+
+function genInstFromChoice(ref) {
+  const c = clients.find(x => x.ref === ref);
+  if (!c) return;
+  const num   = parseInt(document.getElementById(`fcp-gnum-${ref}`)?.value) || 4;
+  const start = document.getElementById(`fcp-gstart-${ref}`)?.value;
+  const total = c._tmpTotal || 0;
+  const first = c._tmpFirst || 0;
+  const remain = Math.max(0, total - first);
+  if (!start) { toast('يرجى تحديد تاريخ البدء', false); return; }
+  const baseAmt = Math.round(remain / num * 100) / 100;
+  c._tmpInsts = [];
+  for (let i = 0; i < num; i++) {
+    const d = new Date(start + 'T00:00:00');
+    d.setMonth(d.getMonth() + i);
+    d.setDate(27);
+    const isLast = i === num-1;
+    const amt = isLast ? Math.round((remain - baseAmt*(num-1))*100)/100 : baseAmt;
+    c._tmpInsts.push({ n:i+1, due:d.toISOString().split('T')[0], amount:amt, status:'upcoming', paidRef:'', paidDate:'' });
+  }
+  renderInstChoiceList(ref);
+  toast(`✓ تم توليد ${num} أقساط`);
+}
+
+async function saveInstFromChoice(ref) {
+  const c = clients.find(x => x.ref === ref);
+  if (!c) return;
+  if (!c._tmpInsts?.length) { toast('أضف قسطاً واحداً على الأقل', false); return; }
+  const session = JSON.parse(sessionStorage.getItem('ops_session') || '{}');
+  c.payType      = 'أقساط';
+  c.finalPrice   = c._tmpTotal || 0;
+  c.price        = c._tmpTotal || 0;
+  c.firstPayment = c._tmpFirst || 0;
+  c.installments = c._tmpInsts;
+  c.totalPaid    = c._tmpFirst || 0;
+  delete c._tmpTotal; delete c._tmpFirst; delete c._tmpInsts;
+  c.log = c.log || [];
+  c.log.push({ who: session.username||'المالية', action:`إنشاء جدول ${c.installments.length} أقساط — ${fmtSAR(c.finalPrice)}`, time: new Date().toLocaleString('en-GB') });
+  persistClient(c);
+  toast(`✅ تم حفظ جدول الأقساط — ${c.installments.length} أقساط`);
+  renderFinance();
+}
+
 async function markFullyPaid(ref) {
   const c = clients.find(x => x.ref === ref);
   if (!c) return;
   const amt = parseFloat(document.getElementById(`fcp-amt-${ref}`)?.value?.replace(/,/g,''));
+  const refNum = document.getElementById(`fcp-ref-${ref}`)?.value?.trim() || '';
   if (!amt) { toast('يرجى إدخال المبلغ', false); return; }
   const session = JSON.parse(sessionStorage.getItem('ops_session') || '{}');
   c.payType    = 'كامل';
-  c.finalPrice = amt;
-  c.price      = amt;
-  c.totalPaid  = amt;
+  c.finalPrice = amt; c.price = amt; c.totalPaid = amt;
   c.installments = [];
+  if (refNum) c.payRef = refNum;
   c.log = c.log || [];
-  c.log.push({ who: session.username||'المالية', action:`تسجيل مكتمل السداد — ${fmtSAR(amt)}`, time: new Date().toLocaleString('en-GB') });
+  c.log.push({ who: session.username||'المالية', action:`دفع كامل — ${fmtSAR(amt)}${refNum?' — '+refNum:''}`, time: new Date().toLocaleString('en-GB') });
   persistClient(c);
-  toast(`✅ تم تسجيل السداد الكامل — ${fmtSAR(amt)}`);
+  toast(`✅ تم تسجيل الدفع الكامل — ${fmtSAR(amt)}`);
   renderFinance();
 }
 
