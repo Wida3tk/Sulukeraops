@@ -3560,9 +3560,6 @@ function renderFinance() {
              document.getElementById('search-input-quick-fin')?.value || '').toLowerCase();
 
   const withFin = clients.filter(c => {
-    // عميل مالي = عنده payType أو سعر أو أقساط
-    const hasFin = c.payType || c.price || (c.installments||[]).length > 0;
-    if (!hasFin) return false;
     // فلتر البرنامج
     if (filterProg && !(c.program||'').includes(filterProg.split(' ')[0])) return false;
     if (filterTrack && c.track !== filterTrack) return false;
@@ -3574,12 +3571,15 @@ function renderFinance() {
     return true;
   });
 
-  // أقساط نشطة — من عنده أقساط ولم يكتمل
+  // أقساط نشطة — من عنده payType أقساط ولم يكتمل
   const active = withFin.filter(c => {
-    if (c.payType !== 'أقساط') return false;
-    const insts = c.installments || [];
-    if (!insts.length) return true; // لم يُضف جدول بعد
-    return !insts.every(i => i.status === 'paid');
+    if (c.payType === 'أقساط') {
+      const insts = c.installments || [];
+      return !insts.every(i => i.status === 'paid');
+    }
+    // لم تُدخل بيانات مالية بعد — يظهر في النشطة
+    if (!c.payType) return true;
+    return false;
   });
 
   // مكتمل — دفع كامل أو اكتمل الأقساط
