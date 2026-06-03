@@ -2759,6 +2759,7 @@ function toggleFilters() {
   if (sidebar) sidebar.classList.toggle('open', filtersOpen);
   if (overlay) overlay.classList.toggle('show', filtersOpen);
   if (btn)     btn.classList.toggle('active', filtersOpen);
+  if (filtersOpen) buildFilterSidebar(); // أعد البناء حسب الصفحة الحالية
 }
 
 function quickSearch(val) {
@@ -2787,23 +2788,27 @@ function updateFilterDot() {
 
 
 function buildFilterSidebar() {
-  // برامج فريدة مع عدادات
   const fixedProgs = ['تحليل السلوك التطبيقي','إدارة السلوك التنظيمي','الاقتصاد السلوكي','برامج التعليم المستمر'];
   const extraProgs = (programs||[]).filter(p => !fixedProgs.some(fp => p.includes(fp)));
   const allProgs   = [...fixedProgs, ...extraProgs];
 
+  // في المالية — نحسب فقط العملاء الذين عندهم بيانات مالية
+  const isFinance   = currentView === 'finance';
+  const baseClients = isFinance
+    ? clients.filter(c => c.payType || c.price || (c.installments||[]).length > 0)
+    : clients;
+
   const el = document.getElementById('prog-filter-list');
   if (!el) return;
 
-  // "الكل" زر
   let html = `<button class="prog-filter-btn ${!filterProg?'active':''}" onclick="setProgFilter('')">
     <div class="prog-dot" style="background:#8A91A3"></div>
     <span class="pf-name">الكل</span>
-    <span class="pf-count">${clients.length}</span>
+    <span class="pf-count">${baseClients.length}</span>
   </button>`;
 
   allProgs.forEach(prog => {
-    const count = clients.filter(c => (c.program||'').includes(prog.split(' ')[0])).length;
+    const count = baseClients.filter(c => (c.program||'').includes(prog.split(' ')[0])).length;
     if (!count) return;
     const color = getProgColor(prog);
     const isActive = filterProg === prog;
@@ -2815,11 +2820,8 @@ function buildFilterSidebar() {
   });
   el.innerHTML = html;
 
-  // مسارات
   updateTrackFilter();
-  // ليبلات
   updateLabelFilter();
-  // مصادر
   fillFilterSelects();
 }
 
